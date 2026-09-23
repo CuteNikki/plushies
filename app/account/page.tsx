@@ -57,9 +57,9 @@ export default async function AccountPage(props: PageProps<'/account'>) {
     <div className='mx-auto flex max-w-2xl flex-col gap-6'>
       <Reveal>
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
-          Account settings
+          Account Settings
         </h1>
-        <p className='text-muted-foreground'>Signed in as {user.email}</p>
+        <p className='text-muted-foreground'>Manage your account settings and preferences.</p>
       </Reveal>
 
       <Section title='Profile'>
@@ -82,7 +82,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section
-        title='Sign-in methods'
+        title='Sign-in Methods'
         description='Connect Discord to sign in with it too, whichever way you signed up.'
       >
         <LinkedAccounts
@@ -101,7 +101,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         <SessionList sessions={sessionInfos} />
       </Section>
 
-      <Section title='Danger zone'>
+      <Section title='Danger Zone'>
         <DeleteAccount hasPassword={hasPassword} />
       </Section>
     </div>

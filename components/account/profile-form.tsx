@@ -16,6 +16,16 @@ export function ProfileForm({ name }: { name: string }) {
   const [pending, setPending] = useState(false);
 
   async function handleSubmit(formData: FormData) {
+    if (!String(formData.get('name')).trim()) {
+      toast.error('Name cannot be empty');
+      return;
+    }
+
+    if (String(formData.get('name')).trim() === name) {
+      toast.error('Name is the same as the current one');
+      return;
+    }
+
     setPending(true);
     const { error } = await authClient.updateUser({
       name: String(formData.get('name')).trim(),

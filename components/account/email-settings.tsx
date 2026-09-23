@@ -78,13 +78,13 @@ export function EmailSettings({
         {!verified && (
           <Button
             size='sm'
-            variant='outline'
+            variant='default'
             disabled={resending}
             onClick={resend}
             className='ml-auto'
           >
             {resending && <Loader2 className='animate-spin' />}
-            Send verification link
+            Send Verification
           </Button>
         )}
       </div>
@@ -94,7 +94,7 @@ export function EmailSettings({
         action={changeEmail}
         className='flex flex-col gap-1 border-t pt-4'
       >
-        <Label htmlFor='newEmail'>Change email</Label>
+        <Label htmlFor='newEmail'>Change Email</Label>
         <div className='flex gap-2'>
           <Input
             id='newEmail'

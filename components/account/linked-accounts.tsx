@@ -8,7 +8,6 @@ import { toast } from 'sonner';
 import { authClient } from '@/lib/auth-client';
 
 import { DiscordIcon } from '@/components/discord-icon';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export function LinkedAccounts({
@@ -74,13 +73,13 @@ export function LinkedAccounts({
         <Mail className='size-5 text-muted-foreground' />
         <span className='flex-1 font-medium'>Email and password</span>
         {hasPassword ? (
-          <Badge variant='secondary'>
+          <Button variant='secondary' size='sm' disabled>
             <Check />
-            Set up
-          </Badge>
+            Done
+          </Button>
         ) : (
           <span className='text-sm text-muted-foreground'>
-            Add a password above
+            Missing Password
           </span>
         )}
       </li>
@@ -89,7 +88,7 @@ export function LinkedAccounts({
         <span className='flex-1 font-medium'>Discord</span>
         {hasDiscord ? (
           <Button
-            variant='outline'
+            variant='destructive'
             size='sm'
             disabled={pending || !hasPassword}
             title={

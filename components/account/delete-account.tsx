@@ -35,10 +35,9 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
   return (
     <div className='flex flex-col gap-2 rounded-xl p-4 ring-1 ring-destructive/30'>
       <div>
-        <p className='font-medium'>Delete your account</p>
+        <p className='font-medium'>Delete Account</p>
         <p className='text-sm text-muted-foreground'>
-          This removes your account and signs you out everywhere. The plushies
-          stay.
+          This removes your account and signs you out everywhere.
         </p>
       </div>
       {open ? (
@@ -63,7 +62,7 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
           <div className='flex gap-2'>
             <Button type='submit' variant='destructive' disabled={pending}>
               {pending ? <Loader2 className='animate-spin' /> : <Trash2 />}
-              Delete my account
+              Delete Account
             </Button>
             <Button
               type='button'

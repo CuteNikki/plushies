@@ -45,7 +45,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       );
     }
     formRef.current?.reset();
-    toast.success(hasPassword ? 'Password changed' : 'Password added');
+    toast.success(hasPassword ? 'Password Changed' : 'Password Added');
     router.refresh();
   }
 
@@ -57,7 +57,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
     >
       {hasPassword && (
         <div className='flex flex-col gap-1'>
-          <Label htmlFor='currentPassword'>Current password</Label>
+          <Label htmlFor='currentPassword'>Current Password</Label>
           <Input
             id='currentPassword'
             name='currentPassword'
@@ -69,7 +69,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
       )}
       <div className='grid gap-3 sm:grid-cols-2'>
         <div className='flex flex-col gap-1'>
-          <Label htmlFor='newPassword'>New password</Label>
+          <Label htmlFor='newPassword'>New Password</Label>
           <Input
             id='newPassword'
             name='newPassword'
@@ -80,7 +80,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           />
         </div>
         <div className='flex flex-col gap-1'>
-          <Label htmlFor='confirm'>Repeat new password</Label>
+          <Label htmlFor='confirm'>Repeat Password</Label>
           <Input
             id='confirm'
             name='confirm'
@@ -91,22 +91,24 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           />
         </div>
       </div>
-      {hasPassword && (
-        <label className='flex items-center gap-2 text-sm'>
-          <input
-            type='checkbox'
-            name='revokeOthers'
-            defaultChecked
-            className='size-4 accent-primary'
-          />
-          Sign out on other devices
-        </label>
-      )}
       {error && <p className='text-sm text-destructive'>{error}</p>}
-      <Button type='submit' disabled={pending} className='w-fit'>
-        {pending && <Loader2 className='animate-spin' />}
-        {hasPassword ? 'Change password' : 'Add password'}
-      </Button>
+      <div className='flex flex-col gap-3 xs:flex-row xs:items-center xs:justify-between'>
+        {hasPassword && (
+          <label className='flex items-center gap-2 text-sm'>
+            <input
+              type='checkbox'
+              name='revokeOthers'
+              defaultChecked={false}
+              className='size-4 accent-primary'
+            />
+            Sign out on other devices
+          </label>
+        )}
+        <Button type='submit' disabled={pending} className='w-fit'>
+          {pending && <Loader2 className='animate-spin' />}
+          {hasPassword ? 'Change Password' : 'Add Password'}
+        </Button>
+      </div>
     </form>
   );
 }

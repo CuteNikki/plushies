@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getPlushie, getPlushies } from '@/lib/plushies';
+import { site } from '@/lib/site';
 
 import { PlushieAge } from '@/components/plushie-age';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
@@ -28,7 +29,32 @@ export async function generateMetadata(
   const { slug } = await props.params;
   const plushie = await getPlushie(slug);
   if (!plushie) return {};
-  return { title: plushie.name, description: plushie.description };
+
+  // Link previews show the plushie's own photo. Without one, the site-wide
+  // preview image is used. openGraph replaces the layout's, so the shared
+  // fields are repeated here.
+  const images = plushie.thumbnail
+    ? [{ url: plushie.thumbnail.url, alt: `Photo of ${plushie.name}` }]
+    : undefined;
+  return {
+    title: plushie.name,
+    description: plushie.description,
+    openGraph: {
+      type: 'profile',
+      siteName: site.name,
+      title: `${plushie.name} · ${site.name}`,
+      description: plushie.description,
+      url: `/plushies/${plushie.slug}`,
+      locale: 'en_US',
+      images,
+    },
+    twitter: {
+      card: plushie.thumbnail ? 'summary_large_image' : 'summary',
+      title: `${plushie.name} · ${site.name}`,
+      description: plushie.description,
+      images,
+    },
+  };
 }
 
 export default async function PlushiePage(

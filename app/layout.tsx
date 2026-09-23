@@ -1,6 +1,7 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fredoka, Geist_Mono, Nunito } from 'next/font/google';
 
+import { brand, site } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
 import { MotionProvider } from '@/components/motion';
@@ -21,11 +22,38 @@ const fontMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: site.url,
   title: {
-    default: 'Plushies',
-    template: '%s · Plushies',
+    default: site.title,
+    template: `%s · ${site.name}`,
   },
-  description: 'Meet all of my plushies!',
+  description: site.description,
+  applicationName: site.name,
+  keywords: ['plushies', 'plushie collection', 'stuffed animals', 'soft toys'],
+  category: 'entertainment',
+  formatDetection: { telephone: false },
+  appleWebApp: { capable: true, title: site.name, statusBarStyle: 'default' },
+  openGraph: {
+    type: 'website',
+    siteName: site.name,
+    title: site.title,
+    description: site.description,
+    url: '/',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: site.title,
+    description: site.description,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: brand.light.background },
+    { media: '(prefers-color-scheme: dark)', color: brand.dark.background },
+  ],
+  colorScheme: 'light dark',
 };
 
 export default function RootLayout({

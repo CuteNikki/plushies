@@ -119,6 +119,19 @@ export function SignInForm() {
         <DiscordIcon />
         Use Discord
       </Button>
+
+      {/* Covers every way of signing in above, including Discord. */}
+      <p className='text-center text-xs text-balance text-muted-foreground'>
+        By continuing, you agree to our{' '}
+        <Link href='/terms' className='text-primary hover:underline'>
+          terms of service
+        </Link>{' '}
+        and{' '}
+        <Link href='/privacy' className='text-primary hover:underline'>
+          privacy policy
+        </Link>
+        .
+      </p>
     </div>
   );
 }

@@ -85,7 +85,7 @@ export function LinkedAccounts({
         )}
       </li>
       <li className='flex items-center gap-3 p-3 px-4'>
-        <DiscordIcon className='size-5 text-[#5865F2]' />
+        <DiscordIcon className='size-5 text-muted-foreground' />
         <span className='flex-1 font-medium'>Discord</span>
         {hasDiscord ? (
           <Button

@@ -41,7 +41,7 @@ export function SessionList({ sessions }: { sessions: SessionInfo[] }) {
               <div className='min-w-0 flex-1'>
                 <p className='flex items-center gap-1.5 font-medium'>
                   {session.device}
-                  {session.current && <Badge>This device</Badge>}
+                  {session.current && <Badge size='sm'>This device</Badge>}
                 </p>
                 <p className='truncate text-sm text-muted-foreground'>
                   {[session.ipAddress, `active ${timeAgo(session.lastActive)}`]

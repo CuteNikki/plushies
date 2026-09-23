@@ -1,11 +1,12 @@
 'use client';
 
-import { Loader2, MailCheck } from 'lucide-react';
+import { Loader2, MailCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
 import { authClient } from '@/lib/auth-client';
 
+import { AuthStatus } from '@/components/auth-status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,35 +29,49 @@ export function ForgotPasswordForm() {
     setSentTo(email);
   }
 
+  if (sentTo) {
+    return (
+      <AuthStatus
+        icon={MailCheckIcon}
+        title='Check your inbox'
+        actions={
+          <>
+            <Button asChild>
+              <Link href='/sign-in'>Back to Sign In</Link>
+            </Button>
+            <Button variant='ghost' onClick={() => setSentTo(undefined)}>
+              Use a different email
+            </Button>
+          </>
+        }
+      >
+        If there&rsquo;s an account for{' '}
+        <strong className='font-semibold text-foreground'>{sentTo}</strong>, a
+        reset link is on its way. It works for one hour, and might land in your
+        spam folder.
+      </AuthStatus>
+    );
+  }
+
   return (
     <div className='flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
-      {sentTo ? (
-        <div className='flex flex-col items-center gap-3 text-center'>
-          <MailCheck className='size-10 text-primary' />
-          <p className='text-sm'>
-            If there&rsquo;s an account for <strong>{sentTo}</strong>, a reset
-            link is on its way. Check your inbox (and spam folder).
-          </p>
+      <form action={handleSubmit} className='flex flex-col gap-3'>
+        <div className='flex flex-col gap-1'>
+          <Label htmlFor='email'>Email</Label>
+          <Input
+            id='email'
+            name='email'
+            type='email'
+            required
+            autoComplete='email'
+          />
         </div>
-      ) : (
-        <form action={handleSubmit} className='flex flex-col gap-3'>
-          <div className='flex flex-col gap-1'>
-            <Label htmlFor='email'>Email</Label>
-            <Input
-              id='email'
-              name='email'
-              type='email'
-              required
-              autoComplete='email'
-            />
-          </div>
-          {error && <p className='text-sm text-destructive'>{error}</p>}
-          <Button type='submit' disabled={pending}>
-            {pending && <Loader2 className='animate-spin' />}
-            Send Reset Link
-          </Button>
-        </form>
-      )}
+        {error && <p className='text-sm text-destructive'>{error}</p>}
+        <Button type='submit' disabled={pending}>
+          {pending && <Loader2 className='animate-spin' />}
+          Send Reset Link
+        </Button>
+      </form>
 
       <p className='text-center text-sm text-muted-foreground'>
         <Link

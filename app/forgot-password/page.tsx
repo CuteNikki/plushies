@@ -1,13 +1,14 @@
 import type { Metadata } from 'next';
 
+import { AuthShell } from '@/components/auth-shell';
 import { ForgotPasswordForm } from '@/components/forgot-password-form';
 import { Reveal } from '@/components/motion';
 
-export const metadata: Metadata = { title: 'Forgot password' };
+export const metadata: Metadata = { title: 'Forgot Password' };
 
 export default function ForgotPasswordPage() {
   return (
-    <div className='mx-auto flex max-w-sm flex-col gap-6 py-8'>
+    <AuthShell>
       <Reveal className='flex flex-col gap-1 text-center'>
         <h1 className='font-heading text-3xl font-semibold'>
           Forgot your password?
@@ -19,6 +20,6 @@ export default function ForgotPasswordPage() {
       <Reveal>
         <ForgotPasswordForm />
       </Reveal>
-    </div>
+    </AuthShell>
   );
 }

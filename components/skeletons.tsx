@@ -8,13 +8,20 @@ import { Skeleton } from '@/components/ui/skeleton';
  */
 export function LoadingPage({
   className,
+  fill,
   children,
 }: {
   className?: string;
+  /** Fill the space between header and footer, like centered pages do. */
+  fill?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn('flex flex-col', className)} aria-busy>
+    <div
+      className={cn('flex flex-col', className)}
+      data-fill={fill || undefined}
+      aria-busy
+    >
       <span className='sr-only' role='status'>
         Loading…
       </span>
@@ -78,12 +85,25 @@ export function SectionSkeleton({ height }: { height: string }) {
   );
 }
 
-/** A heading over a small centered card, like the sign-in and email pages. */
+/** Matches AuthShell: the brand panel on wide screens and the form column. */
 export function AuthCardSkeleton({ height = 'h-72' }: { height?: string }) {
   return (
-    <LoadingPage className='mx-auto w-full max-w-sm items-center gap-6 py-8'>
-      <Skeleton className='h-9 w-48' />
-      <Skeleton className={cn('w-full rounded-2xl', height)} />
+    <LoadingPage
+      fill
+      className='grid w-full flex-1 content-center items-center gap-16 py-8 lg:grid-cols-2'
+    >
+      <div className='hidden flex-col gap-10 justify-self-center lg:flex'>
+        <Skeleton className='h-72 w-96 rounded-3xl' />
+        <div className='flex flex-col gap-3'>
+          <Skeleton className='h-12 w-48' />
+          <Skeleton className='h-7 w-64' />
+          <Skeleton className='h-5 w-80' />
+        </div>
+      </div>
+      <div className='mx-auto flex w-full max-w-sm flex-col items-center gap-6'>
+        <Skeleton className='h-9 w-48' />
+        <Skeleton className={cn('w-full rounded-2xl', height)} />
+      </div>
     </LoadingPage>
   );
 }

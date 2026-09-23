@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { getSession } from '@/lib/session';
 
+import { AuthShell } from '@/components/auth-shell';
 import { Reveal } from '@/components/motion';
 import { SignInForm } from '@/components/sign-in-form';
 
@@ -13,7 +14,7 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
   const { reset } = await props.searchParams;
 
   return (
-    <div className='mx-auto flex max-w-sm flex-col gap-6 py-8'>
+    <AuthShell>
       <Reveal className='flex flex-col gap-1 text-center'>
         <h1 className='font-heading text-3xl font-semibold'>Welcome!</h1>
         <p className='text-sm text-muted-foreground'>
@@ -28,6 +29,6 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
       <Reveal>
         <SignInForm />
       </Reveal>
-    </div>
+    </AuthShell>
   );
 }

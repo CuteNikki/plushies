@@ -30,12 +30,8 @@ export async function generateMetadata(
   const plushie = await getPlushie(slug);
   if (!plushie) return {};
 
-  // Link previews show the plushie's own photo. Without one, the site-wide
-  // preview image is used. openGraph replaces the layout's, so the shared
-  // fields are repeated here.
-  const images = plushie.thumbnail
-    ? [{ url: plushie.thumbnail.url, alt: `Photo of ${plushie.name}` }]
-    : undefined;
+  // The preview image comes from opengraph-image.tsx next to this page.
+  // openGraph replaces the layout's, so the shared fields are repeated here.
   return {
     title: plushie.name,
     description: plushie.description,
@@ -46,13 +42,11 @@ export async function generateMetadata(
       description: plushie.description,
       url: `/plushies/${plushie.slug}`,
       locale: 'en_US',
-      images,
     },
     twitter: {
-      card: plushie.thumbnail ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: `${plushie.name} · ${site.name}`,
       description: plushie.description,
-      images,
     },
   };
 }

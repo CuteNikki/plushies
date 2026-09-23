@@ -7,7 +7,7 @@ import { requireEditor } from '@/lib/session';
 import { Reveal } from '@/components/motion';
 import { PlushieForm } from '@/components/plushie-form';
 
-export const metadata: Metadata = { title: 'Edit plushie' };
+export const metadata: Metadata = { title: 'Edit Plushie' };
 
 export default async function EditPlushiePage(
   props: PageProps<'/dashboard/plushies/[id]'>

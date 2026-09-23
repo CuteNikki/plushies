@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 import { LegalList, LegalPage, LegalSection } from '@/components/legal';
 
-export const metadata: Metadata = { title: 'Terms of service' };
+export const metadata: Metadata = { title: 'Terms of Service' };
 
 export default function TermsPage() {
   return (
-    <LegalPage title='Terms of service' updated='September 23, 2026'>
+    <LegalPage title='Terms of Service' updated='September 23, 2026'>
       <LegalSection title='1. Scope'>
         <p>
           These terms apply to your use of Plushies, a free website that shows a

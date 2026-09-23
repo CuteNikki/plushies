@@ -5,7 +5,7 @@ import { Reveal } from '@/components/motion';
 import { ResetPasswordForm } from '@/components/reset-password-form';
 import { Button } from '@/components/ui/button';
 
-export const metadata: Metadata = { title: 'Reset password' };
+export const metadata: Metadata = { title: 'Reset Password' };
 
 export default async function ResetPasswordPage(
   props: PageProps<'/reset-password'>

@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 import { LegalList, LegalPage, LegalSection } from '@/components/legal';
 
-export const metadata: Metadata = { title: 'Privacy policy' };
+export const metadata: Metadata = { title: 'Privacy Policy' };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title='Privacy policy' updated='September 23, 2026'>
+    <LegalPage title='Privacy Policy' updated='September 23, 2026'>
       <LegalSection title='1. Who is responsible'>
         <p>
           The controller within the meaning of the GDPR is the operator named in

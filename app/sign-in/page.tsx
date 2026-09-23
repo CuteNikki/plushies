@@ -6,7 +6,7 @@ import { getSession } from '@/lib/session';
 import { Reveal } from '@/components/motion';
 import { SignInForm } from '@/components/sign-in-form';
 
-export const metadata: Metadata = { title: 'Sign in' };
+export const metadata: Metadata = { title: 'Sign In' };
 
 export default async function SignInPage(props: PageProps<'/sign-in'>) {
   if (await getSession()) redirect('/dashboard');

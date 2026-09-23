@@ -5,22 +5,22 @@ import Link from 'next/link';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 
-export const metadata: Metadata = { title: 'Email verification' };
+export const metadata: Metadata = { title: 'Email Verification' };
 
 const messages = {
   // A new account's address, or a resent link.
   verified: {
-    title: 'Email verified',
+    title: 'Email Verified',
     text: 'Thanks! Your email address is confirmed.',
   },
   // Changing email, step 1: confirmed from the old address.
   confirmed: {
-    title: 'Almost there',
+    title: 'Almost There',
     text: 'We sent one more link to your new address. Open it to finish changing your email.',
   },
   // Changing email, step 2: confirmed from the new address.
   changed: {
-    title: 'Email changed',
+    title: 'Email Changed',
     text: 'Your new email address is confirmed and now in use.',
   },
 };

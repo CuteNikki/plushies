@@ -3,8 +3,8 @@ import { headers } from 'next/headers';
 
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { requireUser } from '@/lib/session';
 import { getIpLocation } from '@/lib/ip-location';
+import { requireUser } from '@/lib/session';
 import { describeUserAgent } from '@/lib/user-agent';
 
 import { DeleteAccount } from '@/components/account/delete-account';
@@ -15,7 +15,7 @@ import { ProfileForm } from '@/components/account/profile-form';
 import { SessionList } from '@/components/account/session-list';
 import { Reveal } from '@/components/motion';
 
-export const metadata: Metadata = { title: 'Account settings' };
+export const metadata: Metadata = { title: 'Account Settings' };
 
 export default async function AccountPage(props: PageProps<'/account'>) {
   const { user, session } = await requireUser();
@@ -59,7 +59,9 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Account Settings
         </h1>
-        <p className='text-muted-foreground'>Manage your account settings and preferences.</p>
+        <p className='text-muted-foreground'>
+          Manage your account settings and preferences.
+        </p>
       </Reveal>
 
       <Section title='Profile'>

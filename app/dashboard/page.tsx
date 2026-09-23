@@ -9,7 +9,7 @@ import { Reveal } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { Button } from '@/components/ui/button';
 
-export const metadata: Metadata = { title: 'Edit plushies' };
+export const metadata: Metadata = { title: 'Edit Plushies' };
 
 export default async function AdminPage() {
   const session = await requireEditor();
@@ -20,7 +20,7 @@ export default async function AdminPage() {
       <Reveal className='flex flex-wrap items-end justify-between gap-4'>
         <div>
           <h1 className='font-heading text-4xl font-semibold tracking-tight'>
-            Edit plushies
+            Edit Plushies
           </h1>
           <p className='text-muted-foreground'>
             Add new friends or update the ones you have.
@@ -38,7 +38,7 @@ export default async function AdminPage() {
           <Button asChild>
             <Link href='/dashboard/plushies/new'>
               <Plus />
-              New plushie
+              New Plushie
             </Link>
           </Button>
         </div>

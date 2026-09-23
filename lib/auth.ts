@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from '@/lib/email';
-import { ac, roles } from '@/lib/permissions';
+import { ac, isAdmin, Role, roles } from '@/lib/permissions';
 
 export const auth = betterAuth({
   database: prismaAdapter(db, { provider: 'postgresql' }),
@@ -83,8 +83,8 @@ export const auth = betterAuth({
       enabled: true,
       beforeDelete: async (user) => {
         const u = user as typeof user & { role?: string | null };
-        if (u.role !== 'admin') return;
-        const admins = await db.user.count({ where: { role: 'admin' } });
+        if (!isAdmin(u.role)) return;
+        const admins = await db.user.count({ where: { role: Role.ADMIN } });
         if (admins <= 1) {
           throw new APIError('BAD_REQUEST', {
             message:
@@ -95,7 +95,12 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    admin({ ac, roles, defaultRole: 'user', adminRoles: ['admin'] }),
+    admin({
+      ac,
+      roles,
+      defaultRole: Role.USER,
+      adminRoles: [Role.ADMIN],
+    }),
     // Must be last: lets server actions set auth cookies.
     nextCookies(),
   ],

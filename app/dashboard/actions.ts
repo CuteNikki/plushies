@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import { canEditPlushies, roleNames } from '@/lib/permissions';
+import { canEditPlushies, isAdmin, isRole } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
 
 const utapi = new UTApi();
@@ -205,7 +205,7 @@ export async function discardUploads(keys: string[]) {
 /** Only admins can manage users, and never their own account from here. */
 async function assertCanManage(userId: string) {
   const session = await getSession();
-  if (session?.user.role !== 'admin') {
+  if (!isAdmin(session?.user.role)) {
     throw new Error('Only admins can do that');
   }
   if (session.user.id === userId) {
@@ -215,10 +215,10 @@ async function assertCanManage(userId: string) {
 
 export async function setUserRole(userId: string, role: string) {
   await assertCanManage(userId);
-  if (!roleNames.includes(role as never)) throw new Error('Unknown role');
+  if (!isRole(role)) throw new Error('Unknown role');
 
   await auth.api.setRole({
-    body: { userId, role: role as (typeof roleNames)[number] },
+    body: { userId, role },
     headers: await headers(),
   });
   revalidatePath('/dashboard/users');

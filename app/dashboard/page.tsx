@@ -2,6 +2,7 @@ import { Pencil, Plus, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { isAdmin } from '@/lib/permissions';
 import { getPlushies } from '@/lib/plushies';
 import { requireEditor } from '@/lib/session';
 
@@ -27,7 +28,7 @@ export default async function AdminPage() {
           </p>
         </div>
         <div className='flex gap-2'>
-          {session.user.role === 'admin' && (
+          {isAdmin(session.user.role) && (
             <Button variant='outline' asChild>
               <Link href='/dashboard/users'>
                 <Users />

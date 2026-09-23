@@ -5,7 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { authClient } from '@/lib/auth-client';
-import { canEditPlushies, roleLabels } from '@/lib/permissions';
+import {
+  canEditPlushies,
+  isAdmin,
+  isRole,
+  roleLabels,
+} from '@/lib/permissions';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -52,7 +57,7 @@ export function UserMenu() {
               {user.name}
             </span>
             <span className='text-xs text-muted-foreground'>
-              {roleLabels[user.role ?? 'user'] ?? 'Viewer'}
+              {isRole(user.role) ? roleLabels[user.role] : roleLabels.USER}
             </span>
           </span>
         </DropdownMenuLabel>
@@ -65,7 +70,7 @@ export function UserMenu() {
             </Link>
           </DropdownMenuItem>
         )}
-        {user.role === 'admin' && (
+        {isAdmin(user.role) && (
           <DropdownMenuItem asChild>
             <Link href='/dashboard/users'>
               <Users />

@@ -4,7 +4,7 @@ import 'dotenv/config';
 
 import { PrismaPg } from '@prisma/adapter-pg';
 
-import { PrismaClient } from '../lib/generated/prisma/client';
+import { PrismaClient, Role } from '../lib/generated/prisma/client';
 
 const email = process.argv[2];
 if (!email) {
@@ -18,7 +18,7 @@ const db = new PrismaClient({
 
 const user = await db.user.findUnique({ where: { email } });
 if (user) {
-  await db.user.update({ where: { email }, data: { role: 'admin' } });
+  await db.user.update({ where: { email }, data: { role: Role.ADMIN } });
   console.log(`${user.name} (${email}) is now an admin.`);
 } else {
   console.error(`No account for ${email}. Sign in on the site first.`);

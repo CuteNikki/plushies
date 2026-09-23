@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { auth } from '@/lib/auth';
-import { canEditPlushies } from '@/lib/permissions';
+import { canEditPlushies, isAdmin } from '@/lib/permissions';
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
@@ -22,7 +22,7 @@ export async function requireEditor() {
 export async function requireAdmin() {
   const session = await getSession();
   if (!session) redirect('/sign-in');
-  if (session.user.role !== 'admin') redirect('/no-access');
+  if (!isAdmin(session.user.role)) redirect('/no-access');
   return session;
 }
 

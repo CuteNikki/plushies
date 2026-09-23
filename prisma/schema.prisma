@@ -50,14 +50,23 @@ model PlushieImage {
 
 // Better Auth tables (core + admin plugin)
 
+/// What an account may do. Better Auth's admin plugin uses these exact names.
+enum Role {
+  /// Everything, including managing users and their roles.
+  ADMIN
+  /// Can add, edit and delete plushies.
+  EDITOR
+  /// Signed in, but can only look.
+  USER
+}
+
 model User {
   id            String    @id
   name          String
   email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
-  /// 'admin', 'editor' or 'user'.
-  role          String    @default("user")
+  role          Role      @default(USER)
   banned        Boolean?  @default(false)
   banReason     String?
   banExpires    DateTime?

@@ -1,34 +1,50 @@
 import { createAccessControl } from 'better-auth/plugins/access';
 import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
 
+// The generated enum is a plain object, safe to use in the browser too.
+import { Role } from '@/lib/generated/prisma/enums';
+
+export { Role };
+
 // Shared by the server and the client, so keep this free of server-only imports.
 export const ac = createAccessControl({
   ...defaultStatements,
   plushie: ['create', 'update', 'delete'],
 } as const);
 
+/**
+ * Better Auth's roles, named exactly like the Role enum in the database so
+ * the role it stores is always one the database accepts.
+ */
 export const roles = {
   /** Can do everything, including managing users and their roles. */
-  admin: ac.newRole({
+  [Role.ADMIN]: ac.newRole({
     ...adminAc.statements,
     plushie: ['create', 'update', 'delete'],
   }),
   /** Can add, edit and delete plushies. */
-  editor: ac.newRole({ plushie: ['create', 'update', 'delete'] }),
+  [Role.EDITOR]: ac.newRole({ plushie: ['create', 'update', 'delete'] }),
   /** Signed in, but can only look. */
-  user: ac.newRole({ plushie: [] }),
+  [Role.USER]: ac.newRole({ plushie: [] }),
+} satisfies Record<Role, unknown>;
+
+export const roleNames = Object.values(Role);
+
+export const roleLabels: Record<Role, string> = {
+  ADMIN: 'Admin',
+  EDITOR: 'Editor',
+  USER: 'User',
 };
 
-export type Role = keyof typeof roles;
+/** Checks a role that comes from outside the type system, e.g. a form. */
+export function isRole(value: unknown): value is Role {
+  return roleNames.includes(value as Role);
+}
 
-export const roleNames = Object.keys(roles) as Role[];
-
-export const roleLabels: Record<string, string> = {
-  admin: 'Admin',
-  editor: 'Editor',
-  user: 'Viewer',
-};
+export function isAdmin(role: string | null | undefined) {
+  return role === Role.ADMIN;
+}
 
 export function canEditPlushies(role: string | null | undefined) {
-  return role === 'admin' || role === 'editor';
+  return role === Role.ADMIN || role === Role.EDITOR;
 }

@@ -51,7 +51,7 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
                   sizes='(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw'
                   className='transition group-hover:brightness-105'
                 />
-                <div className='flex items-baseline justify-between gap-2 p-3 px-4'>
+                <div className='flex justify-between gap-2 p-3 px-4 items-center'>
                   <h2 className='truncate font-heading text-base font-semibold'>
                     {plushie.name}
                   </h2>

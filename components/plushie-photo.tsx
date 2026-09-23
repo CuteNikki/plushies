@@ -1,8 +1,9 @@
-import { Heart } from 'lucide-react';
 import Image from 'next/image';
 
-import { cn } from '@/lib/utils';
+import { HeartCrackIcon } from 'lucide-react';
+
 import type { Plushie } from '@/lib/plushies';
+import { cn } from '@/lib/utils';
 
 export function PlushiePhoto({
   plushie,
@@ -14,7 +15,6 @@ export function PlushiePhoto({
   plushie: Pick<Plushie, 'name' | 'thumbnail'>;
   sizes: string;
   priority?: boolean;
-  /** Hides the "Photo coming soon" text, for small thumbnails. */
   compact?: boolean;
   className?: string;
 }) {
@@ -36,9 +36,9 @@ export function PlushiePhoto({
         />
       ) : (
         <div className='flex size-full flex-col items-center justify-center gap-2 text-primary/60'>
-          <Heart className='size-1/4 fill-current' />
+          <HeartCrackIcon className='size-1/2 fill-current' />
           {!compact && (
-            <span className='font-heading text-sm'>Photo coming soon</span>
+            <span className='font-heading text-sm'>Missing Photo</span>
           )}
         </div>
       )}

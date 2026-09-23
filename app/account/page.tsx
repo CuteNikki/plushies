@@ -7,6 +7,7 @@ import { requireUser } from '@/lib/session';
 import { describeUserAgent } from '@/lib/user-agent';
 
 import { DeleteAccount } from '@/components/account/delete-account';
+import { EmailSettings } from '@/components/account/email-settings';
 import { LinkedAccounts } from '@/components/account/linked-accounts';
 import { PasswordForm } from '@/components/account/password-form';
 import { ProfileForm } from '@/components/account/profile-form';
@@ -38,12 +39,15 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         <p className='text-muted-foreground'>Signed in as {user.email}</p>
       </Reveal>
 
-      <Section delay={0.15} title='Profile'>
+      <Section title='Profile'>
         <ProfileForm name={user.name} />
       </Section>
 
+      <Section title='Email'>
+        <EmailSettings email={user.email} verified={user.emailVerified} />
+      </Section>
+
       <Section
-        delay={0.25}
         title='Password'
         description={
           hasPassword
@@ -55,7 +59,6 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section
-        delay={0.35}
         title='Sign-in methods'
         description='Connect Discord to sign in with it too, whichever way you signed up.'
       >
@@ -69,7 +72,6 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section
-        delay={0.45}
         title='Sessions'
         description='Everywhere you are signed in right now.'
       >
@@ -90,7 +92,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         />
       </Section>
 
-      <Section delay={0.55} title='Danger zone'>
+      <Section title='Danger zone'>
         <DeleteAccount hasPassword={hasPassword} />
       </Section>
     </div>
@@ -100,17 +102,14 @@ export default async function AccountPage(props: PageProps<'/account'>) {
 function Section({
   title,
   description,
-  delay,
   children,
 }: {
   title: string;
   description?: string;
-  /** Intro delay, for sections on screen when the page loads. */
-  delay?: number;
   children: React.ReactNode;
 }) {
   return (
-    <Reveal as='section' delay={delay} className='flex flex-col gap-4'>
+    <Reveal as='section' className='flex flex-col gap-4'>
       <div>
         <h2 className='font-heading text-xl font-semibold'>{title}</h2>
         {description && (

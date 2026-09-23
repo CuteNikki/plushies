@@ -1,3 +1,4 @@
+import { BadgeCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 
 import { db } from '@/lib/db';
@@ -35,13 +36,12 @@ export default async function UsersPage() {
       </Reveal>
 
       <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
-        {users.map((user, index) => {
+        {users.map((user) => {
           const isYou = user.id === session.user.id;
           return (
             <Reveal
               as='li'
               key={user.id}
-              delay={0.15 + Math.min(index, 10) * 0.08}
               className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
             >
               <div className='flex min-w-0 flex-col gap-1.5'>
@@ -49,12 +49,19 @@ export default async function UsersPage() {
                   <p className='truncate font-heading font-semibold'>
                     {user.name}
                   </p>
-                  {isYou && <Badge>You</Badge>}
                 </div>
                 <PrivateText className='w-fit text-sm text-muted-foreground'>
                   {user.email}
                 </PrivateText>
                 <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
+                  {user.emailVerified ? (
+                    <Badge>
+                      <BadgeCheck />
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge variant='outline'>Unverified</Badge>
+                  )}
                   {user.accounts.map(({ providerId }) => (
                     <Badge key={providerId} variant='secondary'>
                       {providerLabels[providerId] ?? providerId}

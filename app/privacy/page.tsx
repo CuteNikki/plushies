@@ -53,8 +53,11 @@ export default function PrivacyPage() {
             photos that show people or other personal information.
           </li>
           <li>
-            <strong>Emails:</strong> if you ask to reset your password, we send
-            an email with a reset link to your address.
+            <strong>Emails:</strong> when you sign up with your email address,
+            or change it, we send a link to confirm it belongs to you. When you
+            change a confirmed address, we first ask you to confirm from the old
+            one. If you ask to reset your password, we send an email with a
+            reset link. We store whether your address is confirmed.
           </li>
           <li>
             <strong>Technical data:</strong> when you visit the site, your IP
@@ -113,9 +116,9 @@ export default function PrivacyPage() {
             photos are delivered through our own server.
           </li>
           <li>
-            <strong>Resend</strong> (Plus Five Five, Inc., USA): sends password
-            reset emails. Resend receives your email address, name and the
-            content of the email.
+            <strong>Resend</strong> (Plus Five Five, Inc., USA): sends email
+            verification and password reset emails. Resend receives your email
+            address, name and the content of the email.
           </li>
         </LegalList>
         <p>
@@ -144,11 +147,11 @@ export default function PrivacyPage() {
           Account data is kept until you delete your account, or an admin
           deletes it. Deleting your account also removes your sessions and
           connected sign-in methods right away. Sessions end after at most seven
-          days without use, and password reset links expire after one hour.
-          Plushie photos are deleted from UploadThing when they are removed from
-          a plushie. Log data, if any, is kept only as long as needed for
-          security and troubleshooting. Browser storage stays on your device
-          until it expires or you clear it.
+          days without use, password reset links expire after one hour, and
+          email verification links after 24 hours. Plushie photos are deleted
+          from UploadThing when they are removed from a plushie. Log data, if
+          any, is kept only as long as needed for security and troubleshooting.
+          Browser storage stays on your device until it expires or you clear it.
         </p>
       </LegalSection>
 
@@ -157,8 +160,8 @@ export default function PrivacyPage() {
           Under the GDPR you have the right of access (Art. 15), rectification
           (Art. 16), erasure (Art. 17), restriction of processing (Art. 18),
           data portability (Art. 20) and objection (Art. 21). You can change
-          your name, password and sign-in methods, end your sessions and delete
-          your account yourself in your{' '}
+          your name, email address, password and sign-in methods, end your
+          sessions and delete your account yourself in your{' '}
           <Link href='/account'>account settings</Link>. For anything else,
           contact us using the details in the{' '}
           <Link href='/imprint'>Imprint</Link>.

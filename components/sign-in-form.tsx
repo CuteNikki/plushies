@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { authClient } from '@/lib/auth-client';
 
@@ -30,10 +31,17 @@ export function SignInForm() {
             email,
             password,
             name: String(formData.get('name')),
+            // Where the link in the verification email leads.
+            callbackURL: '/verified',
           });
     setPending(false);
     if (error) return setError(error.message ?? 'Something went wrong');
-    router.push('/dashboard');
+    if (mode === 'sign-up') {
+      toast.success('Account created! Check your inbox to verify your email.');
+      router.push('/account');
+    } else {
+      router.push('/dashboard');
+    }
     router.refresh();
   }
 

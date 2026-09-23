@@ -5,7 +5,11 @@ import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins';
 
 import { db } from '@/lib/db';
-import { sendPasswordResetEmail } from '@/lib/email';
+import {
+  sendEmailChangeConfirmation,
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from '@/lib/email';
 import { ac, roles } from '@/lib/permissions';
 
 export const auth = betterAuth({
@@ -17,6 +21,29 @@ export const auth = betterAuth({
       // Not awaited, so the response time doesn't reveal whether the email exists.
       void sendPasswordResetEmail(user.email, user.name, url).catch((error) =>
         console.error('Failed to send password reset email', error)
+      );
+    },
+  },
+  emailVerification: {
+    // Sent automatically after signing up with email, and on request from
+    // the account page. Discord accounts are verified by Discord already.
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      // During an email change, the last link goes to the new address, which
+      // no account uses yet. It gets its own wording and landing message.
+      const changing = !(await db.user.findUnique({
+        where: { email: user.email },
+        select: { id: true },
+      }));
+      void sendVerificationEmail(
+        user.email,
+        user.name,
+        changing ? withCallback(url, '/verified?step=changed') : url,
+        changing
+      ).catch((error) =>
+        console.error('Failed to send verification email', error)
       );
     },
   },
@@ -34,6 +61,24 @@ export const auth = betterAuth({
     },
   },
   user: {
+    changeEmail: {
+      enabled: true,
+      // Unverified addresses may have a typo, so they change right away and
+      // get a new verification link.
+      updateEmailWithoutVerification: true,
+      // Verified addresses first confirm from the current address, so a
+      // stolen session can't quietly take over the account.
+      sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
+        void sendEmailChangeConfirmation(
+          user.email,
+          user.name,
+          newEmail,
+          withCallback(url, '/verified?step=confirmed')
+        ).catch((error) =>
+          console.error('Failed to send email change confirmation', error)
+        );
+      },
+    },
     deleteUser: {
       enabled: true,
       beforeDelete: async (user) => {
@@ -57,3 +102,10 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+/** Changes where a Better Auth email link leads once it has been used. */
+function withCallback(url: string, callbackURL: string) {
+  const link = new URL(url);
+  link.searchParams.set('callbackURL', callbackURL);
+  return link.toString();
+}

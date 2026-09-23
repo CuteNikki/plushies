@@ -1,71 +1,77 @@
+import 'server-only';
+
+import { db } from '@/lib/db';
+import type { Prisma } from '@/lib/generated/prisma/client';
+
+export type PlushieImage = { key: string; url: string };
+
+export type PlushieFact = { label: string; value: string };
+
 export type Plushie = {
+  id: string;
   /** Used in the URL, e.g. /plushies/mochi. Lowercase, no spaces. */
   slug: string;
   name: string;
-  /** Path to a photo inside /public, e.g. '/plushies/mochi.jpg'. */
-  image?: string;
+  /** The main photo, shown on the card and first on the plushie's page. */
+  thumbnail: PlushieImage | null;
+  /** Extra photos shown on the plushie's page. */
+  gallery: PlushieImage[];
   /** What kind of plushie it is, e.g. 'Bunny', 'Shark', 'Frog'. */
-  species?: string;
+  species: string | null;
   /** Birthday as YYYY-MM-DD. The age is calculated from this automatically. */
-  birthday?: string;
-  gender?: string;
-  pronouns?: string;
+  birthday: string | null;
+  gender: string | null;
+  pronouns: string | null;
   description: string;
   /** Where they came from, e.g. 'IKEA', 'A claw machine in Tokyo'. */
-  origin?: string;
-  /** Any extra facts you want to show, e.g. { 'Favorite food': 'Strawberries' }. */
-  facts?: Record<string, string>;
+  origin: string | null;
+  /** Any extra facts you want to show, e.g. Favorite food: Strawberries. */
+  facts: PlushieFact[];
   /** Little personality tags shown as badges. */
-  traits?: string[];
+  traits: string[];
 };
 
-export const plushies: Plushie[] = [
-  {
-    slug: 'mochi',
-    name: 'Mochi',
-    species: 'Bunny',
-    birthday: '2021-04-02',
-    gender: 'Girl',
-    pronouns: 'she/her',
-    description:
-      'A very round bunny who insists on sleeping in the exact middle of the bed. Soft ears, softer heart.',
-    origin: 'A tiny shop in a train station',
-    facts: {
-      'Favorite food': 'Strawberry daifuku',
-      'Favorite spot': 'The middle pillow',
-    },
-    traits: ['Sleepy', 'Gentle', 'Cuddly'],
-  },
-  {
-    slug: 'blahaj',
-    name: 'Blåhaj',
-    species: 'Shark',
-    birthday: '2019-11-15',
-    gender: 'Non-binary',
-    pronouns: 'they/them',
-    description:
-      'Fearsome predator of the deep, currently employed as a professional pillow. Has seen things.',
-    origin: 'IKEA',
-    facts: {
-      'Favorite food': 'Swedish meatballs',
-      'Hidden talent': 'Emotional support',
-    },
-    traits: ['Brave', 'Loyal'],
-  },
-  {
-    slug: 'pickle',
-    name: 'Pickle',
-    species: 'Frog',
-    birthday: '2023-06-21',
-    gender: 'Boy',
-    pronouns: 'he/him',
-    description:
-      'Small, green and permanently surprised. Pickle thinks every day is the best day ever.',
-    origin: 'Claw machine (third try)',
-    traits: ['Chaotic', 'Cheerful'],
-  },
-];
+const include = {
+  gallery: { orderBy: { position: 'asc' } },
+} satisfies Prisma.PlushieInclude;
 
-export function getPlushie(slug: string) {
-  return plushies.find((plushie) => plushie.slug === slug);
+type PlushieRow = Prisma.PlushieGetPayload<{ include: typeof include }>;
+
+function toPlushie(row: PlushieRow): Plushie {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    thumbnail:
+      row.thumbnailKey && row.thumbnailUrl
+        ? { key: row.thumbnailKey, url: row.thumbnailUrl }
+        : null,
+    gallery: row.gallery.map(({ key, url }) => ({ key, url })),
+    species: row.species,
+    birthday: row.birthday,
+    gender: row.gender,
+    pronouns: row.pronouns,
+    description: row.description,
+    origin: row.origin,
+    facts: (row.facts ?? []) as PlushieFact[],
+    traits: row.traits,
+  };
+}
+
+export async function getPlushies() {
+  const rows = await db.plushie.findMany({
+    include,
+    orderBy: { createdAt: 'asc' },
+  });
+  return rows.map(toPlushie);
+}
+
+export async function getPlushie(slug: string) {
+  const row = await db.plushie.findUnique({ where: { slug }, include });
+  return row ? toPlushie(row) : null;
+}
+
+export async function getPlushieById(id: string) {
+  const row = await db.plushie.findUnique({ where: { id }, include });
+  return row ? toPlushie(row) : null;
 }

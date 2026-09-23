@@ -8,11 +8,14 @@ export function PlushiePhoto({
   plushie,
   sizes,
   priority,
+  compact,
   className,
 }: {
-  plushie: Plushie;
+  plushie: Pick<Plushie, 'name' | 'thumbnail'>;
   sizes: string;
   priority?: boolean;
+  /** Hides the "Photo coming soon" text, for small thumbnails. */
+  compact?: boolean;
   className?: string;
 }) {
   return (
@@ -22,9 +25,9 @@ export function PlushiePhoto({
         className
       )}
     >
-      {plushie.image ? (
+      {plushie.thumbnail ? (
         <Image
-          src={plushie.image}
+          src={plushie.thumbnail.url}
           alt={`Photo of ${plushie.name}`}
           fill
           sizes={sizes}
@@ -34,7 +37,9 @@ export function PlushiePhoto({
       ) : (
         <div className='flex size-full flex-col items-center justify-center gap-2 text-primary/60'>
           <Heart className='size-1/4 fill-current' />
-          <span className='font-heading text-sm'>Photo coming soon</span>
+          {!compact && (
+            <span className='font-heading text-sm'>Photo coming soon</span>
+          )}
         </div>
       )}
     </div>

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 
 import './globals.css';
 
@@ -46,6 +47,7 @@ export default function RootLayout({
         <ThemeProvider>
           <SiteHeader />
           <main className='mx-auto max-w-6xl px-4 py-8'>{children}</main>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

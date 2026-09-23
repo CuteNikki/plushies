@@ -1,38 +1,41 @@
 # Plushies
 
-A little website that shows all of my plushies. Built with Next.js and shadcn/ui.
+A little website that shows all of my plushies. Built with Next.js, shadcn/ui, Prisma (Postgres), Better Auth and UploadThing.
 
-## Running it
+## Setup
+
+1. Copy `.env.example` to `.env` and fill it in (database, auth secret, Discord app, UploadThing token).
+2. Install and set up the database:
 
 ```bash
-bun install
+bun install          # also runs prisma generate
+bun db:migrate       # creates the database and tables
+bun db:seed          # adds the starter plushies
 bun dev
 ```
 
 Then open http://localhost:3000.
 
-## Adding a plushie
+## Accounts and roles
 
-1. Put a photo in `public/plushies/`, e.g. `public/plushies/mochi.jpg`.
-2. Add an entry to the list in `lib/plushies.ts`:
+Sign in at `/sign-in` with email and password or Discord. New accounts can only look around. Forgotten passwords can be reset from the sign-in page; the reset link is emailed through Resend.
 
-```ts
-{
-  slug: 'mochi',                  // used in the URL: /plushies/mochi
-  name: 'Mochi',
-  image: '/plushies/mochi.jpg',
-  species: 'Bunny',
-  birthday: '2021-04-02',         // the age is calculated from this
-  gender: 'Girl',
-  pronouns: 'she/her',
-  description: 'A very round bunny…',
-  origin: 'A tiny shop in a train station',
-  facts: { 'Favorite food': 'Strawberry daifuku' },
-  traits: ['Sleepy', 'Cuddly'],
-},
+- **Editor**: can add, edit and delete plushies at `/admin`.
+- **Admin**: everything an editor can do, plus changing people's roles at `/admin/users`.
+
+To make yourself the first admin, sign in once and then run:
+
+```bash
+bun run make-admin you@example.com
 ```
 
-Only `slug`, `name` and `description` are required. Leave out anything you don't want to show.
+## Adding a plushie
+
+Go to `/admin` and click **New plushie**. Each plushie has a thumbnail (shown on the home page) and a gallery of extra photos, all uploaded through UploadThing. Only the name and description are required.
+
+## Changing the data model
+
+Edit `prisma/schema.prisma`, then run `bun db:migrate` to create a migration. In production, run `bun db:deploy` to apply migrations.
 
 ## Colors
 

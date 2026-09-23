@@ -51,19 +51,12 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
                   sizes='(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw'
                   className='transition group-hover:brightness-105'
                 />
-                <div className='flex flex-col gap-1.5 p-3'>
-                  <div className='flex items-baseline justify-between gap-2'>
-                    <h2 className='truncate font-heading text-base font-semibold'>
-                      {plushie.name}
-                    </h2>
-                    {plushie.pronouns && (
-                      <Badge variant='secondary'>{plushie.pronouns}</Badge>
-                    )}
-                  </div>
-                  {plushie.species && (
-                    <p className='text-xs text-muted-foreground'>
-                      {plushie.species}
-                    </p>
+                <div className='flex items-baseline justify-between gap-2 p-3 px-4'>
+                  <h2 className='truncate font-heading text-base font-semibold'>
+                    {plushie.name}
+                  </h2>
+                  {plushie.pronouns && (
+                    <Badge variant='secondary'>{plushie.pronouns}</Badge>
                   )}
                 </div>
               </Link>

@@ -1,8 +1,10 @@
-import { plushies } from '@/lib/plushies';
+import { getPlushies } from '@/lib/plushies';
 
 import { PlushieGallery } from '@/components/plushie-gallery';
 
-export default function Page() {
+export default async function Page() {
+  const plushies = await getPlushies();
+
   return (
     <div className='flex flex-col gap-8'>
       <section className='flex flex-col gap-2'>

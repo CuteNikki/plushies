@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react';
 import Link from 'next/link';
 
 import { ThemeButton } from '@/components/theme-button';
+import { UserMenu } from '@/components/user-menu';
 
 export function SiteHeader() {
   return (
@@ -14,7 +15,10 @@ export function SiteHeader() {
           <Heart className='size-5 fill-primary text-primary' />
           Plushies
         </Link>
-        <ThemeButton />
+        <div className='flex items-center gap-2'>
+          <UserMenu />
+          <ThemeButton />
+        </div>
       </div>
     </header>
   );

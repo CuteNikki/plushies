@@ -1,18 +1,11 @@
-import Link from 'next/link';
+import { NotFoundMessage } from '@/components/not-found-message';
 
-import { Reveal } from '@/components/motion';
-import { Button } from '@/components/ui/button';
-
+/** For any address that doesn't exist. */
 export default function NotFound() {
   return (
-    <Reveal className='flex flex-col items-center gap-4 py-24 text-center'>
-      <h1 className='font-heading text-4xl font-semibold'>Hmm, nobody here</h1>
-      <p className='text-muted-foreground'>
-        This plushie must be hiding under the blankets.
-      </p>
-      <Button asChild>
-        <Link href='/'>Back to all plushies</Link>
-      </Button>
-    </Reveal>
+    <NotFoundMessage
+      title='Hmm, nobody here'
+      text="We couldn't find the page you were looking for. It must be hiding under the blankets."
+    />
   );
 }

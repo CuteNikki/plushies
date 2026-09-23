@@ -77,7 +77,9 @@ export default function RootLayout({
         <ThemeProvider>
           <MotionProvider>
             <SiteHeader />
-            <main className='mx-auto w-full max-w-6xl flex-1 px-4 py-8'>
+            {/* Pages can fill the space between header and footer by marking
+                their root with data-fill, e.g. to center their content. */}
+            <main className='mx-auto w-full max-w-6xl flex-1 px-4 py-8 has-[>[data-fill]]:flex has-[>[data-fill]]:flex-col'>
               {children}
             </main>
             <SiteFooter />

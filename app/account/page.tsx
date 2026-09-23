@@ -11,6 +11,7 @@ import { LinkedAccounts } from '@/components/account/linked-accounts';
 import { PasswordForm } from '@/components/account/password-form';
 import { ProfileForm } from '@/components/account/profile-form';
 import { SessionList } from '@/components/account/session-list';
+import { Reveal } from '@/components/motion';
 
 export const metadata: Metadata = { title: 'Account settings' };
 
@@ -29,21 +30,20 @@ export default async function AccountPage(props: PageProps<'/account'>) {
   const hasPassword = providers.includes('credential');
 
   return (
-    <div className='mx-auto flex max-w-2xl flex-col gap-10'>
-      <div>
+    <div className='mx-auto flex max-w-2xl flex-col gap-6'>
+      <Reveal>
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Account settings
         </h1>
-        <p className='text-muted-foreground'>
-          Signed in as {user.email}
-        </p>
-      </div>
+        <p className='text-muted-foreground'>Signed in as {user.email}</p>
+      </Reveal>
 
-      <Section title='Profile'>
+      <Section delay={0.15} title='Profile'>
         <ProfileForm name={user.name} />
       </Section>
 
       <Section
+        delay={0.25}
         title='Password'
         description={
           hasPassword
@@ -55,6 +55,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section
+        delay={0.35}
         title='Sign-in methods'
         description='Connect Discord to sign in with it too, whichever way you signed up.'
       >
@@ -68,6 +69,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section
+        delay={0.45}
         title='Sessions'
         description='Everywhere you are signed in right now.'
       >
@@ -88,7 +90,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         />
       </Section>
 
-      <Section title='Danger zone'>
+      <Section delay={0.55} title='Danger zone'>
         <DeleteAccount hasPassword={hasPassword} />
       </Section>
     </div>
@@ -98,14 +100,17 @@ export default async function AccountPage(props: PageProps<'/account'>) {
 function Section({
   title,
   description,
+  delay,
   children,
 }: {
   title: string;
   description?: string;
+  /** Intro delay, for sections on screen when the page loads. */
+  delay?: number;
   children: React.ReactNode;
 }) {
   return (
-    <section className='flex flex-col gap-4'>
+    <Reveal as='section' delay={delay} className='flex flex-col gap-4'>
       <div>
         <h2 className='font-heading text-xl font-semibold'>{title}</h2>
         {description && (
@@ -113,6 +118,6 @@ function Section({
         )}
       </div>
       {children}
-    </section>
+    </Reveal>
   );
 }

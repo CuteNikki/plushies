@@ -8,13 +8,13 @@ import { cn } from '@/lib/utils';
 export function PlushiePhoto({
   plushie,
   sizes,
-  priority,
+  preload,
   compact,
   className,
 }: {
   plushie: Pick<Plushie, 'name' | 'thumbnail'>;
   sizes: string;
-  priority?: boolean;
+  preload?: boolean;
   compact?: boolean;
   className?: string;
 }) {
@@ -31,7 +31,7 @@ export function PlushiePhoto({
           alt={`Photo of ${plushie.name}`}
           fill
           sizes={sizes}
-          priority={priority}
+          preload={preload}
           className='object-cover'
         />
       ) : (

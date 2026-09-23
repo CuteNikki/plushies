@@ -7,6 +7,7 @@ import { getPlushie, getPlushies } from '@/lib/plushies';
 
 import { PlushieAge } from '@/components/plushie-age';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,7 @@ export default async function PlushiePage(
 
   return (
     <div className='flex flex-col gap-6'>
-      <div className='flex items-center justify-between gap-2'>
+      <Reveal className='flex items-center justify-between gap-2'>
         <Button variant='ghost' size='sm' className='w-fit' asChild>
           <Link href='/'>
             <ArrowLeft />
@@ -55,18 +56,25 @@ export default async function PlushiePage(
           </Link>
         </Button>
         <EditPlushieButton id={plushie.id} />
-      </div>
+      </Reveal>
 
+      {/* Photos come in from the left, details from the right. */}
       <article className='grid gap-8 md:grid-cols-2'>
         <PlushiePhotos plushie={plushie} />
 
         <div className='flex flex-col gap-6'>
-          <div className='flex flex-col gap-3'>
-            <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
-              {plushie.name}
-            </h1>
+          <RevealGroup
+            delay={0.25}
+            interval={0.12}
+            className='flex flex-col gap-3'
+          >
+            <RevealItem direction='left'>
+              <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
+                {plushie.name}
+              </h1>
+            </RevealItem>
             {plushie.traits.length > 0 && (
-              <div className='flex flex-wrap gap-1.5'>
+              <RevealItem direction='left' className='flex flex-wrap gap-1.5'>
                 {plushie.traits.map((trait) => (
                   <Badge
                     key={trait}
@@ -76,27 +84,38 @@ export default async function PlushiePage(
                     {trait}
                   </Badge>
                 ))}
-              </div>
+              </RevealItem>
             )}
-          </div>
+            <RevealItem
+              as='p'
+              direction='left'
+              className='mt-3 text-base leading-relaxed'
+            >
+              {plushie.description}
+            </RevealItem>
+          </RevealGroup>
 
-          <p className='text-base leading-relaxed'>{plushie.description}</p>
-
-          <dl className='grid grid-cols-2 gap-3'>
+          <RevealGroup
+            as='dl'
+            delay={0.6}
+            interval={0.08}
+            className='grid grid-cols-2 gap-3'
+          >
             {details
               .filter(([, value]) => value)
               .map(([label, value]) => (
-                <div
+                <RevealItem
                   key={label}
+                  direction='left'
                   className='rounded-xl bg-muted/60 px-4 py-3 ring-1 ring-foreground/5'
                 >
                   <dt className='text-xs text-muted-foreground'>{label}</dt>
                   <dd className='font-heading text-base font-medium'>
                     {value}
                   </dd>
-                </div>
+                </RevealItem>
               ))}
-          </dl>
+          </RevealGroup>
         </div>
       </article>
     </div>

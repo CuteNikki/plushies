@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPlushieById } from '@/lib/plushies';
 import { requireEditor } from '@/lib/session';
 
+import { Reveal } from '@/components/motion';
 import { PlushieForm } from '@/components/plushie-form';
 
 export const metadata: Metadata = { title: 'Edit plushie' };
@@ -18,9 +19,11 @@ export default async function EditPlushiePage(
 
   return (
     <div className='mx-auto flex max-w-3xl flex-col gap-8'>
-      <h1 className='font-heading text-4xl font-semibold tracking-tight'>
-        Edit {plushie.name}
-      </h1>
+      <Reveal>
+        <h1 className='font-heading text-4xl font-semibold tracking-tight'>
+          Edit {plushie.name}
+        </h1>
+      </Reveal>
       {/* Reset the form's state when switching between plushies. */}
       <PlushieForm key={plushie.id} plushie={plushie} />
     </div>

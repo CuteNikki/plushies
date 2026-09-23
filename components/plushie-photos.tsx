@@ -6,9 +6,13 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Plushie } from '@/lib/plushies';
 
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
 
-/** The thumbnail and gallery, with a strip of small photos to switch between. */
+/**
+ * The thumbnail and gallery, with a strip of small photos to switch between.
+ * The big photo slides in first, then the small ones one after another.
+ */
 export function PlushiePhotos({
   plushie,
 }: {
@@ -20,32 +24,43 @@ export function PlushiePhotos({
 
   if (!current) {
     return (
-      <PlushiePhoto
-        plushie={plushie}
-        sizes='(min-width: 768px) 50vw, 100vw'
-        className='rounded-2xl ring-1 ring-foreground/10'
-      />
+      <Reveal direction='right' delay={0.15}>
+        <PlushiePhoto
+          plushie={plushie}
+          sizes='(min-width: 768px) 50vw, 100vw'
+          className='rounded-2xl ring-1 ring-foreground/10'
+        />
+      </Reveal>
     );
   }
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/10'>
+      <Reveal
+        direction='right'
+        delay={0.15}
+        className='relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/10'
+      >
         <Image
           key={current.key}
           src={current.url}
           alt={`Photo ${selected + 1} of ${plushie.name}`}
           fill
           sizes='(min-width: 768px) 50vw, 100vw'
-          priority={selected === 0}
+          preload={selected === 0}
           className='object-cover'
         />
-      </div>
+      </Reveal>
 
       {photos.length > 1 && (
-        <ul className='grid grid-cols-5 gap-2'>
+        <RevealGroup
+          as='ul'
+          delay={0.45}
+          interval={0.08}
+          className='grid grid-cols-5 gap-2'
+        >
           {photos.map((photo, index) => (
-            <li key={photo.key}>
+            <RevealItem as='li' key={photo.key} direction='right'>
               <button
                 type='button'
                 onClick={() => setSelected(index)}
@@ -66,9 +81,9 @@ export function PlushiePhotos({
                   className='object-cover'
                 />
               </button>
-            </li>
+            </RevealItem>
           ))}
-        </ul>
+        </RevealGroup>
       )}
     </div>
   );

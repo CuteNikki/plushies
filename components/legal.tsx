@@ -1,4 +1,6 @@
-import Link from 'next/link';
+import { Children, cloneElement, isValidElement } from 'react';
+
+import { Reveal } from '@/components/motion';
 
 export const operator = {
   name: 'Nikki Sophie Berthold',
@@ -22,29 +24,47 @@ export function LegalPage({
 }) {
   return (
     <article className='mx-auto flex max-w-2xl flex-col gap-8'>
-      <header className='flex flex-col gap-1'>
+      <Reveal as='header' className='flex flex-col gap-1'>
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           {title}
         </h1>
         <p className='text-sm text-muted-foreground'>Last updated: {updated}</p>
-      </header>
-      {children}
+      </Reveal>
+      {/* One after another after the title; sections further down fade in
+          when they are scrolled to. */}
+      {Children.map(children, (child, index) => {
+        const delay = 0.15 + index * 0.1;
+        if (
+          isValidElement<{ delay?: number }>(child) &&
+          child.type === LegalSection
+        ) {
+          return cloneElement(child, { delay });
+        }
+        return <Reveal delay={delay}>{child}</Reveal>;
+      })}
     </article>
   );
 }
 
 export function LegalSection({
   title,
+  delay,
   children,
 }: {
   title: string;
+  /** Set by LegalPage from the section's position. */
+  delay?: number;
   children: React.ReactNode;
 }) {
   return (
-    <section className='flex flex-col gap-3 leading-relaxed [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_strong]:font-semibold [&_strong]:text-foreground'>
+    <Reveal
+      as='section'
+      delay={delay}
+      className='flex flex-col gap-3 leading-relaxed [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_strong]:font-semibold [&_strong]:text-foreground'
+    >
       <h2 className='font-heading text-xl font-semibold'>{title}</h2>
       {children}
-    </section>
+    </Reveal>
   );
 }
 

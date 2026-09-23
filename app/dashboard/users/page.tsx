@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/session';
 
+import { Reveal } from '@/components/motion';
 import { PrivateText } from '@/components/private-text';
 import { RoleSelect } from '@/components/role-select';
 import { Badge } from '@/components/ui/badge';
@@ -24,21 +25,23 @@ export default async function UsersPage() {
 
   return (
     <div className='flex flex-col gap-6'>
-      <div>
+      <Reveal>
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Users
         </h1>
         <p className='text-muted-foreground'>
           Editors can add and change plushies. Admins can also manage users.
         </p>
-      </div>
+      </Reveal>
 
       <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
-        {users.map((user) => {
+        {users.map((user, index) => {
           const isYou = user.id === session.user.id;
           return (
-            <li
+            <Reveal
+              as='li'
               key={user.id}
+              delay={0.15 + Math.min(index, 10) * 0.08}
               className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
             >
               <div className='flex min-w-0 flex-col gap-1.5'>
@@ -79,7 +82,7 @@ export default async function UsersPage() {
                 disabled={isYou}
                 className='col-span-2 w-full xs:col-span-1 xs:w-24'
               />
-            </li>
+            </Reveal>
           );
         })}
       </ul>

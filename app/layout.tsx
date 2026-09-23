@@ -3,6 +3,7 @@ import { Fredoka, Geist_Mono, Nunito } from 'next/font/google';
 
 import { cn } from '@/lib/utils';
 
+import { MotionProvider } from '@/components/motion';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -46,12 +47,14 @@ export default function RootLayout({
     >
       <body className='flex min-h-svh flex-col'>
         <ThemeProvider>
-          <SiteHeader />
-          <main className='mx-auto w-full max-w-6xl flex-1 px-4 py-8'>
-            {children}
-          </main>
-          <SiteFooter />
-          <Toaster />
+          <MotionProvider>
+            <SiteHeader />
+            <main className='mx-auto w-full max-w-6xl flex-1 px-4 py-8'>
+              {children}
+            </main>
+            <SiteFooter />
+            <Toaster />
+          </MotionProvider>
         </ThemeProvider>
       </body>
     </html>

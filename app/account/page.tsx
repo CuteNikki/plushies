@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/session';
+import { getIpLocation } from '@/lib/ip-location';
 import { describeUserAgent } from '@/lib/user-agent';
 
 import { DeleteAccount } from '@/components/account/delete-account';
@@ -29,6 +30,28 @@ export default async function AccountPage(props: PageProps<'/account'>) {
   ]);
   const providers = accounts.map((account) => account.providerId);
   const hasPassword = providers.includes('credential');
+
+  const sessionInfos = await Promise.all(
+    sessions
+      .toSorted((a, b) => +b.updatedAt - +a.updatedAt)
+      .map(async (s) => {
+        const location = await getIpLocation(s.ipAddress);
+        return {
+          id: s.id,
+          device: describeUserAgent(s.userAgent),
+          // Local development records an all-zero address; hide it.
+          ipAddress:
+            s.ipAddress && !/^[0:.]+$/.test(s.ipAddress) ? s.ipAddress : null,
+          location: location
+            ? [location.country, location.provider].filter(Boolean).join(' · ')
+            : null,
+          createdAt: s.createdAt.toISOString(),
+          lastActive: s.updatedAt.toISOString(),
+          expiresAt: s.expiresAt.toISOString(),
+          current: s.id === session.id,
+        };
+      })
+  );
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-6'>
@@ -75,21 +98,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         title='Sessions'
         description='Everywhere you are signed in right now.'
       >
-        <SessionList
-          sessions={sessions
-            .toSorted((a, b) => +b.updatedAt - +a.updatedAt)
-            .map((s) => ({
-              id: s.id,
-              device: describeUserAgent(s.userAgent),
-              // Local development records an all-zero address; hide it.
-              ipAddress:
-                s.ipAddress && !/^[0:.]+$/.test(s.ipAddress)
-                  ? s.ipAddress
-                  : null,
-              lastActive: s.updatedAt.toISOString(),
-              current: s.id === session.id,
-            }))}
-        />
+        <SessionList sessions={sessionInfos} />
       </Section>
 
       <Section title='Danger zone'>

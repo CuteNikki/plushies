@@ -45,7 +45,8 @@ export default function PrivacyPage() {
             <strong>Sessions:</strong> while you are signed in, we store a
             session with its IP address, browser information and timestamps.
             This keeps you signed in and lets you see and end your sessions in
-            your account settings.
+            your account settings, together with the rough location (country and
+            network provider) of each session.
           </li>
           <li>
             <strong>Plushie content:</strong> the names, descriptions and photos
@@ -119,6 +120,13 @@ export default function PrivacyPage() {
             <strong>Resend</strong> (Plus Five Five, Inc., USA): sends email
             verification and password reset emails. Resend receives your email
             address, name and the content of the email.
+          </li>
+          <li>
+            <strong>IPinfo</strong> (IPinfo, Inc., USA): when you open your
+            account settings, the IP addresses of your sessions are sent to
+            IPinfo to look up their country and network provider. Each address
+            is looked up at most once a week. Local and private network
+            addresses are never sent.
           </li>
         </LegalList>
         <p>

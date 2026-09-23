@@ -1,6 +1,7 @@
-import { MailCheck, MailX, Send } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import { MailCheckIcon, MailXIcon, SendIcon } from 'lucide-react';
 
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
@@ -32,13 +33,13 @@ export default async function VerifiedPage(props: PageProps<'/verified'>) {
     step === 'confirmed' || step === 'changed'
       ? messages[step]
       : messages.verified;
-  const Icon = step === 'confirmed' ? Send : MailCheck;
+  const Icon = step === 'confirmed' ? SendIcon : MailCheckIcon;
 
   return (
     <div className='mx-auto flex max-w-sm flex-col gap-6 py-8'>
       {error ? (
         <Reveal className='flex flex-col items-center gap-4 rounded-2xl bg-card p-6 text-center ring-1 ring-foreground/10'>
-          <MailX className='size-10 text-destructive' />
+          <MailXIcon className='size-10 text-destructive' />
           <div className='flex flex-col gap-1'>
             <h1 className='font-heading text-2xl font-semibold'>
               That link didn&rsquo;t work

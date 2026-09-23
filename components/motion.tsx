@@ -103,6 +103,9 @@ export function RevealQueue({
   return <QueueContext value={queue}>{children}</QueueContext>;
 }
 
+/** Whether the nearest Reveal around this one has taken its turn yet. */
+const ParentClaimedContext = createContext(true);
+
 /**
  * Waits until the element first scrolls into view, then claims `seconds` of
  * the nearest queue. Returns the delay to use, or `null` until then.
@@ -111,11 +114,16 @@ function useReveal(seconds: number) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
   const queue = useContext(QueueContext);
+  const parentClaimed = useContext(ParentClaimedContext);
   const [delay, setDelay] = useState<number | null>(null);
 
   useEffect(() => {
-    if (inView) setDelay(queue ? queue.claim(seconds) : 0);
-  }, [inView, queue, seconds]);
+    // React runs child effects before parent ones, so without waiting, rows
+    // inside a card would queue ahead of the card and play while it's hidden.
+    if (inView && parentClaimed && delay === null) {
+      setDelay(queue ? queue.claim(seconds) : 0);
+    }
+  }, [inView, parentClaimed, delay, queue, seconds]);
 
   return { ref, delay };
 }
@@ -141,10 +149,12 @@ type BaseProps = Omit<HTMLMotionProps<'div'>, 'variants' | 'ref'> & {
 export function Reveal({
   direction = 'up',
   as = 'div',
+  children,
   ...props
-}: BaseProps & {
+}: Omit<BaseProps, 'children'> & {
   /** Which way the element moves as it fades in. "up" moves upwards. */
   direction?: Direction;
+  children?: React.ReactNode;
 }) {
   const Component = elements[as] as typeof motion.div;
   const { ref, delay } = useReveal(STEP);
@@ -155,7 +165,11 @@ export function Reveal({
       animate={delay === null ? 'hidden' : 'visible'}
       variants={fadeIn(direction, delay ?? 0)}
       {...props}
-    />
+    >
+      <ParentClaimedContext value={delay !== null}>
+        {children}
+      </ParentClaimedContext>
+    </Component>
   );
 }
 

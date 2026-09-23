@@ -35,12 +35,18 @@ export default async function UsersPage() {
         </p>
       </Reveal>
 
-      <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+      {/* The card rises as a whole, then its rows fade in without moving, so
+          nothing slides past the card's edge. */}
+      <Reveal
+        as='ul'
+        className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
+      >
         {users.map((user) => {
           const isYou = user.id === session.user.id;
           return (
             <Reveal
               as='li'
+              direction='none'
               key={user.id}
               className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
             >
@@ -92,7 +98,7 @@ export default async function UsersPage() {
             </Reveal>
           );
         })}
-      </ul>
+      </Reveal>
     </div>
   );
 }

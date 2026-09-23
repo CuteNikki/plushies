@@ -45,10 +45,16 @@ export default async function AdminPage() {
         </div>
       </Reveal>
 
-      <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+      {/* The card rises as a whole, then its rows fade in without moving, so
+          nothing slides past the card's edge. */}
+      <Reveal
+        as='ul'
+        className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
+      >
         {plushies.map((plushie) => (
           <Reveal
             as='li'
+            direction='none'
             key={plushie.id}
             className='flex items-center gap-4 p-3'
           >
@@ -82,7 +88,7 @@ export default async function AdminPage() {
             </Button>
           </Reveal>
         ))}
-      </ul>
+      </Reveal>
     </div>
   );
 }

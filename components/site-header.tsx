@@ -1,0 +1,21 @@
+import { Heart } from 'lucide-react';
+import Link from 'next/link';
+
+import { ThemeButton } from '@/components/theme-button';
+
+export function SiteHeader() {
+  return (
+    <header className='sticky top-0 z-10 border-b bg-background/80 backdrop-blur'>
+      <div className='mx-auto flex h-14 max-w-6xl items-center justify-between px-4'>
+        <Link
+          href='/'
+          className='flex items-center gap-2 font-heading text-lg font-semibold'
+        >
+          <Heart className='size-5 fill-primary text-primary' />
+          Plushies
+        </Link>
+        <ThemeButton />
+      </div>
+    </header>
+  );
+}

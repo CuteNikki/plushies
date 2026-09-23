@@ -1,0 +1,76 @@
+'use client';
+
+import { Search } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
+
+import type { Plushie } from '@/lib/plushies';
+
+import { PlushiePhoto } from '@/components/plushie-photo';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+
+export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
+  const [query, setQuery] = useState('');
+
+  const q = query.trim().toLowerCase();
+  const filtered = plushies.filter((plushie) =>
+    [plushie.name, plushie.species, plushie.pronouns, ...(plushie.traits ?? [])]
+      .filter(Boolean)
+      .some((value) => value!.toLowerCase().includes(q))
+  );
+
+  return (
+    <div className='flex flex-col gap-6'>
+      <div className='relative max-w-sm'>
+        <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+        <Input
+          type='search'
+          placeholder='Search by name, species, trait…'
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className='h-10 rounded-full pl-9 text-sm'
+          aria-label='Search plushies'
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className='py-12 text-center text-muted-foreground'>
+          No plushies match &ldquo;{query}&rdquo;.
+        </p>
+      ) : (
+        <ul className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
+          {filtered.map((plushie) => (
+            <li key={plushie.slug}>
+              <Link
+                href={`/plushies/${plushie.slug}`}
+                className='group block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/40 focus-visible:ring-2 focus-visible:ring-ring'
+              >
+                <PlushiePhoto
+                  plushie={plushie}
+                  sizes='(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw'
+                  className='transition group-hover:brightness-105'
+                />
+                <div className='flex flex-col gap-1.5 p-3'>
+                  <div className='flex items-baseline justify-between gap-2'>
+                    <h2 className='truncate font-heading text-base font-semibold'>
+                      {plushie.name}
+                    </h2>
+                    {plushie.pronouns && (
+                      <Badge variant='secondary'>{plushie.pronouns}</Badge>
+                    )}
+                  </div>
+                  {plushie.species && (
+                    <p className='text-xs text-muted-foreground'>
+                      {plushie.species}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

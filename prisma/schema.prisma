@@ -13,7 +13,7 @@ model Plushie {
   slug        String   @unique
   name        String
   species     String?
-  /// Birthday as YYYY-MM-DD.
+  /// Birthday as YYYY, YYYY-MM or YYYY-MM-DD, as precise as is known.
   birthday    String?
   gender      String?
   pronouns    String?

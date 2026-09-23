@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { formatBirthday } from '@/lib/birthday';
 import { getPlushie, getPlushies } from '@/lib/plushies';
 import { site } from '@/lib/site';
 
@@ -63,7 +64,7 @@ export default async function PlushiePage(
     ['Age', plushie.birthday && <PlushieAge birthday={plushie.birthday} />],
     ['Gender', plushie.gender],
     ['Pronouns', plushie.pronouns],
-    ['Birthday', plushie.birthday && formatDate(plushie.birthday)],
+    ['Birthday', plushie.birthday && formatBirthday(plushie.birthday)],
     ['From', plushie.origin],
     ...plushie.facts.map(({ label, value }): [string, string] => [
       label,
@@ -141,12 +142,4 @@ export default async function PlushiePage(
       </article>
     </div>
   );
-}
-
-function formatDate(date: string) {
-  return new Date(`${date}T00:00:00`).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
 }

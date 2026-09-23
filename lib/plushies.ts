@@ -18,7 +18,7 @@ export type Plushie = {
   gallery: PlushieImage[];
   /** What kind of plushie it is, e.g. 'Bunny', 'Shark', 'Frog'. */
   species: string | null;
-  /** Birthday as YYYY-MM-DD. The age is calculated from this automatically. */
+  /** Birthday as YYYY, YYYY-MM or YYYY-MM-DD. The age is calculated from it. */
   birthday: string | null;
   gender: string | null;
   pronouns: string | null;

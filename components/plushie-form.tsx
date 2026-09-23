@@ -23,6 +23,7 @@ import {
   savePlushie,
   type FormState,
 } from '@/app/dashboard/actions';
+import { BirthdayField } from '@/components/birthday-field';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -222,12 +223,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             defaultValue={plushie?.species}
             placeholder='Bunny'
           />
-          <Field
-            label='Birthday'
-            name='birthday'
-            type='date'
-            defaultValue={plushie?.birthday}
-          />
+          <BirthdayField defaultValue={plushie?.birthday} />
           <Field label='Gender' name='gender' defaultValue={plushie?.gender} />
           <Field
             label='Pronouns'
@@ -291,9 +287,9 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             />
             <Button
               type='button'
-              variant='ghost'
+              variant='destructive'
               size='icon'
-              aria-label='Remove fact'
+              aria-label='Remove Fact'
               onClick={() =>
                 setFacts((all) => all.filter((_, i) => i !== index))
               }
@@ -304,13 +300,13 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
         ))}
         <Button
           type='button'
-          variant='outline'
+          variant='default'
           size='sm'
           className='w-fit'
           onClick={() => setFacts((all) => [...all, { label: '', value: '' }])}
         >
           <Plus />
-          Add fact
+          Add Fact
         </Button>
       </Section>
 
@@ -324,7 +320,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
         <div className='flex gap-2'>
           <Button type='submit' disabled={saving || deleting}>
             {saving && <Loader2 className='animate-spin' />}
-            {plushie ? 'Save changes' : 'Add plushie'}
+            {plushie ? 'Save' : 'Create'}
           </Button>
           <Button type='button' variant='ghost' asChild>
             <Link href={plushie ? `/plushies/${plushie.slug}` : '/dashboard'}>

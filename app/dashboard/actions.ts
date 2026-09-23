@@ -7,6 +7,7 @@ import { UTApi } from 'uploadthing/server';
 import { z } from 'zod';
 
 import { auth } from '@/lib/auth';
+import { isNotInFuture, parseBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { canEditPlushies, isAdmin, isRole } from '@/lib/permissions';
@@ -41,10 +42,16 @@ const plushieSchema = z.object({
     .regex(/^[a-z0-9-]*$/, 'The URL name can only use a-z, 0-9 and dashes'),
   description: z.string().trim().min(1, 'Write a little description'),
   species: optional,
-  birthday: optional.refine(
-    (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value),
-    'Birthday must look like YYYY-MM-DD'
-  ),
+  // Just the year, year and month, or the full date.
+  birthday: optional
+    .refine(
+      (value) => !value || parseBirthday(value),
+      "That birthday isn't a real date"
+    )
+    .refine(
+      (value) => !value || isNotInFuture(parseBirthday(value)!),
+      "The birthday can't be in the future"
+    ),
   gender: optional,
   pronouns: optional,
   origin: optional,

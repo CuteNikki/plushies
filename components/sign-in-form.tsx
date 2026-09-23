@@ -38,15 +38,15 @@ export function SignInForm() {
   }
 
   return (
-    <div className='flex flex-col gap-6 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
-      <form action={handleSubmit} className='flex flex-col gap-4'>
+    <div className='flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
+      <form action={handleSubmit} className='flex flex-col gap-3'>
         {mode === 'sign-up' && (
-          <div className='flex flex-col gap-2'>
+          <div className='flex flex-col gap-1'>
             <Label htmlFor='name'>Name</Label>
             <Input id='name' name='name' required autoComplete='name' />
           </div>
         )}
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-1'>
           <Label htmlFor='email'>Email</Label>
           <Input
             id='email'
@@ -56,7 +56,7 @@ export function SignInForm() {
             autoComplete='email'
           />
         </div>
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-1'>
           <div className='flex items-baseline justify-between'>
             <Label htmlFor='password'>Password</Label>
             {mode === 'sign-in' && (
@@ -64,7 +64,7 @@ export function SignInForm() {
                 href='/forgot-password'
                 className='text-xs text-muted-foreground hover:text-primary hover:underline'
               >
-                Forgot password?
+                Forgot Password?
               </Link>
             )}
           </div>
@@ -82,7 +82,7 @@ export function SignInForm() {
         {error && <p className='text-sm text-destructive'>{error}</p>}
         <Button type='submit' disabled={pending}>
           {pending && <Loader2 className='animate-spin' />}
-          {mode === 'sign-in' ? 'Sign in' : 'Create account'}
+          {mode === 'sign-in' ? 'Sign in' : 'Create Account'}
         </Button>
       </form>
 
@@ -96,7 +96,7 @@ export function SignInForm() {
             setMode(mode === 'sign-in' ? 'sign-up' : 'sign-in');
           }}
         >
-          {mode === 'sign-in' ? 'Create one' : 'Sign in'}
+          {mode === 'sign-in' ? 'Create account.' : 'Sign in.'}
         </button>
       </p>
 
@@ -117,7 +117,7 @@ export function SignInForm() {
         }
       >
         <DiscordIcon />
-        Continue with Discord
+        Use Discord
       </Button>
     </div>
   );

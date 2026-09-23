@@ -29,7 +29,7 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <div className='flex flex-col gap-6 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
+    <div className='flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
       {sentTo ? (
         <div className='flex flex-col items-center gap-3 text-center'>
           <MailCheck className='size-10 text-primary' />
@@ -39,8 +39,8 @@ export function ForgotPasswordForm() {
           </p>
         </div>
       ) : (
-        <form action={handleSubmit} className='flex flex-col gap-4'>
-          <div className='flex flex-col gap-2'>
+        <form action={handleSubmit} className='flex flex-col gap-3'>
+          <div className='flex flex-col gap-1'>
             <Label htmlFor='email'>Email</Label>
             <Input
               id='email'
@@ -53,7 +53,7 @@ export function ForgotPasswordForm() {
           {error && <p className='text-sm text-destructive'>{error}</p>}
           <Button type='submit' disabled={pending}>
             {pending && <Loader2 className='animate-spin' />}
-            Send reset link
+            Send Reset Link
           </Button>
         </form>
       )}
@@ -63,7 +63,7 @@ export function ForgotPasswordForm() {
           href='/sign-in'
           className='font-medium text-primary hover:underline'
         >
-          Back to sign in
+          Back to Sign In.
         </Link>
       </p>
     </div>

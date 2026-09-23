@@ -32,10 +32,10 @@ export function ResetPasswordForm({ token }: { token: string }) {
   return (
     <form
       action={handleSubmit}
-      className='flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'
+      className='flex flex-col gap-3 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'
     >
-      <div className='flex flex-col gap-2'>
-        <Label htmlFor='password'>New password</Label>
+      <div className='flex flex-col gap-1'>
+        <Label htmlFor='password'>New Password</Label>
         <Input
           id='password'
           name='password'
@@ -45,8 +45,8 @@ export function ResetPasswordForm({ token }: { token: string }) {
           autoComplete='new-password'
         />
       </div>
-      <div className='flex flex-col gap-2'>
-        <Label htmlFor='confirm'>Repeat new password</Label>
+      <div className='flex flex-col gap-1'>
+        <Label htmlFor='confirm'>Repeat Password</Label>
         <Input
           id='confirm'
           name='confirm'
@@ -59,7 +59,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       {error && <p className='text-sm text-destructive'>{error}</p>}
       <Button type='submit' disabled={pending}>
         {pending && <Loader2 className='animate-spin' />}
-        Save new password
+        Change Password
       </Button>
     </form>
   );

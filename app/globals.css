@@ -125,6 +125,16 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Always reserve room for the scrollbar, so pages don't shift sideways
+       when navigating between short and long pages. */
+    scrollbar-gutter: stable;
+  }
+  html body[data-scroll-locked] {
+    /* Menus and selects lock scrolling and add a margin for the hidden
+       scrollbar. The gutter above already keeps that space, so skip it. */
+    margin-right: 0 !important;
+  }
   body {
     @apply bg-background text-foreground;
   }

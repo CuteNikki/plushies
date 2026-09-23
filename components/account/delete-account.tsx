@@ -33,7 +33,7 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
   }
 
   return (
-    <div className='flex flex-col gap-4 rounded-xl p-4 ring-1 ring-destructive/30'>
+    <div className='flex flex-col gap-2 rounded-xl p-4 ring-1 ring-destructive/30'>
       <div>
         <p className='font-medium'>Delete your account</p>
         <p className='text-sm text-muted-foreground'>
@@ -42,9 +42,9 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
         </p>
       </div>
       {open ? (
-        <form action={handleSubmit} className='flex flex-col gap-4'>
+        <form action={handleSubmit} className='flex flex-col gap-3'>
           {hasPassword ? (
-            <div className='flex flex-col gap-2'>
+            <div className='flex flex-col gap-1'>
               <Label htmlFor='delete-password'>
                 Enter your password to confirm
               </Label>

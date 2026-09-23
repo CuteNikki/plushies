@@ -92,7 +92,7 @@ export function EmailSettings({
       <form
         ref={formRef}
         action={changeEmail}
-        className='flex flex-col gap-2 border-t pt-4'
+        className='flex flex-col gap-1 border-t pt-4'
       >
         <Label htmlFor='newEmail'>Change email</Label>
         <div className='flex gap-2'>

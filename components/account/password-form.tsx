@@ -53,10 +53,10 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
     <form
       ref={formRef}
       action={handleSubmit}
-      className='flex flex-col gap-4 rounded-xl p-4 ring-1 ring-foreground/10'
+      className='flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10'
     >
       {hasPassword && (
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-1'>
           <Label htmlFor='currentPassword'>Current password</Label>
           <Input
             id='currentPassword'
@@ -67,8 +67,8 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           />
         </div>
       )}
-      <div className='grid gap-4 sm:grid-cols-2'>
-        <div className='flex flex-col gap-2'>
+      <div className='grid gap-3 sm:grid-cols-2'>
+        <div className='flex flex-col gap-1'>
           <Label htmlFor='newPassword'>New password</Label>
           <Input
             id='newPassword'
@@ -79,7 +79,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
             autoComplete='new-password'
           />
         </div>
-        <div className='flex flex-col gap-2'>
+        <div className='flex flex-col gap-1'>
           <Label htmlFor='confirm'>Repeat new password</Label>
           <Input
             id='confirm'

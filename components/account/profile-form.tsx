@@ -31,7 +31,7 @@ export function ProfileForm({ name }: { name: string }) {
 
   return (
     <form action={handleSubmit} className='flex items-end gap-2'>
-      <div className='flex flex-1 flex-col gap-2'>
+      <div className='flex flex-1 flex-col gap-1'>
         <Label htmlFor='name'>Name</Label>
         <Input
           id='name'

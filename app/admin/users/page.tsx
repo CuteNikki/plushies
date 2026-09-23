@@ -37,33 +37,47 @@ export default async function UsersPage() {
         {users.map((user) => {
           const isYou = user.id === session.user.id;
           return (
-            <li key={user.id} className='flex items-center gap-3 p-3 px-4'>
-              <div className='flex min-w-0 flex-1 flex-col gap-1'>
-                <div className='flex flex-wrap items-center gap-1.5'>
+            <li
+              key={user.id}
+              className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
+            >
+              <div className='flex min-w-0 flex-col gap-1.5'>
+                <div className='flex min-w-0 items-center gap-1.5'>
                   <p className='truncate font-heading font-semibold'>
                     {user.name}
                   </p>
                   {isYou && <Badge>You</Badge>}
+                </div>
+                <PrivateText className='w-fit text-sm text-muted-foreground'>
+                  {user.email}
+                </PrivateText>
+                <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
                   {user.accounts.map(({ providerId }) => (
                     <Badge key={providerId} variant='secondary'>
                       {providerLabels[providerId] ?? providerId}
                     </Badge>
                   ))}
+                  <span>
+                    Joined{' '}
+                    {user.createdAt.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
                 </div>
-                <p className='truncate text-sm text-muted-foreground'>
-                  <PrivateText>{user.email}</PrivateText>
-                  {' · joined '}
-                  {user.createdAt.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
               </div>
-              <RoleSelect userId={user.id} role={user.role} disabled={isYou} />
-              <UserActions
-                user={{ id: user.id, name: user.name }}
+              <div className='self-start xs:order-last xs:self-center'>
+                <UserActions
+                  user={{ id: user.id, name: user.name }}
+                  disabled={isYou}
+                />
+              </div>
+              <RoleSelect
+                userId={user.id}
+                role={user.role}
                 disabled={isYou}
+                className='col-span-2 w-full xs:col-span-1 xs:w-24'
               />
             </li>
           );

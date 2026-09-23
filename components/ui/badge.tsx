@@ -30,6 +30,7 @@ function Badge({
   className,
   variant = 'default',
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<'span'> &
   VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
@@ -41,7 +42,21 @@ function Badge({
       data-variant={variant}
       className={cn(badgeVariants({ variant }), className)}
       {...props}
-    />
+    >
+      {asChild
+        ? children
+        : // Trim the text box to the capital letters, so words without
+          // descenders (g, p, y) look vertically centered too.
+          React.Children.map(children, (child) =>
+            typeof child === 'string' || typeof child === 'number' ? (
+              <span className='[text-box:trim-both_cap_alphabetic]'>
+                {child}
+              </span>
+            ) : (
+              child
+            )
+          )}
+    </Comp>
   );
 }
 

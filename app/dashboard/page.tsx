@@ -17,10 +17,7 @@ export default async function AdminPage() {
 
   return (
     <div className='flex flex-col gap-6'>
-      <Reveal
-       
-        className='flex flex-wrap items-end justify-between gap-4'
-      >
+      <Reveal className='flex flex-wrap items-end justify-between gap-4'>
         <div>
           <h1 className='font-heading text-4xl font-semibold tracking-tight'>
             Edit plushies
@@ -48,11 +45,10 @@ export default async function AdminPage() {
       </Reveal>
 
       <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
-        {plushies.map((plushie, index) => (
+        {plushies.map((plushie) => (
           <Reveal
             as='li'
             key={plushie.id}
-            delay={0.15 + Math.min(index, 10) * 0.08}
             className='flex items-center gap-4 p-3'
           >
             <PlushiePhoto

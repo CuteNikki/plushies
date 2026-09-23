@@ -7,7 +7,12 @@ import { getPlushie, getPlushies } from '@/lib/plushies';
 
 import { PlushieAge } from '@/components/plushie-age';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
-import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import {
+  Reveal,
+  RevealGroup,
+  RevealItem,
+  RevealQueue,
+} from '@/components/motion';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -58,65 +63,61 @@ export default async function PlushiePage(
         <EditPlushieButton id={plushie.id} />
       </Reveal>
 
-      {/* Photos come in from the left, details from the right. */}
+      {/* Photos come in from the left and details from the right, each column
+          as its own sequence so both play at the same time. */}
       <article className='grid gap-8 md:grid-cols-2'>
-        <PlushiePhotos plushie={plushie} />
+        <RevealQueue delay={0.1}>
+          <PlushiePhotos plushie={plushie} />
+        </RevealQueue>
 
-        <div className='flex flex-col gap-6'>
-          <RevealGroup
-            delay={0.25}
-            interval={0.12}
-            className='flex flex-col gap-3'
-          >
-            <RevealItem direction='left'>
-              <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
-                {plushie.name}
-              </h1>
-            </RevealItem>
-            {plushie.traits.length > 0 && (
-              <RevealItem direction='left' className='flex flex-wrap gap-1.5'>
-                {plushie.traits.map((trait) => (
-                  <Badge
-                    key={trait}
-                    variant='secondary'
-                    className='h-6 px-2.5 text-xs'
-                  >
-                    {trait}
-                  </Badge>
-                ))}
+        <RevealQueue delay={0.2}>
+          <div className='flex flex-col gap-6'>
+            <RevealGroup interval={0.12} className='flex flex-col gap-3'>
+              <RevealItem direction='left'>
+                <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
+                  {plushie.name}
+                </h1>
               </RevealItem>
-            )}
-            <RevealItem
-              as='p'
-              direction='left'
-              className='mt-3 text-base leading-relaxed'
-            >
-              {plushie.description}
-            </RevealItem>
-          </RevealGroup>
-
-          <RevealGroup
-            as='dl'
-            delay={0.6}
-            interval={0.08}
-            className='grid grid-cols-2 gap-3'
-          >
-            {details
-              .filter(([, value]) => value)
-              .map(([label, value]) => (
-                <RevealItem
-                  key={label}
-                  direction='left'
-                  className='rounded-xl bg-muted/60 px-4 py-3 ring-1 ring-foreground/5'
-                >
-                  <dt className='text-xs text-muted-foreground'>{label}</dt>
-                  <dd className='font-heading text-base font-medium'>
-                    {value}
-                  </dd>
+              {plushie.traits.length > 0 && (
+                <RevealItem direction='left' className='flex flex-wrap gap-1.5'>
+                  {plushie.traits.map((trait) => (
+                    <Badge key={trait} variant='secondary'>
+                      {trait}
+                    </Badge>
+                  ))}
                 </RevealItem>
-              ))}
-          </RevealGroup>
-        </div>
+              )}
+              <RevealItem
+                as='p'
+                direction='left'
+                className='mt-3 text-base leading-relaxed'
+              >
+                {plushie.description}
+              </RevealItem>
+            </RevealGroup>
+
+            <RevealGroup
+              as='dl'
+              interval={0.08}
+              className='grid grid-cols-2 gap-3'
+            >
+              {details
+                .filter(([, value]) => value)
+                .map(([label, value]) => (
+                  <RevealItem
+                    key={label}
+                    direction='left'
+                    className='rounded-xl bg-muted/60 px-4 py-3 ring-1 ring-foreground/5'
+                  >
+                    <dt className='text-xs text-muted-foreground'>{label}</dt>
+                    <dd className='font-heading text-base font-medium'>
+                      {value}
+                    </dd>
+                  </RevealItem>
+                ))}
+            </RevealGroup>
+          </div>
+        </RevealQueue>
       </article>
     </div>
   );

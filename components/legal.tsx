@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement } from 'react';
+import { Children, isValidElement } from 'react';
 
 import { Reveal } from '@/components/motion';
 
@@ -30,36 +30,29 @@ export function LegalPage({
         </h1>
         <p className='text-sm text-muted-foreground'>Last updated: {updated}</p>
       </Reveal>
-      {/* One after another after the title; sections further down fade in
-          when they are scrolled to. */}
-      {Children.map(children, (child, index) => {
-        const delay = 0.15 + index * 0.1;
-        if (
-          isValidElement<{ delay?: number }>(child) &&
-          child.type === LegalSection
-        ) {
-          return cloneElement(child, { delay });
-        }
-        return <Reveal delay={delay}>{child}</Reveal>;
-      })}
+      {/* Sections reveal themselves; anything else, like the imprint's
+          address, gets wrapped so it animates too. */}
+      {Children.map(children, (child) =>
+        isValidElement(child) && child.type === LegalSection ? (
+          child
+        ) : (
+          <Reveal>{child}</Reveal>
+        )
+      )}
     </article>
   );
 }
 
 export function LegalSection({
   title,
-  delay,
   children,
 }: {
   title: string;
-  /** Set by LegalPage from the section's position. */
-  delay?: number;
   children: React.ReactNode;
 }) {
   return (
     <Reveal
       as='section'
-      delay={delay}
       className='flex flex-col gap-3 leading-relaxed [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_strong]:font-semibold [&_strong]:text-foreground'
     >
       <h2 className='font-heading text-xl font-semibold'>{title}</h2>

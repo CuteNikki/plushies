@@ -19,7 +19,7 @@ export default async function ResetPasswordPage(
           Choose a new password
         </h1>
       </Reveal>
-      <Reveal delay={0.2}>
+      <Reveal>
         {typeof token === 'string' && !error ? (
           <ResetPasswordForm token={token} />
         ) : (

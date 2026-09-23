@@ -25,7 +25,7 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
           Your password was changed. Sign in with your new one.
         </p>
       )}
-      <Reveal delay={0.2}>
+      <Reveal>
         <SignInForm />
       </Reveal>
     </div>

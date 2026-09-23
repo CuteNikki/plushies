@@ -86,7 +86,6 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
       <input type='hidden' name='facts' value={JSON.stringify(facts)} />
 
       <Section
-        delay={0.15}
         title='Thumbnail'
         description='The main photo, shown on the home page and first on their page.'
       >
@@ -129,7 +128,6 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
       </Section>
 
       <Section
-        delay={0.25}
         title='Gallery'
         description='More photos, shown on their page. Use the arrows to reorder.'
       >
@@ -203,7 +201,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
         </ul>
       </Section>
 
-      <Section delay={0.35} title='About'>
+      <Section title='About'>
         <div className='grid gap-4 sm:grid-cols-2'>
           <Field
             label='Name'
@@ -263,11 +261,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
         </div>
       </Section>
 
-      <Section
-        delay={0.45}
-        title='Facts'
-        description='Anything else, e.g. Favorite food.'
-      >
+      <Section title='Facts' description='Anything else, e.g. Favorite food.'>
         {facts.map((fact, index) => (
           <div key={index} className='flex gap-2'>
             <Input
@@ -362,17 +356,14 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
 function Section({
   title,
   description,
-  delay,
   children,
 }: {
   title: string;
   description?: string;
-  /** Intro delay, for sections on screen when the page loads. */
-  delay?: number;
   children: React.ReactNode;
 }) {
   return (
-    <Reveal as='section' delay={delay} className='flex flex-col gap-4'>
+    <Reveal as='section' className='flex flex-col gap-4'>
       <div>
         <h2 className='font-heading text-xl font-semibold'>{title}</h2>
         {description && (

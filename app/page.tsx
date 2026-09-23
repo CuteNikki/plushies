@@ -8,7 +8,7 @@ export default async function Page() {
 
   return (
     <div className='flex flex-col gap-8'>
-      <RevealGroup as='section' interval={0.15} className='flex flex-col gap-2'>
+      <RevealGroup as='section' className='flex flex-col gap-2'>
         <RevealItem>
           <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
             My{' '}

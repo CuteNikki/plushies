@@ -8,7 +8,14 @@ import {
   type HTMLMotionProps,
   type Variants,
 } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import {
+  Children,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 // No 'down': things falling from above while others rise looks like a collision.
 type Direction = 'up' | 'left' | 'right' | 'none';
@@ -19,18 +26,14 @@ const DISTANCE = 20;
 /** How long each element takes to fade in, in seconds. */
 const DURATION = 0.45;
 
-/**
- * Tempo of the whole site: every delay, scrollDelay and stagger interval set
- * on the pages is multiplied by this. Lower is faster; 1 uses them as written.
- */
-const PACE = 0.7;
+/** Seconds between elements that come into view together. */
+const STEP = 0.1;
 
 /**
- * Elements that come into view this soon after mounting count as part of the
- * page's intro and use their full `delay`. Later ones were scrolled to, and
- * use the shorter `scrollDelay` so scrolling doesn't feel sluggish.
+ * Tempo of the whole site: STEP and every RevealGroup interval are multiplied
+ * by this. Lower is faster; 1 uses them as written.
  */
-const INTRO_MS = 500;
+const PACE = 0.7;
 
 const offsets: Record<Direction, { x?: number; y?: number }> = {
   up: { y: DISTANCE },
@@ -61,26 +64,60 @@ function fadeIn(direction: Direction, delay?: number): Variants {
 }
 
 /**
- * Tracks when an element first scrolls into view, and picks the delay to use:
- * `delay` during the page intro, `scrollDelay` afterwards. `null` until then.
+ * Hands out reveal times. Each element that comes into view claims the next
+ * free slot, so elements appearing together play one after another in page
+ * order, while one that scrolls in on its own plays right away. Nothing on
+ * the pages needs a hand-set delay.
  */
-function useReveal(delay: number, scrollDelay: number) {
+function createQueue(startDelay = 0) {
+  let nextFree: number | null = null;
+  return {
+    /** Reserves `seconds` of the sequence; returns how long to wait. */
+    claim(seconds: number) {
+      const now = performance.now();
+      nextFree ??= now + startDelay * PACE * 1000;
+      const at = Math.max(now, nextFree);
+      nextFree = at + seconds * PACE * 1000;
+      return (at - now) / 1000;
+    },
+  };
+}
+
+type Queue = ReturnType<typeof createQueue>;
+
+const QueueContext = createContext<Queue | null>(null);
+
+/**
+ * Starts a separate sequence for its content, running alongside the page's.
+ * Use it for side-by-side columns that should animate at the same time.
+ */
+export function RevealQueue({
+  delay,
+  children,
+}: {
+  /** Seconds before the first element of this sequence. */
+  delay?: number;
+  children: React.ReactNode;
+}) {
+  const [queue] = useState(() => createQueue(delay));
+  return <QueueContext value={queue}>{children}</QueueContext>;
+}
+
+/**
+ * Waits until the element first scrolls into view, then claims `seconds` of
+ * the nearest queue. Returns the delay to use, or `null` until then.
+ */
+function useReveal(seconds: number) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.15 });
-  const mountedAt = useRef(0);
-  const [revealDelay, setRevealDelay] = useState<number | null>(null);
+  const queue = useContext(QueueContext);
+  const [delay, setDelay] = useState<number | null>(null);
 
   useEffect(() => {
-    mountedAt.current = performance.now();
-  }, []);
+    if (inView) setDelay(queue ? queue.claim(seconds) : 0);
+  }, [inView, queue, seconds]);
 
-  useEffect(() => {
-    if (!inView) return;
-    const intro = performance.now() - mountedAt.current < INTRO_MS;
-    setRevealDelay((intro ? delay : scrollDelay) * PACE);
-  }, [inView, delay, scrollDelay]);
-
-  return { ref, revealDelay };
+  return { ref, delay };
 }
 
 const elements = {
@@ -98,17 +135,11 @@ type Element = keyof typeof elements;
 
 type BaseProps = Omit<HTMLMotionProps<'div'>, 'variants' | 'ref'> & {
   as?: Element;
-  /** Seconds to wait when the element is on screen as the page loads. */
-  delay?: number;
-  /** Seconds to wait when the element is scrolled into view later. */
-  scrollDelay?: number;
 };
 
 /** Fades its content in the first time it scrolls into view. */
 export function Reveal({
   direction = 'up',
-  delay = 0,
-  scrollDelay = 0,
   as = 'div',
   ...props
 }: BaseProps & {
@@ -116,47 +147,45 @@ export function Reveal({
   direction?: Direction;
 }) {
   const Component = elements[as] as typeof motion.div;
-  const { ref, revealDelay } = useReveal(delay, scrollDelay);
+  const { ref, delay } = useReveal(STEP);
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
       initial='hidden'
-      animate={revealDelay === null ? 'hidden' : 'visible'}
-      variants={fadeIn(direction, revealDelay ?? 0)}
+      animate={delay === null ? 'hidden' : 'visible'}
+      variants={fadeIn(direction, delay ?? 0)}
       {...props}
     />
   );
 }
 
 /**
- * Reveals its RevealItem children one after another when it scrolls into
- * view. Best for groups that fit on screen; long lists should use Reveal per
- * item, so items further down wait until they are scrolled to.
+ * Reveals its RevealItem children one after another. It takes a slot in the
+ * queue long enough for all of them, so whatever comes next waits its turn.
+ * Best for groups that fit on screen; long lists should use Reveal per item,
+ * so items further down wait until they are scrolled to.
  */
 export function RevealGroup({
   as = 'div',
-  interval = 0.1,
-  delay = 0,
-  scrollDelay = 0,
+  interval = STEP,
   ...props
 }: BaseProps & {
   /** Seconds between each child. */
   interval?: number;
 }) {
   const Component = elements[as] as typeof motion.div;
-  const { ref, revealDelay } = useReveal(delay, scrollDelay);
+  const count = Children.count(props.children);
+  const { ref, delay } = useReveal(interval * Math.max(count, 1));
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
       initial='hidden'
-      animate={revealDelay === null ? 'hidden' : 'visible'}
+      animate={delay === null ? 'hidden' : 'visible'}
       variants={{
         hidden: {},
         visible: {
           transition: {
-            delayChildren: stagger(interval * PACE, {
-              startDelay: revealDelay ?? 0,
-            }),
+            delayChildren: stagger(interval * PACE, { startDelay: delay ?? 0 }),
           },
         },
       }}
@@ -178,7 +207,14 @@ export function RevealItem({
   return <Component variants={fadeIn(direction)} {...props} />;
 }
 
-/** Skips movement for people who ask their system to reduce motion. */
+/**
+ * Site-wide setup: one queue for every page, and no movement for people who
+ * ask their system to reduce motion.
+ */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
-  return <MotionConfig reducedMotion='user'>{children}</MotionConfig>;
+  return (
+    <MotionConfig reducedMotion='user'>
+      <RevealQueue>{children}</RevealQueue>
+    </MotionConfig>
+  );
 }

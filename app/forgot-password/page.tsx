@@ -16,7 +16,7 @@ export default function ForgotPasswordPage() {
           We&rsquo;ll email you a link to choose a new one.
         </p>
       </Reveal>
-      <Reveal delay={0.2}>
+      <Reveal>
         <ForgotPasswordForm />
       </Reveal>
     </div>

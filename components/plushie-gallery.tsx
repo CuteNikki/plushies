@@ -13,8 +13,6 @@ import { Input } from '@/components/ui/input';
 
 export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
   const [query, setQuery] = useState('');
-  // Once someone searches, cards that reappear skip the page intro timing.
-  const [searched, setSearched] = useState(false);
 
   const q = query.trim().toLowerCase();
   const filtered = plushies.filter((plushie) =>
@@ -25,16 +23,13 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
 
   return (
     <div className='flex flex-col gap-6'>
-      <Reveal delay={0.35} className='relative max-w-sm'>
+      <Reveal className='relative max-w-sm'>
         <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
         <Input
           type='search'
           placeholder='Search by name, species, trait…'
           value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setSearched(true);
-          }}
+          onChange={(event) => setQuery(event.target.value)}
           className='h-10 rounded-full pl-9 text-sm'
           aria-label='Search plushies'
         />
@@ -46,15 +41,8 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
         </p>
       ) : (
         <ul className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
-          {filtered.map((plushie, index) => (
-            <Reveal
-              as='li'
-              key={plushie.slug}
-              // After the title and search bar, one card at a time. Cards
-              // scrolled to later only cascade across their row.
-              delay={searched ? (index % 4) * 0.06 : 0.55 + index * 0.1}
-              scrollDelay={(index % 4) * 0.1}
-            >
+          {filtered.map((plushie) => (
+            <Reveal as='li' key={plushie.slug}>
               <Link
                 href={`/plushies/${plushie.slug}`}
                 className='group block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/40 focus-visible:ring-2 focus-visible:ring-ring'

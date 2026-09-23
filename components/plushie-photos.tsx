@@ -24,7 +24,7 @@ export function PlushiePhotos({
 
   if (!current) {
     return (
-      <Reveal direction='right' delay={0.15}>
+      <Reveal direction='right'>
         <PlushiePhoto
           plushie={plushie}
           sizes='(min-width: 768px) 50vw, 100vw'
@@ -38,7 +38,6 @@ export function PlushiePhotos({
     <div className='flex flex-col gap-3'>
       <Reveal
         direction='right'
-        delay={0.15}
         className='relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/10'
       >
         <Image
@@ -53,12 +52,7 @@ export function PlushiePhotos({
       </Reveal>
 
       {photos.length > 1 && (
-        <RevealGroup
-          as='ul'
-          delay={0.45}
-          interval={0.08}
-          className='grid grid-cols-5 gap-2'
-        >
+        <RevealGroup as='ul' interval={0.08} className='grid grid-cols-5 gap-2'>
           {photos.map((photo, index) => (
             <RevealItem as='li' key={photo.key} direction='right'>
               <button

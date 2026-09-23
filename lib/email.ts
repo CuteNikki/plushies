@@ -13,6 +13,9 @@ async function sendEmail(email: {
   const { error } = await resend.emails.send({
     from: process.env.EMAIL_FROM!,
     ...email,
+    // A unique value stops Gmail from grouping emails with the same subject
+    // into one conversation, where it hides the repeated text behind "…".
+    headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
   });
   if (error) throw new Error(`Resend: ${error.message}`);
 }

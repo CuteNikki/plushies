@@ -180,7 +180,7 @@ export async function deletePlushie(id: string) {
   );
 
   revalidatePath('/', 'layout');
-  redirect('/admin');
+  redirect('/dashboard');
 }
 
 /** Removes photos that were uploaded but never saved, e.g. on cancel. */
@@ -221,7 +221,7 @@ export async function setUserRole(userId: string, role: string) {
     body: { userId, role: role as (typeof roleNames)[number] },
     headers: await headers(),
   });
-  revalidatePath('/admin/users');
+  revalidatePath('/dashboard/users');
 }
 
 export async function sendUserPasswordReset(userId: string) {
@@ -246,5 +246,5 @@ export async function signOutUser(userId: string) {
 export async function deleteUser(userId: string) {
   await assertCanManage(userId);
   await auth.api.removeUser({ body: { userId }, headers: await headers() });
-  revalidatePath('/admin/users');
+  revalidatePath('/dashboard/users');
 }

@@ -28,14 +28,14 @@ export default async function AdminPage() {
         <div className='flex gap-2'>
           {session.user.role === 'admin' && (
             <Button variant='outline' asChild>
-              <Link href='/admin/users'>
+              <Link href='/dashboard/users'>
                 <Users />
                 Users
               </Link>
             </Button>
           )}
           <Button asChild>
-            <Link href='/admin/plushies/new'>
+            <Link href='/dashboard/plushies/new'>
               <Plus />
               New plushie
             </Link>
@@ -69,7 +69,7 @@ export default async function AdminPage() {
               </p>
             </div>
             <Button variant='outline' size='sm' asChild>
-              <Link href={`/admin/plushies/${plushie.id}`}>
+              <Link href={`/dashboard/plushies/${plushie.id}`}>
                 <Pencil />
                 Edit
               </Link>

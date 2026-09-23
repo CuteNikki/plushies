@@ -8,7 +8,7 @@ import { SignInForm } from '@/components/sign-in-form';
 export const metadata: Metadata = { title: 'Sign in' };
 
 export default async function SignInPage(props: PageProps<'/sign-in'>) {
-  if (await getSession()) redirect('/admin');
+  if (await getSession()) redirect('/dashboard');
   const { reset } = await props.searchParams;
 
   return (

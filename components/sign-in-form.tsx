@@ -33,7 +33,7 @@ export function SignInForm() {
           });
     setPending(false);
     if (error) return setError(error.message ?? 'Something went wrong');
-    router.push('/admin');
+    router.push('/dashboard');
     router.refresh();
   }
 
@@ -112,7 +112,7 @@ export function SignInForm() {
         onClick={() =>
           authClient.signIn.social({
             provider: 'discord',
-            callbackURL: '/admin',
+            callbackURL: '/dashboard',
           })
         }
       >

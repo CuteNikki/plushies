@@ -20,8 +20,8 @@ Then open http://localhost:3000.
 
 Sign in at `/sign-in` with email and password or Discord. New accounts can only look around. Forgotten passwords can be reset from the sign-in page; the reset link is emailed through Resend.
 
-- **Editor**: can add, edit and delete plushies at `/admin`.
-- **Admin**: everything an editor can do, plus changing people's roles at `/admin/users`.
+- **Editor**: can add, edit and delete plushies at `/dashboard`.
+- **Admin**: everything an editor can do, plus changing people's roles at `/dashboard/users`.
 
 To make yourself the first admin, sign in once and then run:
 
@@ -31,7 +31,7 @@ bun run make-admin you@example.com
 
 ## Adding a plushie
 
-Go to `/admin` and click **New plushie**. Each plushie has a thumbnail (shown on the home page) and a gallery of extra photos, all uploaded through UploadThing. Only the name and description are required.
+Go to `/dashboard` and click **New plushie**. Each plushie has a thumbnail (shown on the home page) and a gallery of extra photos, all uploaded through UploadThing. Only the name and description are required.
 
 ## Changing the data model
 

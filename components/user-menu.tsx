@@ -59,7 +59,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         {canEditPlushies(user.role) && (
           <DropdownMenuItem asChild>
-            <Link href='/admin'>
+            <Link href='/dashboard'>
               <Pencil />
               Plushies
             </Link>
@@ -67,7 +67,7 @@ export function UserMenu() {
         )}
         {user.role === 'admin' && (
           <DropdownMenuItem asChild>
-            <Link href='/admin/users'>
+            <Link href='/dashboard/users'>
               <Users />
               Users
             </Link>

@@ -14,7 +14,7 @@ export function EditPlushieButton({ id }: { id: string }) {
 
   return (
     <Button variant='outline' size='sm' asChild>
-      <Link href={`/admin/plushies/${id}`}>
+      <Link href={`/dashboard/plushies/${id}`}>
         <Pencil />
         Edit
       </Link>

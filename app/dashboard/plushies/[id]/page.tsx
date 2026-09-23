@@ -9,7 +9,7 @@ import { PlushieForm } from '@/components/plushie-form';
 export const metadata: Metadata = { title: 'Edit plushie' };
 
 export default async function EditPlushiePage(
-  props: PageProps<'/admin/plushies/[id]'>
+  props: PageProps<'/dashboard/plushies/[id]'>
 ) {
   await requireEditor();
   const { id } = await props.params;

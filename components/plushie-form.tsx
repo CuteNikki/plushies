@@ -22,7 +22,7 @@ import {
   discardUploads,
   savePlushie,
   type FormState,
-} from '@/app/admin/actions';
+} from '@/app/dashboard/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -326,7 +326,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             {plushie ? 'Save changes' : 'Add plushie'}
           </Button>
           <Button type='button' variant='ghost' asChild>
-            <Link href={plushie ? `/plushies/${plushie.slug}` : '/admin'}>
+            <Link href={plushie ? `/plushies/${plushie.slug}` : '/dashboard'}>
               Cancel
             </Link>
           </Button>

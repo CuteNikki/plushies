@@ -108,20 +108,30 @@ export function RevealQueue({
 const ParentClaimedContext = createContext(true);
 
 /**
+ * Whether the animation code has loaded. Until then, reveals wait: an element
+ * told to animate before it arrives never does, and stays invisible until it
+ * happens to render again.
+ */
+const FeaturesReadyContext = createContext(true);
+
+/**
  * Waits until the element first scrolls into view, then claims `seconds` of
  * the nearest queue. Returns the delay to use, or `null` until then.
  */
 function useReveal(seconds: number) {
   const ref = useRef<HTMLElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.15 });
+  // As soon as any of it shows. A share of its area would never be reached
+  // by elements many screens tall, like a long list, which then stay hidden.
+  const inView = useInView(ref, { once: true, amount: 'some' });
   const queue = useContext(QueueContext);
   const parentClaimed = useContext(ParentClaimedContext);
+  const featuresReady = useContext(FeaturesReadyContext);
   const [delay, setDelay] = useState<number | null>(null);
 
   useEffect(() => {
     // React runs child effects before parent ones, so without waiting, rows
     // inside a card would queue ahead of the card and play while it's hidden.
-    if (!inView || !parentClaimed || delay !== null) return;
+    if (!inView || !parentClaimed || !featuresReady || delay !== null) return;
     // Claimed on the next frame rather than during the effect, which would
     // render again right away. Frames run in effect order, so elements that
     // come into view together still queue top to bottom.
@@ -129,7 +139,7 @@ function useReveal(seconds: number) {
       setDelay(queue ? queue.claim(seconds) : 0)
     );
     return () => cancelAnimationFrame(frame);
-  }, [inView, parentClaimed, delay, queue, seconds]);
+  }, [inView, parentClaimed, featuresReady, delay, queue, seconds]);
 
   return { ref, delay };
 }
@@ -228,8 +238,12 @@ export function RevealItem({
   return <Component variants={fadeIn(direction)} {...props} />;
 }
 
+// Loaded once, and shared by LazyMotion and the reveals waiting for it.
+let features: Promise<typeof import('@/components/motion-features').default>;
 const loadFeatures = () =>
-  import('@/components/motion-features').then((mod) => mod.default);
+  (features ??= import('@/components/motion-features').then(
+    (mod) => mod.default
+  ));
 
 /**
  * Site-wide setup: one queue for every page, and no movement for people who
@@ -238,10 +252,22 @@ const loadFeatures = () =>
  * bundling everything again.
  */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
+  const [featuresReady, setFeaturesReady] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    loadFeatures().then(() => current && setFeaturesReady(true));
+    return () => {
+      current = false;
+    };
+  }, []);
+
   return (
     <LazyMotion features={loadFeatures} strict>
       <MotionConfig reducedMotion='user'>
-        <RevealQueue>{children}</RevealQueue>
+        <FeaturesReadyContext value={featuresReady}>
+          <RevealQueue>{children}</RevealQueue>
+        </FeaturesReadyContext>
       </MotionConfig>
     </LazyMotion>
   );

@@ -30,7 +30,7 @@ export default async function UsersPage() {
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Users
         </h1>
-        <p className='text-muted-foreground'>
+        <p className='text-pretty text-muted-foreground'>
           Editors can add and change plushies. Admins can also manage users.
         </p>
       </Reveal>

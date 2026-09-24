@@ -372,7 +372,9 @@ function Section({
       <div>
         <h2 className='font-heading text-xl font-semibold'>{title}</h2>
         {description && (
-          <p className='text-sm text-muted-foreground'>{description}</p>
+          <p className='text-sm text-pretty text-muted-foreground'>
+            {description}
+          </p>
         )}
       </div>
       {children}

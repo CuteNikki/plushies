@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
         <h1 className='font-heading text-3xl font-semibold'>
           Forgot your password?
         </h1>
-        <p className='text-sm text-muted-foreground'>
+        <p className='text-sm text-pretty text-muted-foreground'>
           We&rsquo;ll email you a link to choose a new one.
         </p>
       </Reveal>

@@ -59,7 +59,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Account Settings
         </h1>
-        <p className='text-muted-foreground'>
+        <p className='text-pretty text-muted-foreground'>
           Manage your account settings and preferences.
         </p>
       </Reveal>
@@ -124,7 +124,9 @@ function Section({
       <div>
         <h2 className='font-heading text-xl font-semibold'>{title}</h2>
         {description && (
-          <p className='text-sm text-muted-foreground'>{description}</p>
+          <p className='text-sm text-pretty text-muted-foreground'>
+            {description}
+          </p>
         )}
       </div>
       {children}

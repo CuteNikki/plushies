@@ -24,7 +24,7 @@ export default async function ResetPasswordPage(
             <h1 className='font-heading text-3xl font-semibold'>
               Choose a new password
             </h1>
-            <p className='text-sm text-muted-foreground'>
+            <p className='text-sm text-pretty text-muted-foreground'>
               You&rsquo;ll be signed out everywhere else afterwards.
             </p>
           </Reveal>

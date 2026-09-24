@@ -23,7 +23,7 @@ export default async function AdminPage() {
           <h1 className='font-heading text-4xl font-semibold tracking-tight'>
             Edit Plushies
           </h1>
-          <p className='text-muted-foreground'>
+          <p className='text-pretty text-muted-foreground'>
             Add new friends or update the ones you have.
           </p>
         </div>

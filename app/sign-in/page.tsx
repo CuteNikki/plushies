@@ -17,7 +17,7 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
     <AuthShell>
       <Reveal className='flex flex-col gap-1 text-center'>
         <h1 className='font-heading text-3xl font-semibold'>Welcome!</h1>
-        <p className='text-sm text-muted-foreground'>
+        <p className='text-sm text-pretty text-muted-foreground'>
           Sign in to edit the plushies.
         </p>
       </Reveal>

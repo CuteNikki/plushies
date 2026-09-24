@@ -17,7 +17,7 @@ export default async function Page() {
             </span>
           </h1>
         </RevealItem>
-        <RevealItem as='p' className='text-muted-foreground'>
+        <RevealItem as='p' className='text-pretty text-muted-foreground'>
           {plushies.length} soft friends and counting. Click on one to learn
           more about them!
         </RevealItem>

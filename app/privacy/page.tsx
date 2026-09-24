@@ -64,6 +64,12 @@ export default function PrivacyPage() {
             and misuse.
           </li>
           <li>
+            <strong>Likes:</strong> when you like a plushie, we store that your
+            account likes it, so each account can like a plushie only once.
+            Everyone sees how many likes a plushie has, but not who gave them.
+            Your likes are deleted with your account.
+          </li>
+          <li>
             <strong>Plushie content:</strong> the names, descriptions and photos
             that editors add. This content is public. Please do not upload
             photos that show people or other personal information.

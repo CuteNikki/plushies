@@ -7,6 +7,7 @@ import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
+import { LikeButton } from '@/components/like-button';
 import {
   Reveal,
   RevealGroup,
@@ -87,10 +88,18 @@ export default async function PlushiePage(
         <RevealQueue delay={0.2}>
           <div className='flex flex-col gap-6'>
             <RevealGroup interval={0.12} className='flex flex-col gap-3'>
-              <RevealItem direction='left'>
-                <h1 className='font-heading text-4xl font-semibold tracking-tight sm:text-5xl'>
+              <RevealItem
+                direction='left'
+                className='flex items-start justify-between gap-4'
+              >
+                <h1 className='min-w-0 font-heading text-4xl font-semibold tracking-tight wrap-break-word sm:text-5xl'>
                   {plushie.name}
                 </h1>
+                <LikeButton
+                  plushieId={plushie.id}
+                  slug={plushie.slug}
+                  count={plushie.likes}
+                />
               </RevealItem>
               {plushie.traits.length > 0 && (
                 <RevealItem direction='left' className='flex flex-wrap gap-1.5'>

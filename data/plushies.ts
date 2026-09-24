@@ -31,10 +31,13 @@ export type Plushie = {
   facts: PlushieFact[];
   /** Little personality tags shown as badges. */
   traits: string[];
+  /** How many accounts like them. */
+  likes: number;
 };
 
 const include = {
   gallery: { orderBy: { position: 'asc' } },
+  _count: { select: { likes: true } },
 } satisfies Prisma.PlushieInclude;
 
 type PlushieRow = Prisma.PlushieGetPayload<{ include: typeof include }>;
@@ -57,6 +60,7 @@ function toPlushie(row: PlushieRow): Plushie {
     origin: row.origin,
     facts: (row.facts ?? []) as PlushieFact[],
     traits: row.traits,
+    likes: row._count.likes,
   };
 }
 

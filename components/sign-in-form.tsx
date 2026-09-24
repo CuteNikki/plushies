@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export function SignInForm() {
+/** `next` is where to go after signing in. */
+export function SignInForm({ next }: { next: string }) {
   const router = useRouter();
   const [mode, setMode] = useState<'sign-in' | 'sign-up'>('sign-in');
   const [error, setError] = useState<string>();
@@ -41,7 +42,7 @@ export function SignInForm() {
       toast.success('Account created! Check your inbox to verify your email.');
       router.push('/account');
     } else {
-      router.push('/dashboard');
+      router.push(next);
     }
     router.refresh();
   }
@@ -121,7 +122,7 @@ export function SignInForm() {
         onClick={() =>
           authClient.signIn.social({
             provider: 'discord',
-            callbackURL: '/dashboard',
+            callbackURL: next,
           })
         }
       >

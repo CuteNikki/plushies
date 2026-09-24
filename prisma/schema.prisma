@@ -27,6 +27,7 @@ model Plushie {
   thumbnailKey String?
   thumbnailUrl String?
   gallery      PlushieImage[]
+  likes        PlushieLike[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,6 +49,19 @@ model PlushieImage {
   @@map("plushie_image")
 }
 
+/// A signed-in account liking a plushie. The key allows one per account.
+model PlushieLike {
+  plushieId String
+  plushie   Plushie  @relation(fields: [plushieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([plushieId, userId])
+  @@index([userId])
+  @@map("plushie_like")
+}
+
 // Better Auth tables (core + admin plugin)
 
 /// What an account may do. Better Auth's admin plugin uses these exact names.
@@ -61,19 +75,20 @@ enum Role {
 }
 
 model User {
-  id            String    @id
+  id            String        @id
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String        @unique
+  emailVerified Boolean       @default(false)
   image         String?
-  role          Role      @default(USER)
-  banned        Boolean?  @default(false)
+  role          Role          @default(USER)
+  banned        Boolean?      @default(false)
   banReason     String?
   banExpires    DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   sessions      Session[]
   accounts      Account[]
+  likes         PlushieLike[]
 
   @@map("user")
 }

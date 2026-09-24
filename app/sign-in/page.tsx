@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { safeNext } from '@/lib/redirect';
 import { getSession } from '@/lib/session';
 
 import { AuthShell } from '@/components/auth-shell';
@@ -11,8 +12,10 @@ import { Toaster } from '@/components/ui/sonner';
 export const metadata: Metadata = { title: 'Sign In' };
 
 export default async function SignInPage(props: PageProps<'/sign-in'>) {
-  if (await getSession()) redirect('/dashboard');
-  const { reset } = await props.searchParams;
+  const { reset, next: nextParam } = await props.searchParams;
+  // Where to go afterwards, e.g. back to a plushie someone wanted to like.
+  const next = safeNext(nextParam);
+  if (await getSession()) redirect(next);
 
   return (
     <>
@@ -29,7 +32,7 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
           </p>
         )}
         <Reveal>
-          <SignInForm />
+          <SignInForm next={next} />
         </Reveal>
       </AuthShell>
       <Toaster />

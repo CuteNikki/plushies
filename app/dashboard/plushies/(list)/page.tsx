@@ -5,6 +5,7 @@ import { PencilIcon, PlusIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
+import { count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { Reveal } from '@/components/motion';
@@ -67,11 +68,12 @@ export default async function PlushiesPage() {
               </Link>
               <p className='text-sm text-muted-foreground'>
                 {[
-                  plushie.species,
-                  `${plushie.gallery.length + (plushie.thumbnail ? 1 : 0)} photos`,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
+                  count(
+                    plushie.gallery.length + (plushie.thumbnail ? 1 : 0),
+                    'photo'
+                  ),
+                  count(plushie.likes, 'like'),
+                ].join(' · ')}
               </p>
             </div>
             <Button variant='outline' size='sm' asChild>

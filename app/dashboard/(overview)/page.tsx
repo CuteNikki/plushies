@@ -13,14 +13,11 @@ import {
 import { getDashboardStats } from '@/data/dashboard';
 import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
+import { count } from '@/lib/utils';
 
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 
 export const metadata: Metadata = { title: 'Dashboard' };
-
-function count(n: number, word: string) {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
-}
 
 export default async function DashboardPage() {
   const session = await requireEditor();

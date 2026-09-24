@@ -10,12 +10,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function PlushieFormLoading() {
   return (
     <LoadingPage className='mx-auto w-full max-w-3xl gap-8'>
-      <TextSkeleton
-        as='div'
-        className='font-heading text-4xl font-semibold tracking-tight'
-      >
-        New Plushie
-      </TextSkeleton>
+      <div className='flex flex-col gap-6'>
+        {/* Back to the plushies. */}
+        <Skeleton className='h-6 w-24' />
+        <TextSkeleton
+          as='div'
+          className='font-heading text-4xl font-semibold tracking-tight'
+        >
+          New Plushie
+        </TextSkeleton>
+      </div>
       <div className='flex flex-col gap-4'>
         <SectionHeadingSkeleton
           title='Thumbnail'

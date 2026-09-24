@@ -1,5 +1,5 @@
 import { createAccessControl } from 'better-auth/plugins/access';
-import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
+import { defaultStatements } from 'better-auth/plugins/admin/access';
 
 // The generated enum is a plain object, safe to use in the browser too.
 import { Role } from '@/lib/generated/prisma/enums';
@@ -17,9 +17,15 @@ export const ac = createAccessControl({
  * the role it stores is always one the database accepts.
  */
 export const roles = {
-  /** Can do everything, including managing users and their roles. */
+  /**
+   * Can do everything, including managing users and their roles. Better Auth
+   * serves every admin endpoint whether the site uses it or not, so admins
+   * only get what the site offers: no creating users, setting their
+   * passwords or emails, or editing them otherwise.
+   */
   [Role.ADMIN]: ac.newRole({
-    ...adminAc.statements,
+    user: ['set-role', 'ban', 'impersonate', 'delete'],
+    session: ['revoke'],
     plushie: ['create', 'update', 'delete'],
   }),
   /** Can add, edit and delete plushies. */

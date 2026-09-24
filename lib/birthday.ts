@@ -80,3 +80,39 @@ export function formatAge(value: string, now = new Date()) {
   const years = Math.floor(months / 12);
   return `${years} year${years === 1 ? '' : 's'}`;
 }
+
+export type UpcomingBirthday = {
+  /** Days until the birthday, 0 for today. Null when only the month is known. */
+  days: number | null;
+  /** The age they turn. */
+  turns: number;
+};
+
+/**
+ * The next birthday if it's within `withinDays`, or this month for birthdays
+ * without a day. Null for year-only birthdays, which have no date to count to.
+ */
+export function upcomingBirthday(
+  value: string,
+  withinDays: number,
+  now = new Date()
+): UpcomingBirthday | null {
+  const birthday = parseBirthday(value);
+  if (!birthday?.month) return null;
+  const { year, month, day } = birthday;
+
+  if (!day) {
+    const turns = now.getFullYear() - year;
+    if (month !== now.getMonth() + 1 || turns < 1) return null;
+    return { days: null, turns };
+  }
+
+  // Feb 29 falls on Mar 1 in other years, which Date does by itself.
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let next = new Date(today.getFullYear(), month - 1, day);
+  if (next < today) next = new Date(today.getFullYear() + 1, month - 1, day);
+  const days = Math.round((next.getTime() - today.getTime()) / 86_400_000);
+  const turns = next.getFullYear() - year;
+  if (days > withinDays || turns < 1) return null;
+  return { days, turns };
+}

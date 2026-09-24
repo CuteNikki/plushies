@@ -42,6 +42,12 @@ export async function retainedPhotos() {
   );
 }
 
+/** How much of the UploadThing storage limit is used, across all apps. */
+export async function getStorageUsage() {
+  const { totalBytes, limitBytes, filesUploaded } = await utapi.getUsageInfo();
+  return { usedBytes: totalBytes, limitBytes, files: filesUploaded };
+}
+
 export async function deleteFiles(keys: string[]) {
   if (keys.length === 0) return;
   try {

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { BadgeCheckIcon } from 'lucide-react';
 
 import { getUsers } from '@/data/users';
+import { providerLabels } from '@/lib/providers';
 import { requireAdmin } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
@@ -13,11 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { UserActions } from '@/components/user-actions';
 
 export const metadata: Metadata = { title: 'Users' };
-
-const providerLabels: Record<string, string> = {
-  credential: 'Email',
-  discord: 'Discord',
-};
 
 export default async function UsersPage() {
   const session = await requireAdmin();

@@ -1,26 +1,42 @@
 import {
   HeadingSkeleton,
+  ListSkeleton,
   LoadingPage,
+  SectionHeadingSkeleton,
+  TextLinesSkeleton,
   TextSkeleton,
 } from '@/components/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const tiles = ['Plushies', 'Photos', 'Likes', 'Changes in 7 days'];
+
 // Admins see all four links, editors the first three. The texts are samples
 // shaped like the real ones, so the cards wrap where the real ones do.
 const links = [
-  { title: 'Plushies', text: '3 plushies with 7 photos' },
+  { title: 'Plushies', text: 'Browse and edit every plushie' },
   { title: 'New Plushie', text: 'Add a new soft friend' },
-  { title: 'Activity', text: '5 changes in the last 7 days' },
+  { title: 'Activity', text: 'See and undo recent changes' },
   { title: 'Users', text: '1 account, 1 admin and 0 editors' },
 ];
 
 export default function DashboardLoading() {
   return (
-    <LoadingPage className='gap-6'>
+    <LoadingPage className='gap-8'>
       <HeadingSkeleton
-        title='Dashboard'
+        title='Good afternoon'
         subtitle='Everything for looking after the plushies.'
       />
+      <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
+        {tiles.map((tile) => (
+          <div
+            key={tile}
+            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10'
+          >
+            <TextSkeleton className='text-sm'>{tile}</TextSkeleton>
+            <TextSkeleton className='text-3xl font-semibold'>12</TextSkeleton>
+          </div>
+        ))}
+      </div>
       <ul className='grid gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <li
@@ -41,6 +57,25 @@ export default function DashboardLoading() {
           </li>
         ))}
       </ul>
+      <div className='grid items-start gap-8 lg:grid-cols-2'>
+        <div className='flex flex-col gap-4'>
+          <SectionHeadingSkeleton title='Recently edited' />
+          <ListSkeleton rows={3} rowClassName='flex items-center gap-3 p-3'>
+            <Skeleton className='size-10 shrink-0 rounded-lg' />
+            <TextLinesSkeleton />
+          </ListSkeleton>
+        </div>
+        <div className='flex flex-col gap-4'>
+          <SectionHeadingSkeleton
+            title='Needs attention'
+            description='Plushies whose page is still missing something.'
+          />
+          <ListSkeleton rows={2} rowClassName='flex items-center gap-3 p-3'>
+            <Skeleton className='size-10 shrink-0 rounded-lg' />
+            <TextLinesSkeleton />
+          </ListSkeleton>
+        </div>
+      </div>
     </LoadingPage>
   );
 }

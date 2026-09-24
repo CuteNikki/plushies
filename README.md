@@ -4,7 +4,7 @@ A little website that shows all of my plushies. Built with Next.js, shadcn/ui, P
 
 ## Setup
 
-1. Use Node 22.12 or newer (`nvm use` picks it up from `.nvmrc`); older versions break the Prisma CLI.
+1. Use Node 24.21 or newer; older versions than 22.12 break the Prisma CLI.
 2. Copy `.env.example` to `.env` and fill it in (database, auth secret, Discord app, UploadThing token).
 3. Install and set up the database:
 

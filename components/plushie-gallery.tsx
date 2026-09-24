@@ -1,7 +1,8 @@
 'use client';
 
-import { SearchIcon } from 'lucide-react';
 import { useState } from 'react';
+
+import { SearchIcon } from 'lucide-react';
 
 import type { Plushie } from '@/data/plushies';
 

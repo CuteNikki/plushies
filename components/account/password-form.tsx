@@ -1,13 +1,14 @@
 'use client';
 
-import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { authClient } from '@/lib/auth-client';
+import { Loader2Icon } from 'lucide-react';
 
 import { setPassword } from '@/actions/account';
+import { authClient } from '@/lib/auth-client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

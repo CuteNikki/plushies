@@ -1,9 +1,10 @@
 'use client';
 
-import { BadgeCheckIcon, Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+import { BadgeCheckIcon, Loader2Icon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 

@@ -1,5 +1,6 @@
-import { HeartIcon } from 'lucide-react';
 import Image from 'next/image';
+
+import { HeartIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 import { cn } from '@/lib/utils';

@@ -1,6 +1,7 @@
-import { PencilIcon, PlusIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import { PencilIcon, PlusIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';

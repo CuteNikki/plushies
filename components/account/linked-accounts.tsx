@@ -1,13 +1,14 @@
 'use client';
 
-import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react';
+import { DiscordIcon } from '@/components/discord-icon';
+
 import { authClient } from '@/lib/auth-client';
 
-import { DiscordIcon } from '@/components/discord-icon';
 import { Button } from '@/components/ui/button';
 
 export function LinkedAccounts({

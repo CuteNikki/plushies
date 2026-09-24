@@ -1,5 +1,6 @@
-import { HeartCrackIcon, HouseIcon } from 'lucide-react';
 import Link from 'next/link';
+
+import { HeartCrackIcon, HouseIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 

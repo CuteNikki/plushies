@@ -6,7 +6,6 @@ import { formatBirthday } from '@/lib/birthday';
 import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
-import { PlushieAge } from '@/components/plushie-age';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
 import {
   Reveal,
@@ -14,6 +13,7 @@ import {
   RevealItem,
   RevealQueue,
 } from '@/components/motion';
+import { PlushieAge } from '@/components/plushie-age';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
 

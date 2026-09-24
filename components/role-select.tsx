@@ -2,10 +2,10 @@
 
 import { useOptimistic, useTransition } from 'react';
 
+import { setUserRole } from '@/actions/users';
 import { roleLabels, roleNames } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
-import { setUserRole } from '@/actions/users';
 import {
   Select,
   SelectContent,

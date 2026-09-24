@@ -1,7 +1,8 @@
 'use client';
 
-import { Loader2Icon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
+
+import { Loader2Icon, Trash2Icon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 

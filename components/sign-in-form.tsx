@@ -1,14 +1,15 @@
 'use client';
 
-import { Loader2Icon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
+import { Loader2Icon } from 'lucide-react';
+import { DiscordIcon } from '@/components/discord-icon';
+
 import { authClient } from '@/lib/auth-client';
 
-import { DiscordIcon } from '@/components/discord-icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -1,5 +1,6 @@
-import { MailIcon, PhoneIcon } from 'lucide-react';
 import type { Metadata } from 'next';
+
+import { MailIcon, PhoneIcon } from 'lucide-react';
 
 import { LegalPage, LegalSection, operator } from '@/components/legal';
 

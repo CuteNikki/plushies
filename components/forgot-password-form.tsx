@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2Icon, MailCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+
+import { Loader2Icon, MailCheckIcon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 

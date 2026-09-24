@@ -1,6 +1,7 @@
-import { LinkIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import { LinkIcon } from 'lucide-react';
 
 import { AuthShell } from '@/components/auth-shell';
 import { AuthStatus } from '@/components/auth-status';

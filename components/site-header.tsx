@@ -1,5 +1,6 @@
-import { HeartIcon } from 'lucide-react';
 import Link from 'next/link';
+
+import { HeartIcon } from 'lucide-react';
 
 import { ThemeButton } from '@/components/theme-button';
 import { UserMenu } from '@/components/user-menu';

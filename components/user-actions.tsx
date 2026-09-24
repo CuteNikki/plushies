@@ -1,19 +1,21 @@
 'use client';
 
+import { useTransition } from 'react';
+import { toast } from 'sonner';
+
 import {
   KeyRoundIcon,
   LogOutIcon,
   MoreHorizontalIcon,
   Trash2Icon,
 } from 'lucide-react';
-import { useTransition } from 'react';
-import { toast } from 'sonner';
 
 import {
   deleteUser,
   sendUserPasswordReset,
   signOutUser,
 } from '@/actions/users';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

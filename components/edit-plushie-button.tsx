@@ -1,7 +1,8 @@
 'use client';
 
-import { PencilIcon } from 'lucide-react';
 import Link from 'next/link';
+
+import { PencilIcon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 import { canEditPlushies } from '@/lib/permissions';

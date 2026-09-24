@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+
+import { Loader2Icon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 

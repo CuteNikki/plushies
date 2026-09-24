@@ -1,5 +1,6 @@
-import { BadgeCheckIcon } from 'lucide-react';
 import type { Metadata } from 'next';
+
+import { BadgeCheckIcon } from 'lucide-react';
 
 import { getUsers } from '@/data/users';
 import { requireAdmin } from '@/lib/session';

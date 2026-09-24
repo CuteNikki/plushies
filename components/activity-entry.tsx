@@ -1,18 +1,19 @@
+import Image from 'next/image';
+import Link from 'next/link';
+
 import {
   ImageOffIcon,
   KeyRoundIcon,
   Link2Icon,
   LogOutIcon,
-  type LucideIcon,
   MailIcon,
   PencilIcon,
   PlusIcon,
   Trash2Icon,
   UnlinkIcon,
   UserPlusIcon,
+  type LucideIcon,
 } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
 
 import type { ActivityContext } from '@/data/activity';
 import type {
@@ -21,9 +22,9 @@ import type {
   UserSnapshot,
 } from '@/lib/activity';
 import {
-  type Activity,
   ActivitySubject,
   ActivityType,
+  type Activity,
 } from '@/lib/generated/prisma/client';
 import { isRole, roleLabels } from '@/lib/permissions';
 import { cn } from '@/lib/utils';

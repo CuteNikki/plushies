@@ -1,13 +1,14 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+
 import {
   ChevronRightIcon,
   HeartIcon,
   HistoryIcon,
-  type LucideIcon,
   PlusIcon,
   UsersIcon,
+  type LucideIcon,
 } from 'lucide-react';
-import type { Metadata } from 'next';
-import Link from 'next/link';
 
 import { getDashboardStats } from '@/data/dashboard';
 import { isAdmin } from '@/lib/permissions';

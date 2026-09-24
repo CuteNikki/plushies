@@ -1,5 +1,6 @@
-import { HeartIcon } from 'lucide-react';
 import Link from 'next/link';
+
+import { HeartIcon } from 'lucide-react';
 
 const links = [
   { href: '/imprint', label: 'Imprint' },

@@ -4,8 +4,8 @@ import { after } from 'next/server';
 
 import {
   activityCutoff,
-  type ActivitySubject,
   pruneActivity,
+  type ActivitySubject,
 } from '@/lib/activity';
 import { db } from '@/lib/db';
 

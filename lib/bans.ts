@@ -25,7 +25,7 @@ export function banSnapshot(user: {
   banExpires: Date | null;
 }): BanSnapshot {
   return {
-    reason: user.banReason ?? '',
+    reason: user.banReason,
     expires: user.banExpires?.toISOString() ?? null,
   };
 }
@@ -37,7 +37,7 @@ export function banSnapshot(user: {
  */
 export async function applyBan(
   user: { id: string; name: string },
-  ban: { reason: string; expires: Date | null },
+  ban: { reason: string | null; expires: Date | null },
   actor: Actor,
   revertOf?: string
 ) {

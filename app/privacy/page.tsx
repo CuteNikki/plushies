@@ -65,12 +65,12 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Bans:</strong> if an admin bans an account, for example for
-            misuse, we store the reason, when the ban ends (if it does), which
-            admin banned it and when. The account is signed out everywhere and
-            cannot sign in until the ban ends or is lifted. When someone tries
-            to sign in to a banned account, we show them the reason. Bans and
-            lifted bans are recorded in the activity log. We do not ban IP
-            addresses.
+            misuse, we store the reason (if one is given), when the ban ends (if
+            it does), which admin banned it and when. The account is signed out
+            everywhere and cannot sign in until the ban ends or is lifted. When
+            someone tries to sign in to a banned account, we show them the
+            reason, if any. Bans and lifted bans are recorded in the activity
+            log. We do not ban IP addresses.
           </li>
           <li>
             <strong>Likes:</strong> when you like a plushie, we store that your

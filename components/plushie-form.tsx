@@ -25,6 +25,7 @@ import { UploadDropzone } from '@/lib/uploadthing';
 import { cn } from '@/lib/utils';
 
 import { BirthdayField } from '@/components/birthday-field';
+import { useConfirm } from '@/components/confirm-dialog';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
   const [facts, setFacts] = useState<PlushieFact[]>(plushie?.facts ?? []);
   const [uploadError, setUploadError] = useState<string>();
   const [deleting, startDelete] = useTransition();
+  const [ask, confirmDialog] = useConfirm();
 
   // Photos from this visit that aren't saved yet are cleaned up when removed
   // or on cancel. Ones left behind by closing the tab are swept up later.
@@ -345,11 +347,15 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             type='button'
             variant='destructive'
             disabled={saving || deleting}
-            onClick={() => {
-              if (!confirm(`Delete ${plushie.name} and all their photos?`)) {
-                return;
-              }
-              startDelete(() => deletePlushie(plushie.id));
+            onClick={async () => {
+              const confirmed = await ask({
+                title: `Delete ${plushie.name}?`,
+                description:
+                  'This also deletes all their photos. You can restore them from the activity page for 30 days.',
+                action: 'Delete',
+                destructive: true,
+              });
+              if (confirmed) startDelete(() => deletePlushie(plushie.id));
             }}
           >
             {deleting ? (
@@ -361,6 +367,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
           </Button>
         )}
       </div>
+      {confirmDialog}
     </form>
   );
 }

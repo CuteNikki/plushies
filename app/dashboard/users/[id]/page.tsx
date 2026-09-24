@@ -77,7 +77,7 @@ export default async function UserPage(
           description={
             banned
               ? undefined
-              : 'Signs them out everywhere and stops them signing in. They see the reason when they try.'
+              : 'Signs them out everywhere and stops them signing in. They see the reason, if you give one, when they try.'
           }
         >
           {banned ? (
@@ -111,11 +111,13 @@ export default async function UserPage(
                   ', until lifted.'
                 )}
               </p>
-              {user.banReason && (
-                <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
-                  {user.banReason}
-                </p>
-              )}
+              <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
+                {user.banReason ?? (
+                  <span className='text-muted-foreground italic'>
+                    No reason given
+                  </span>
+                )}
+              </p>
               <UnbanButton user={user} />
             </div>
           ) : isAdmin(user.role) ? (

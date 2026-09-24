@@ -300,7 +300,14 @@ function banChanges(entry: Activity): Change[] {
   const ban = (entry.after ?? entry.before) as BanSnapshot | null;
   if (!ban) return [];
   return [
-    { label: 'Reason', after: <Text value={ban.reason} /> },
+    {
+      label: 'Reason',
+      after: ban.reason ? (
+        <Text value={ban.reason} />
+      ) : (
+        <span className='text-muted-foreground italic'>none given</span>
+      ),
+    },
     {
       label: 'Ends',
       after: ban.expires ? (

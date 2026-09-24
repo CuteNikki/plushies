@@ -123,17 +123,16 @@ export async function stopViewingAs() {
 }
 
 /**
- * Bans someone: they're signed out everywhere and can't sign in until the
- * ban ends or is lifted. Admins can't be banned; make them an editor first.
+ * Bans someone, with an optional reason: they're signed out everywhere and
+ * can't sign in until the ban ends or is lifted. Admins can't be banned; make them an editor first.
  */
 export async function banUser(
   userId: string,
   input: { reason: string; duration: string }
 ): Promise<{ error?: string }> {
   const actor = await assertCanManage(userId);
-  const reason = input.reason.trim();
-  if (!reason) return { error: 'Give a reason, so they know why' };
-  if (reason.length > BAN_REASON_MAX) {
+  const reason = input.reason.trim() || null;
+  if (reason && reason.length > BAN_REASON_MAX) {
     return { error: `Keep the reason under ${BAN_REASON_MAX} characters` };
   }
   if (!isBanDuration(input.duration)) return { error: 'Pick how long' };

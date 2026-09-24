@@ -96,7 +96,7 @@ export function PasskeySettings({ passkeys }: { passkeys: Passkey[] }) {
                 </p>
               </div>
               <Button
-                variant='ghost'
+                variant='destructive'
                 size='icon'
                 disabled={removing === passkey.id}
                 onClick={() => remove(passkey)}

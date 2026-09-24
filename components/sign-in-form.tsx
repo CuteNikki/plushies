@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { FingerprintIcon, Loader2Icon } from 'lucide-react';
 import { DiscordIcon } from '@/components/discord-icon';
+import { FingerprintIcon, Loader2Icon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 
@@ -165,28 +165,34 @@ export function SignInForm({ next }: { next: string }) {
         <span className='h-px flex-1 bg-border' />
       </div>
 
-      <Button
-        variant='outline'
-        size='lg'
-        onClick={() =>
-          authClient.signIn.social({
-            provider: 'discord',
-            callbackURL: next,
-            // Better Auth adds ?error=… to it.
-            errorCallbackURL: `/sign-in?next=${encodeURIComponent(next)}`,
-          })
-        }
-      >
-        <DiscordIcon />
-        Use Discord
-      </Button>
-
-      {mode === 'sign-in' && (
-        <Button variant='outline' size='lg' onClick={() => signInWithPasskey()}>
-          <FingerprintIcon />
-          Use a passkey
+      <div className='flex flex-col gap-2'>
+        <Button
+          variant='outline'
+          size='lg'
+          onClick={() =>
+            authClient.signIn.social({
+              provider: 'discord',
+              callbackURL: next,
+              // Better Auth adds ?error=… to it.
+              errorCallbackURL: `/sign-in?next=${encodeURIComponent(next)}`,
+            })
+          }
+        >
+          <DiscordIcon />
+          Use Discord
         </Button>
-      )}
+
+        {mode === 'sign-in' && (
+          <Button
+            variant='outline'
+            size='lg'
+            onClick={() => signInWithPasskey()}
+          >
+            <FingerprintIcon />
+            Use Passkey
+          </Button>
+        )}
+      </div>
 
       {/* Covers every way of signing in above, including Discord. */}
       <p className='text-center text-xs text-balance text-muted-foreground'>

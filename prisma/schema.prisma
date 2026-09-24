@@ -125,3 +125,50 @@ model Verification {
   @@index([identifier])
   @@map("verification")
 }
+
+// Activity log
+
+/// What an activity entry is about.
+enum ActivitySubject {
+  PLUSHIE
+  USER
+}
+
+/// What happened. CREATED, UPDATED and DELETED apply to plushies and users;
+/// the rest only to users.
+enum ActivityType {
+  CREATED
+  UPDATED
+  DELETED
+  /// Changed or reset, never with the password itself.
+  PASSWORD_CHANGED
+  /// A sign-in method was added, e.g. Discord or a password.
+  LINKED
+  UNLINKED
+  /// An admin ended all of their sessions.
+  SIGNED_OUT
+  /// An admin sent them a password reset link.
+  PASSWORD_RESET_SENT
+}
+
+/// A change to a plushie or user, kept for 90 days.
+model Activity {
+  id          String          @id @default(cuid())
+  createdAt   DateTime        @default(now())
+  type        ActivityType
+  subject     ActivitySubject
+  /// The plushie's or user's id. Not a relation, so entries outlive them.
+  subjectId   String
+  /// Their name at the time, for when they have been deleted since.
+  subjectName String
+  /// Who made the change. Null if their account no longer existed.
+  actorId     String?
+  actorName   String?
+  /// The relevant fields before and after the change.
+  before      Json?
+  after       Json?
+
+  @@index([createdAt])
+  @@index([subject, createdAt])
+  @@map("activity")
+}

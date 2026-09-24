@@ -4,6 +4,7 @@ import { APIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins';
 
+import { withAccountActivity } from '@/lib/activity';
 import { db } from '@/lib/db';
 import {
   sendEmailChangeConfirmation,
@@ -13,7 +14,8 @@ import {
 import { ac, isAdmin, Role, roles } from '@/lib/permissions';
 
 export const auth = betterAuth({
-  database: prismaAdapter(db, { provider: 'postgresql' }),
+  // Logs account changes to the activity page as Better Auth makes them.
+  database: prismaAdapter(withAccountActivity(db), { provider: 'postgresql' }),
   emailAndPassword: {
     enabled: true,
     revokeSessionsOnPasswordReset: true,

@@ -6,6 +6,12 @@ import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { z } from 'zod';
 
+import {
+  ActivitySubject,
+  ActivityType,
+  logActivity,
+  plushieSnapshot,
+} from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { isNotInFuture, parseBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
@@ -85,18 +91,24 @@ function parseJson(value: FormDataEntryValue | null) {
   }
 }
 
+/** Returns who is making the change, for the activity log. */
 async function assertEditor() {
   const session = await getSession();
   if (!canEditPlushies(session?.user.role)) {
     throw new Error('Only editors can change plushies');
   }
+  return { id: session.user.id, name: session.user.name };
 }
+
+const withGallery = {
+  gallery: { orderBy: { position: 'asc' } },
+} satisfies Prisma.PlushieInclude;
 
 export async function savePlushie(
   _state: FormState,
   formData: FormData
 ): Promise<FormState> {
-  await assertEditor();
+  const actor = await assertEditor();
 
   const parsed = plushieSchema.safeParse({
     ...Object.fromEntries(formData),
@@ -126,7 +138,7 @@ export async function savePlushie(
     if (id) {
       const existing = await db.plushie.findUnique({
         where: { id },
-        include: { gallery: true },
+        include: withGallery,
       });
       if (!existing) return { error: 'This plushie no longer exists' };
 
@@ -136,16 +148,35 @@ export async function savePlushie(
         ...existing.gallery.map((i) => i.key),
       ].filter((key): key is string => !!key && !keptKeys.has(key));
 
-      await db.plushie.update({
+      const updated = await db.plushie.update({
         where: { id },
         data: {
           ...data,
           gallery: { deleteMany: {}, create: galleryRows },
         },
+        include: withGallery,
+      });
+      await logActivity({
+        type: ActivityType.UPDATED,
+        subject: ActivitySubject.PLUSHIE,
+        subjectId: id,
+        subjectName: updated.name,
+        actor,
+        before: plushieSnapshot(existing),
+        after: plushieSnapshot(updated),
       });
     } else {
-      await db.plushie.create({
+      const created = await db.plushie.create({
         data: { ...data, gallery: { create: galleryRows } },
+        include: withGallery,
+      });
+      await logActivity({
+        type: ActivityType.CREATED,
+        subject: ActivitySubject.PLUSHIE,
+        subjectId: created.id,
+        subjectName: created.name,
+        actor,
+        after: plushieSnapshot(created),
       });
     }
   } catch (error) {
@@ -165,11 +196,19 @@ export async function savePlushie(
 }
 
 export async function deletePlushie(id: string) {
-  await assertEditor();
+  const actor = await assertEditor();
 
   const plushie = await db.plushie.delete({
     where: { id },
-    include: { gallery: true },
+    include: withGallery,
+  });
+  await logActivity({
+    type: ActivityType.DELETED,
+    subject: ActivitySubject.PLUSHIE,
+    subjectId: plushie.id,
+    subjectName: plushie.name,
+    actor,
+    before: plushieSnapshot(plushie),
   });
   await deleteFiles(
     [plushie.thumbnailKey, ...plushie.gallery.map((i) => i.key)].filter(
@@ -190,7 +229,10 @@ export async function discardUploads(keys: string[]) {
   await deleteFiles(await unusedKeys(keys));
 }
 
-/** Only admins can manage users, and never their own account from here. */
+/**
+ * Only admins can manage users, and never their own account from here.
+ * Returns who is doing it, for the activity log.
+ */
 async function assertCanManage(userId: string) {
   const session = await getSession();
   if (!isAdmin(session?.user.role)) {
@@ -199,6 +241,7 @@ async function assertCanManage(userId: string) {
   if (session.user.id === userId) {
     throw new Error("You can't do that to your own account");
   }
+  return { id: session.user.id, name: session.user.name };
 }
 
 export async function setUserRole(userId: string, role: string) {
@@ -213,7 +256,7 @@ export async function setUserRole(userId: string, role: string) {
 }
 
 export async function sendUserPasswordReset(userId: string) {
-  await assertCanManage(userId);
+  const actor = await assertCanManage(userId);
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error('User not found');
 
@@ -221,13 +264,30 @@ export async function sendUserPasswordReset(userId: string) {
   await auth.api.requestPasswordReset({
     body: { email: user.email, redirectTo: '/reset-password' },
   });
+  await logActivity({
+    type: ActivityType.PASSWORD_RESET_SENT,
+    subject: ActivitySubject.USER,
+    subjectId: user.id,
+    subjectName: user.name,
+    actor,
+  });
 }
 
 export async function signOutUser(userId: string) {
-  await assertCanManage(userId);
+  const actor = await assertCanManage(userId);
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+
   await auth.api.revokeUserSessions({
     body: { userId },
     headers: await headers(),
+  });
+  await logActivity({
+    type: ActivityType.SIGNED_OUT,
+    subject: ActivitySubject.USER,
+    subjectId: user.id,
+    subjectName: user.name,
+    actor,
   });
 }
 

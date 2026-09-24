@@ -5,11 +5,12 @@ import {
 } from '@/components/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Admins see all three links, editors the first two. The texts are samples
+// Admins see all four links, editors the first three. The texts are samples
 // shaped like the real ones, so the cards wrap where the real ones do.
 const links = [
   { title: 'Plushies', text: '3 plushies with 7 photos' },
   { title: 'New Plushie', text: 'Add a new soft friend' },
+  { title: 'Activity', text: '5 changes in the last 7 days' },
   { title: 'Users', text: '1 account, 1 admin and 0 editors' },
 ];
 
@@ -20,7 +21,7 @@ export default function DashboardLoading() {
         title='Dashboard'
         subtitle='Everything for looking after the plushies.'
       />
-      <ul className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <ul className='grid gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <li
             key={link.title}

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Privacy Policy' };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title='Privacy Policy' updated='September 23, 2026'>
+    <LegalPage title='Privacy Policy' updated='September 24, 2026'>
       <LegalSection title='1. Who is responsible'>
         <p>
           The controller within the meaning of the GDPR is the operator named in
@@ -47,6 +47,16 @@ export default function PrivacyPage() {
             This keeps you signed in and lets you see and end your sessions in
             your account settings, together with the rough location (country and
             network provider) of each session.
+          </li>
+          <li>
+            <strong>Activity log:</strong> when a plushie or an account changes,
+            we record what changed, who changed it and when. For accounts, this
+            includes the name, email address, role and whether the email address
+            is confirmed, before and after the change, as well as added or
+            removed sign-in methods. Passwords are never recorded, only that one
+            was changed. Editors and admins can see changes to plushies; only
+            admins can see changes to accounts. This helps us notice mistakes
+            and misuse.
           </li>
           <li>
             <strong>Plushie content:</strong> the names, descriptions and photos
@@ -157,9 +167,11 @@ export default function PrivacyPage() {
           connected sign-in methods right away. Sessions end after at most seven
           days without use, password reset links expire after one hour, and
           email verification links after 24 hours. Plushie photos are deleted
-          from UploadThing when they are removed from a plushie. Log data, if
-          any, is kept only as long as needed for security and troubleshooting.
-          Browser storage stays on your device until it expires or you clear it.
+          from UploadThing when they are removed from a plushie. Activity log
+          entries are deleted after 90 days, including those about accounts that
+          were deleted before then. Log data, if any, is kept only as long as
+          needed for security and troubleshooting. Browser storage stays on your
+          device until it expires or you clear it.
         </p>
       </LegalSection>
 

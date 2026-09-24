@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
+import { formatDate, relative } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
 import { revokeOtherSessions, revokeSession } from '@/app/account/actions';
@@ -108,7 +109,7 @@ export function SessionList({ sessions }: { sessions: SessionInfo[] }) {
           );
         })}
       </ul>
-      <div className='flex flex-col xs:flex-row items-start justify-between gap-2'>
+      <div className='flex flex-col items-start justify-between gap-2 xs:flex-row'>
         {others.length > 0 && (
           <Button
             variant='destructive'
@@ -124,7 +125,7 @@ export function SessionList({ sessions }: { sessions: SessionInfo[] }) {
         )}
         {/* Required by the IPinfo Lite license. */}
         {sessions.some((session) => session.location) && (
-          <p className='xs:ml-auto text-xs text-muted-foreground'>
+          <p className='text-xs text-muted-foreground xs:ml-auto'>
             IP address data is powered by{' '}
             <a
               href='https://ipinfo.io'
@@ -180,35 +181,4 @@ function Detail({
       <span className='min-w-0 wrap-break-word'>{children}</span>
     </li>
   );
-}
-
-const relativeFormat = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-
-/** e.g. 'just now', '5 minutes ago', 'in 6 days'. */
-function relative(iso: string) {
-  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
-  const units: [Intl.RelativeTimeFormatUnit, number][] = [
-    ['day', 86_400],
-    ['hour', 3_600],
-    ['minute', 60],
-  ];
-  for (const [unit, size] of units) {
-    if (Math.abs(seconds) >= size) {
-      return relativeFormat.format(Math.round(seconds / size), unit);
-    }
-  }
-  return 'just now';
-}
-
-/** e.g. 'Sep 23, 2:05 PM', with the year only when it isn't this year. */
-function formatDate(iso: string) {
-  const date = new Date(iso);
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year:
-      date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
 }

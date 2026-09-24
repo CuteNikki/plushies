@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   Heart,
+  History,
   type LucideIcon,
   Plus,
   Users,
@@ -8,6 +9,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { ActivitySubject } from '@/lib/activity';
 import { db } from '@/lib/db';
 import { isAdmin, Role } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
@@ -24,14 +26,23 @@ export default async function DashboardPage() {
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
 
-  const [plushies, thumbnails, galleryPhotos, roles] = await Promise.all([
-    db.plushie.count(),
-    db.plushie.count({ where: { thumbnailKey: { not: null } } }),
-    db.plushieImage.count(),
-    admin
-      ? db.user.groupBy({ by: ['role'], _count: true })
-      : Promise.resolve([]),
-  ]);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [plushies, thumbnails, galleryPhotos, roles, changes] =
+    await Promise.all([
+      db.plushie.count(),
+      db.plushie.count({ where: { thumbnailKey: { not: null } } }),
+      db.plushieImage.count(),
+      admin
+        ? db.user.groupBy({ by: ['role'], _count: true })
+        : Promise.resolve([]),
+      // Editors only see plushie changes on the activity page.
+      db.activity.count({
+        where: {
+          createdAt: { gte: weekAgo },
+          subject: admin ? undefined : ActivitySubject.PLUSHIE,
+        },
+      }),
+    ]);
   const users = roles.reduce((sum, row) => sum + row._count, 0);
   const withRole = (role: Role) =>
     roles.find((row) => row.role === role)?._count ?? 0;
@@ -48,6 +59,12 @@ export default async function DashboardPage() {
       icon: Plus,
       title: 'New Plushie',
       text: 'Add a new soft friend',
+    },
+    {
+      href: '/dashboard/activity',
+      icon: History,
+      title: 'Activity',
+      text: `${count(changes, 'change')} in the last 7 days`,
     },
     ...(admin
       ? [
@@ -72,7 +89,7 @@ export default async function DashboardPage() {
         </p>
       </Reveal>
 
-      <RevealGroup as='ul' className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+      <RevealGroup as='ul' className='grid gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <RevealItem as='li' key={link.href}>
             <DashboardLink {...link} />

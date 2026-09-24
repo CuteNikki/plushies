@@ -53,7 +53,11 @@ export default async function UserPage(
               {user.email}
             </PrivateText>
             <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
-              <UserBadges user={user} banned={banned} />
+              <UserBadges
+                user={user}
+                passkeys={user.passkeys.length}
+                banned={banned}
+              />
               <span>
                 Joined <LocalTime iso={user.createdAt.toISOString()} />
               </span>
@@ -64,6 +68,7 @@ export default async function UserPage(
             <UserActions
               user={{ id: user.id, name: user.name, role: user.role }}
               banned={banned}
+              twoFactor={!!user.twoFactorEnabled}
               disabled={isYou}
               afterDelete='/dashboard/users'
             />

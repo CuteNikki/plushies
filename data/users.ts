@@ -6,7 +6,10 @@ import { db } from '@/lib/db';
 export async function getUsers() {
   return db.user.findMany({
     orderBy: { createdAt: 'asc' },
-    include: { accounts: { select: { providerId: true } } },
+    include: {
+      accounts: { select: { providerId: true } },
+      _count: { select: { passkeys: true } },
+    },
   });
 }
 
@@ -19,6 +22,7 @@ export async function getUser(id: string) {
     where: { id },
     include: {
       accounts: { select: { providerId: true } },
+      passkeys: { select: { id: true } },
       bannedBy: { select: { id: true, name: true } },
       comments: {
         where: { deletedAt: null },

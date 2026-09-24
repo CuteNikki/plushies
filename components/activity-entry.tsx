@@ -62,6 +62,8 @@ const icons: Record<ActivityType, LucideIcon> = {
 const methodLabels: Record<string, string> = {
   credential: 'a password',
   discord: 'Discord',
+  passkey: 'a passkey',
+  'two-factor': 'two-step sign-in',
 };
 
 export function ActivityEntry({

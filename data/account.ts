@@ -4,8 +4,11 @@ import { db } from '@/lib/db';
 import { getIpLocation } from '@/lib/ip-location';
 import { describeUserAgent } from '@/lib/user-agent';
 
+/** How signing in with a password asks for a second step, if at all. */
+export type TwoFactorMethod = 'app' | 'email' | null;
+
 /**
- * Sign-in methods and sessions for the account page. Takes the signed-in
+ * Sign-in methods, two-step sign-in, passkeys and sessions for the account page. Takes the signed-in
  * user's session, which the page has already checked.
  */
 export async function getAccountSettings(current: {
@@ -14,7 +17,7 @@ export async function getAccountSettings(current: {
 }) {
   // Straight from the database: Better Auth's listSessions would check the
   // session cookie again first, a second round trip for the same answer.
-  const [accounts, sessions] = await Promise.all([
+  const [accounts, sessions, user, app, passkeys] = await Promise.all([
     db.account.findMany({
       where: { userId: current.userId },
       select: { id: true, providerId: true },
@@ -23,8 +26,27 @@ export async function getAccountSettings(current: {
       where: { userId: current.userId, expiresAt: { gt: new Date() } },
       orderBy: { updatedAt: 'desc' },
     }),
+    db.user.findUniqueOrThrow({
+      where: { id: current.userId },
+      select: { twoFactorEnabled: true },
+    }),
+    // An authenticator app counts once its first code confirmed it.
+    db.twoFactor.findFirst({
+      where: { userId: current.userId, verified: { not: false } },
+      select: { id: true },
+    }),
+    db.passkey.findMany({
+      where: { userId: current.userId },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, name: true, createdAt: true, backedUp: true },
+    }),
   ]);
   const providers = accounts.map((account) => account.providerId);
+  const twoFactor: TwoFactorMethod = !user.twoFactorEnabled
+    ? null
+    : app
+      ? 'app'
+      : 'email';
 
   const sessionInfos = await Promise.all(
     sessions.map(async (s) => {
@@ -51,5 +73,10 @@ export async function getAccountSettings(current: {
     hasPassword: providers.includes('credential'),
     discordAccountId: accounts.find((a) => a.providerId === 'discord')?.id,
     sessions: sessionInfos,
+    twoFactor,
+    passkeys: passkeys.map((passkey) => ({
+      ...passkey,
+      createdAt: passkey.createdAt?.toISOString() ?? null,
+    })),
   };
 }

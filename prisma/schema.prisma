@@ -109,29 +109,33 @@ enum Role {
 }
 
 model User {
-  id            String        @id
-  name          String
-  email         String        @unique
-  emailVerified Boolean       @default(false)
-  image         String?
-  role          Role          @default(USER)
-  banned        Boolean?      @default(false)
-  banReason     String?
+  id               String        @id
+  name             String
+  email            String        @unique
+  emailVerified    Boolean       @default(false)
+  image            String?
+  role             Role          @default(USER)
+  /// Whether signing in with a password asks for a second step.
+  twoFactorEnabled Boolean?      @default(false)
+  banned           Boolean?      @default(false)
+  banReason        String?
   /// When the ban ends by itself. Null bans for good.
-  banExpires    DateTime?
+  banExpires       DateTime?
   /// The admin who banned them, and when. Better Auth doesn't know these,
   /// and leaves them behind when a ban expires, so check banned first.
-  bannedById    String?
-  bannedBy      User?         @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
-  bannedAt      DateTime?
+  bannedById       String?
+  bannedBy         User?         @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
+  bannedAt         DateTime?
   /// Accounts this admin banned.
-  usersBanned   User[]        @relation("BannedBy")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  likes         PlushieLike[]
-  comments      Comment[]
+  usersBanned      User[]        @relation("BannedBy")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  sessions         Session[]
+  accounts         Account[]
+  twoFactors       TwoFactor[]
+  passkeys         Passkey[]
+  likes            PlushieLike[]
+  comments         Comment[]
 
   @@map("user")
 }
@@ -170,6 +174,47 @@ model Account {
 
   @@index([userId])
   @@map("account")
+}
+
+/// An authenticator app set up for two-step sign-in, with backup codes.
+/// Accounts using email codes only have none.
+model TwoFactor {
+  id                      String    @id
+  /// Encrypted by Better Auth, like the backup codes.
+  secret                  String
+  backupCodes             String
+  userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// False until the first code from the app confirms it's set up.
+  verified                Boolean?  @default(true)
+  /// For locking sign-in after too many wrong codes.
+  failedVerificationCount Int?      @default(0)
+  lockedUntil             DateTime?
+
+  @@index([secret])
+  @@index([userId])
+  @@map("two_factor")
+}
+
+/// A passkey someone can sign in with instead of a password.
+model Passkey {
+  id           String    @id
+  name         String?
+  publicKey    String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime?
+  /// Which kind of authenticator made it, when it says.
+  aaguid       String?
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 model Verification {

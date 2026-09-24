@@ -60,7 +60,11 @@ export default async function UsersPage() {
                   {user.email}
                 </PrivateText>
                 <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
-                  <UserBadges user={user} banned={isBanned(user)} />
+                  <UserBadges
+                    user={user}
+                    passkeys={user._count.passkeys}
+                    banned={isBanned(user)}
+                  />
                   <span>
                     Joined{' '}
                     {user.createdAt.toLocaleDateString('en-US', {
@@ -75,6 +79,7 @@ export default async function UsersPage() {
                 <UserActions
                   user={{ id: user.id, name: user.name, role: user.role }}
                   banned={isBanned(user)}
+                  twoFactor={!!user.twoFactorEnabled}
                   disabled={isYou}
                 />
               </div>

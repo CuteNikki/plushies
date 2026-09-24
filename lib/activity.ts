@@ -53,7 +53,10 @@ export type UserSnapshot = {
   role: string;
 };
 
-/** For LINKED and UNLINKED: which sign-in method, e.g. 'discord'. */
+/**
+ * For LINKED and UNLINKED: which sign-in method, e.g. 'discord', 'passkey',
+ * or 'two-factor' for two-step sign-in.
+ */
 export type MethodSnapshot = { method: string };
 
 /** A comment an editor or admin deleted, so it can be restored. */
@@ -189,6 +192,8 @@ const userSelect = {
   email: true,
   emailVerified: true,
   role: true,
+  // Not in the snapshot: turning it on or off is logged like a sign-in method.
+  twoFactorEnabled: true,
 } satisfies Prisma.UserSelect;
 
 type UserRow = Prisma.UserGetPayload<{ select: typeof userSelect }>;
@@ -252,7 +257,20 @@ export function withAccountActivity(client: typeof db) {
     });
     for (const old of before) {
       const now = after.find((user) => user.id === old.id);
-      if (!now || same(userSnapshot(old), userSnapshot(now))) continue;
+      if (!now) continue;
+      if (!!old.twoFactorEnabled !== !!now.twoFactorEnabled) {
+        logActivity({
+          type: now.twoFactorEnabled
+            ? ActivityType.LINKED
+            : ActivityType.UNLINKED,
+          subject: ActivitySubject.USER,
+          subjectId: now.id,
+          subjectName: now.name,
+          actor: await accountActor(now),
+          [now.twoFactorEnabled ? 'after' : 'before']: { method: 'two-factor' },
+        });
+      }
+      if (same(userSnapshot(old), userSnapshot(now))) continue;
       logActivity({
         type: ActivityType.UPDATED,
         subject: ActivitySubject.USER,
@@ -301,6 +319,25 @@ export function withAccountActivity(client: typeof db) {
     });
   }
 
+  async function logPasskey(type: ActivityType, userId: string) {
+    const user = await client.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true },
+    });
+    // Deleting an account removes its passkeys too; its own entry covers it.
+    if (!user) return;
+    logActivity({
+      type,
+      subject: ActivitySubject.USER,
+      subjectId: user.id,
+      subjectName: user.name,
+      actor: await accountActor(user),
+      [type === ActivityType.LINKED ? 'after' : 'before']: {
+        method: 'passkey',
+      },
+    });
+  }
+
   return client.$extends({
     query: {
       user: {
@@ -346,6 +383,36 @@ export function withAccountActivity(client: typeof db) {
           if (args.where) await removeCommentsOf(args.where);
           const result = await query(args);
           await logDeletes(before);
+          return result;
+        },
+      },
+      passkey: {
+        async create({ args, query }) {
+          const result = await query(args);
+          await logPasskey(
+            ActivityType.LINKED,
+            (args.data as { userId: string }).userId
+          );
+          return result;
+        },
+        async delete({ args, query }) {
+          const passkey = await client.passkey.findFirst({
+            where: args.where,
+            select: { userId: true },
+          });
+          const result = await query(args);
+          if (passkey) await logPasskey(ActivityType.UNLINKED, passkey.userId);
+          return result;
+        },
+        async deleteMany({ args, query }) {
+          const passkeys = await client.passkey.findMany({
+            where: args.where,
+            select: { userId: true },
+          });
+          const result = await query(args);
+          for (const passkey of passkeys) {
+            await logPasskey(ActivityType.UNLINKED, passkey.userId);
+          }
           return result;
         },
       },

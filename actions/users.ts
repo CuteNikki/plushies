@@ -91,6 +91,35 @@ export async function deleteUser(userId: string) {
 }
 
 /**
+ * Turns off someone's two-step sign-in, e.g. when they lost their phone and
+ * their backup codes. They sign in with just their password again, and can
+ * set it up anew. Their trusted devices and sessions stay.
+ */
+export async function resetTwoFactor(userId: string) {
+  const actor = await assertCanManage(userId);
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+
+  // Straight to the database: it's the admin doing it, not them.
+  await db.$transaction([
+    db.twoFactor.deleteMany({ where: { userId } }),
+    db.user.update({
+      where: { id: userId },
+      data: { twoFactorEnabled: false },
+    }),
+  ]);
+  logActivity({
+    type: ActivityType.UNLINKED,
+    subject: ActivitySubject.USER,
+    subjectId: user.id,
+    subjectName: user.name,
+    actor,
+    before: { method: 'two-factor' },
+  });
+  revalidatePath('/dashboard/users', 'layout');
+}
+
+/**
  * Lets an admin see the site as someone else, e.g. to check what editors or
  * viewers see. Only for looking: changes are turned off until they stop.
  */

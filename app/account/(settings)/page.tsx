@@ -6,9 +6,11 @@ import { requireUser } from '@/lib/session';
 import { DeleteAccount } from '@/components/account/delete-account';
 import { EmailSettings } from '@/components/account/email-settings';
 import { LinkedAccounts } from '@/components/account/linked-accounts';
+import { PasskeySettings } from '@/components/account/passkey-settings';
 import { PasswordForm } from '@/components/account/password-form';
 import { ProfileForm } from '@/components/account/profile-form';
 import { SessionList } from '@/components/account/session-list';
+import { TwoFactorSettings } from '@/components/account/two-factor-settings';
 import { Reveal } from '@/components/motion';
 
 export const metadata: Metadata = { title: 'Account Settings' };
@@ -17,8 +19,14 @@ export default async function AccountPage(props: PageProps<'/account'>) {
   const { user, session } = await requireUser();
   const { error } = await props.searchParams;
 
-  const { providers, hasPassword, discordAccountId, sessions } =
-    await getAccountSettings({ userId: user.id, sessionId: session.id });
+  const {
+    providers,
+    hasPassword,
+    discordAccountId,
+    sessions,
+    twoFactor,
+    passkeys,
+  } = await getAccountSettings({ userId: user.id, sessionId: session.id });
 
   return (
     <div className='mx-auto flex max-w-2xl flex-col gap-6'>
@@ -59,6 +67,17 @@ export default async function AccountPage(props: PageProps<'/account'>) {
           discordAccountId={discordAccountId}
           error={typeof error === 'string' ? error : undefined}
         />
+      </Section>
+
+      <Section title='Two-Step Sign-In'>
+        <TwoFactorSettings method={twoFactor} hasPassword={hasPassword} />
+      </Section>
+
+      <Section
+        title='Passkeys'
+        description='Sign in with your fingerprint, face or device PIN instead of a password. Passkeys only work on this device or the ones it syncs with.'
+      >
+        <PasskeySettings passkeys={passkeys} />
       </Section>
 
       <Section

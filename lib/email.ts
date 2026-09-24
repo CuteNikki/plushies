@@ -93,6 +93,29 @@ export async function sendDeleteAccountEmail(
   });
 }
 
+/** The code for the second step of signing in, when they chose email codes. */
+export async function sendTwoFactorCode(
+  to: string,
+  name: string,
+  code: string
+) {
+  await sendEmail({
+    to,
+    subject: `${code} is your Plushies sign-in code`,
+    text: `Hi ${name},
+
+Your code to finish signing in is:
+
+${code}
+
+It works for five minutes. If you didn't just sign in, someone may know your password: change it in your account settings.`,
+    html: `<p>Hi ${escapeHtml(name)},</p>
+<p>Your code to finish signing in is:</p>
+<p style="font-size:24px;font-weight:bold;letter-spacing:4px">${code}</p>
+<p>It works for five minutes. If you didn't just sign in, someone may know your password: change it in your account settings.</p>`,
+  });
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')

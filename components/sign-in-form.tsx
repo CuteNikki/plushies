@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Loader2Icon } from 'lucide-react';
+import { FingerprintIcon, Loader2Icon } from 'lucide-react';
 import { DiscordIcon } from '@/components/discord-icon';
 
 import { authClient } from '@/lib/auth-client';
 
+import { SEND_CODE_KEY } from '@/components/two-factor-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,12 +22,44 @@ export function SignInForm({ next }: { next: string }) {
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
 
+  /**
+   * Signs in with a passkey. With `autoFill`, the browser offers saved
+   * passkeys in the email field's suggestions instead of opening a prompt.
+   */
+  async function signInWithPasskey(autoFill = false) {
+    const result = await authClient.signIn.passkey({ autoFill });
+    const error = result?.error;
+    if (!error) {
+      router.push(next);
+      return router.refresh();
+    }
+    const code = 'code' in error ? error.code : undefined;
+    if (code === 'BANNED_USER') return router.push('/banned');
+    // Closing the browser's prompt, or ignoring the suggestions, is fine.
+    if (autoFill || code === 'AUTH_CANCELLED' || code?.startsWith('ERROR_')) {
+      return;
+    }
+    setError(error.message ?? 'That passkey didn’t work');
+  }
+
+  useEffect(() => {
+    // Only where the browser can offer passkeys among the autofill
+    // suggestions; elsewhere the button below opens its prompt.
+    void window.PublicKeyCredential?.isConditionalMediationAvailable?.().then(
+      (available) => {
+        if (available) void signInWithPasskey(true);
+      }
+    );
+    // Once, when the form shows.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function handleSubmit(formData: FormData) {
     setPending(true);
     setError(undefined);
     const email = String(formData.get('email'));
     const password = String(formData.get('password'));
-    const { error } =
+    const { data, error } =
       mode === 'sign-in'
         ? await authClient.signIn.email({ email, password })
         : await authClient.signUp.email({
@@ -40,6 +73,20 @@ export function SignInForm({ next }: { next: string }) {
     // The ban notice cookie is set now, so the page can say why.
     if (error?.code === 'BANNED_USER') return router.push('/banned');
     if (error) return setError(error.message ?? 'Something went wrong');
+    // Two-step sign-in is on: the code comes next, on its own page.
+    if (data && 'twoFactorRedirect' in data && data.twoFactorRedirect) {
+      const methods =
+        'twoFactorMethods' in data && Array.isArray(data.twoFactorMethods)
+          ? (data.twoFactorMethods as string[])
+          : [];
+      const query = new URLSearchParams({ next, methods: methods.join(',') });
+      try {
+        sessionStorage.setItem(SEND_CODE_KEY, '1');
+      } catch {
+        // Without storage, the next page offers a button to send the code.
+      }
+      return router.push(`/two-factor?${query}`);
+    }
     if (mode === 'sign-up') {
       toast.success('Account created! Check your inbox to verify your email.');
       router.push('/account');
@@ -65,7 +112,7 @@ export function SignInForm({ next }: { next: string }) {
             name='email'
             type='email'
             required
-            autoComplete='email'
+            autoComplete={mode === 'sign-in' ? 'email webauthn' : 'email'}
           />
         </div>
         <div className='flex flex-col gap-1'>
@@ -133,6 +180,13 @@ export function SignInForm({ next }: { next: string }) {
         <DiscordIcon />
         Use Discord
       </Button>
+
+      {mode === 'sign-in' && (
+        <Button variant='outline' size='lg' onClick={() => signInWithPasskey()}>
+          <FingerprintIcon />
+          Use a passkey
+        </Button>
+      )}
 
       {/* Covers every way of signing in above, including Discord. */}
       <p className='text-center text-xs text-balance text-muted-foreground'>

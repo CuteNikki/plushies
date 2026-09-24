@@ -1,3 +1,4 @@
+import { passkey } from '@better-auth/passkey';
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import {
@@ -6,7 +7,7 @@ import {
   getSessionFromCtx,
 } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
-import { admin } from 'better-auth/plugins';
+import { admin, twoFactor } from 'better-auth/plugins';
 
 import { withAccountActivity } from '@/lib/activity';
 import { banNotice } from '@/lib/ban-notice';
@@ -15,6 +16,7 @@ import {
   sendDeleteAccountEmail,
   sendEmailChangeConfirmation,
   sendPasswordResetEmail,
+  sendTwoFactorCode,
   sendVerificationEmail,
 } from '@/lib/email';
 import {
@@ -24,12 +26,17 @@ import {
   roles,
   VIEWING_AS_MESSAGE,
 } from '@/lib/permissions';
+import { site } from '@/lib/site';
+
+/** Where the auth endpoints run. Passkeys only work on this site. */
+const authURL = new URL(process.env.BETTER_AUTH_URL ?? 'http://localhost:3000');
 
 /** What still works while an admin views the site as someone else. */
 const allowedWhileViewingAs = new Set([
   '/get-session',
   '/list-sessions',
   '/list-accounts',
+  '/passkey/list-user-passkeys',
   '/sign-out',
   '/admin/stop-impersonating',
 ]);
@@ -138,6 +145,13 @@ export const auth = betterAuth({
         assertNotLastAdmin(user as typeof user & { role?: string }),
     },
   },
+  rateLimit: {
+    // On in production only, per IP address. Sign-in codes are emails, so
+    // they get a tighter limit than the default 100 requests per 10 seconds.
+    customRules: {
+      '/two-factor/send-otp': { window: 60, max: 3 },
+    },
+  },
   hooks: {
     // Viewing as someone is for looking only: nothing on their account can be
     // changed until the admin stops. Plushie actions check this themselves.
@@ -163,6 +177,27 @@ export const auth = betterAuth({
       defaultRole: Role.USER,
       adminRoles: [Role.ADMIN],
       bannedUserMessage: 'This account is banned.',
+    }),
+    // Two-step sign-in, for signing in with a password: a code from an
+    // authenticator app or by email, or a backup code. Discord and passkeys
+    // have their own protection, so they skip it.
+    twoFactor({
+      issuer: site.name,
+      otpOptions: {
+        period: 5,
+        // Only a hash is kept, like a password.
+        storeOTP: 'hashed',
+        sendOTP: ({ user, otp }) => {
+          void sendTwoFactorCode(user.email, user.name, otp).catch((error) =>
+            console.error('Failed to send sign-in code', error)
+          );
+        },
+      },
+    }),
+    passkey({
+      rpID: authURL.hostname,
+      rpName: site.name,
+      origin: authURL.origin,
     }),
     // Must be last: lets server actions set auth cookies.
     nextCookies(),

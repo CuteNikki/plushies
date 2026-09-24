@@ -23,10 +23,11 @@
     "encrypt-oauth-tokens": "bun scripts/encrypt-oauth-tokens.ts"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.7.6",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@uploadthing/react": "^7.3.3",
-    "better-auth": "^1.7.5",
+    "better-auth": "^1.7.6",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "lucide-react": "^1.47.0",
@@ -36,6 +37,7 @@
     "radix-ui": "^1.6.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-qr-code": "^2.2.0",
     "resend": "^6.28.1",
     "server-only": "^0.0.1",
     "shadcn": "^4.21.0",

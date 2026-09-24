@@ -20,6 +20,12 @@ export default function AccountLoading() {
         description='Connect Discord to sign in with it too, whichever way you signed up.'
         height='h-24'
       />
+      <SectionSkeleton title='Two-Step Sign-In' height='h-40 sm:h-28' />
+      <SectionSkeleton
+        title='Passkeys'
+        description='Sign in with your fingerprint, face or device PIN instead of a password. Passkeys only work on this device or the ones it syncs with.'
+        height='h-36 sm:h-21'
+      />
       <SectionSkeleton
         title='Sessions'
         description='Everywhere you are signed in right now.'

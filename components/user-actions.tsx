@@ -10,11 +10,13 @@ import {
   KeyRoundIcon,
   LogOutIcon,
   MoreHorizontalIcon,
+  ShieldOffIcon,
   Trash2Icon,
 } from 'lucide-react';
 
 import {
   deleteUser,
+  resetTwoFactor,
   sendUserPasswordReset,
   signOutUser,
   viewAsUser,
@@ -35,12 +37,15 @@ import {
 export function UserActions({
   user,
   banned,
+  twoFactor,
   disabled,
   afterDelete,
 }: {
   user: { id: string; name: string; role: string };
   /** Offers lifting the ban instead of banning, and hides viewing as them. */
   banned?: boolean;
+  /** Offers turning off their two-step sign-in, if they're locked out. */
+  twoFactor?: boolean;
   disabled?: boolean;
   /** Where to go once the account is deleted, e.g. away from its page. */
   afterDelete?: string;
@@ -125,6 +130,27 @@ export function UserActions({
             <LogOutIcon />
             Sign out everywhere
           </DropdownMenuItem>
+          {twoFactor && (
+            <DropdownMenuItem
+              onClick={async () => {
+                const confirmed = await ask({
+                  title: `Reset ${user.name}’s two-step sign-in?`,
+                  description:
+                    'For when they lost their phone and backup codes. They sign in with just their password until they set it up again.',
+                  action: 'Reset',
+                  destructive: true,
+                });
+                if (!confirmed) return;
+                run(
+                  () => resetTwoFactor(user.id),
+                  `${user.name}’s two-step sign-in is off`
+                );
+              }}
+            >
+              <ShieldOffIcon />
+              Reset two-step sign-in
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           {/* Admins can't be banned; make them an editor first. */}
           {!isAdmin(user.role) &&

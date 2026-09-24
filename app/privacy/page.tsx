@@ -48,6 +48,19 @@ export default function PrivacyPage() {
             cannot change anything. This is recorded in the activity log.
           </li>
           <li>
+            <strong>Two-step sign-in and passkeys:</strong> if you turn on
+            two-step sign-in with an authenticator app, we store its secret key
+            and your backup codes, both encrypted. With email codes, we email
+            you a code each time you sign in with your password and keep only a
+            hash of it until it is used or expires. If you add a passkey, we
+            store its public key, an identifier, its name and when it was added;
+            the private key never leaves your device or password manager. We
+            also count failed codes, to lock sign-in for a while after too many.
+            If you are locked out, an admin can turn two-step sign-in off for
+            you; turning it on or off and adding or removing passkeys is
+            recorded in the activity log.
+          </li>
+          <li>
             <strong>Sessions:</strong> while you are signed in, we store a
             session with its IP address, browser information and timestamps.
             This keeps you signed in and lets you see and end your sessions in
@@ -100,7 +113,8 @@ export default function PrivacyPage() {
             change a confirmed address, we first ask you to confirm from the old
             one. If you ask to reset your password, we send an email with a
             reset link, and if you ask to delete your account, we send a link to
-            confirm. We store whether your address is confirmed.
+            confirm. With two-step sign-in by email, we send you a sign-in code.
+            We store whether your address is confirmed.
           </li>
           <li>
             <strong>Technical data:</strong> when you visit the site, your IP
@@ -124,6 +138,13 @@ export default function PrivacyPage() {
             seven days, renewed while you use the site): keeps you signed in.
           </li>
           <li>
+            <strong>Two-step sign-in cookies</strong> (only with two-step
+            sign-in on): one for up to ten minutes between entering your
+            password and your code, and one for 30 days if you choose not to be
+            asked again on a device. Signing in with a passkey sets a similar
+            short-lived cookie for the few minutes it takes.
+          </li>
+          <li>
             <strong>A ban notice cookie</strong> (only after trying to sign in
             to a banned account, for 15 minutes): lets the page that explains
             the ban show its reason to you and no one else.
@@ -138,10 +159,10 @@ export default function PrivacyPage() {
       <LegalSection title='5. Why there is no cookie banner'>
         <p>
           The storage above is strictly necessary to provide functions you
-          explicitly use, such as staying signed in, switching the theme or
-          seeing why an account is banned (§ 25 (2) no. 2 TDDDG). We use no
-          advertising, analytics or other tracking technologies, so there is
-          nothing to ask consent for.
+          explicitly use, such as staying signed in, two-step sign-in, switching
+          the theme or seeing why an account is banned (§ 25 (2) no. 2 TDDDG).
+          We use no advertising, analytics or other tracking technologies, so
+          there is nothing to ask consent for.
         </p>
       </LegalSection>
 
@@ -205,7 +226,9 @@ export default function PrivacyPage() {
           deletes it. Deleting your account also removes your sessions and
           connected sign-in methods right away. Sessions end after at most seven
           days without use, password reset links expire after one hour, and
-          email verification links after 24 hours. Ban details are removed when
+          email verification links after 24 hours. Sign-in codes by email expire
+          after five minutes. Two-step sign-in data and passkeys are kept until
+          you remove them or delete your account. Ban details are removed when
           an admin lifts the ban, or when the account next signs in after the
           ban ended. Comments are kept until you, an editor or an admin deletes
           them. When your account is deleted, your comments are deleted with it;

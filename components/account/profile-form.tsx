@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -52,7 +52,7 @@ export function ProfileForm({ name }: { name: string }) {
         />
       </div>
       <Button type='submit' disabled={pending}>
-        {pending && <Loader2 className='animate-spin' />}
+        {pending && <Loader2Icon className='animate-spin' />}
         Save
       </Button>
     </form>

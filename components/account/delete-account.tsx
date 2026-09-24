@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2Icon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 
 import { authClient } from '@/lib/auth-client';
@@ -61,7 +61,11 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
           {error && <p className='text-sm text-destructive'>{error}</p>}
           <div className='flex gap-2'>
             <Button type='submit' variant='destructive' disabled={pending}>
-              {pending ? <Loader2 className='animate-spin' /> : <Trash2 />}
+              {pending ? (
+                <Loader2Icon className='animate-spin' />
+              ) : (
+                <Trash2Icon />
+              )}
               Delete Account
             </Button>
             <Button
@@ -82,7 +86,7 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
           className='w-fit'
           onClick={() => setOpen(true)}
         >
-          <Trash2 />
+          <Trash2Icon />
           Delete account
         </Button>
       )}

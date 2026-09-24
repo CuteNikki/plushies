@@ -1,4 +1,4 @@
-import { BadgeCheck } from 'lucide-react';
+import { BadgeCheckIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 
 import { getUsers } from '@/data/users';
@@ -63,7 +63,7 @@ export default async function UsersPage() {
                 <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
                   {user.emailVerified ? (
                     <Badge>
-                      <BadgeCheck />
+                      <BadgeCheckIcon />
                       Verified
                     </Badge>
                   ) : (

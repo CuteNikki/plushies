@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -105,7 +105,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
           </label>
         )}
         <Button type='submit' disabled={pending} className='w-fit'>
-          {pending && <Loader2 className='animate-spin' />}
+          {pending && <Loader2Icon className='animate-spin' />}
           {hasPassword ? 'Change Password' : 'Add Password'}
         </Button>
       </div>

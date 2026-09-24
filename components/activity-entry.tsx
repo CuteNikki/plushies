@@ -1,15 +1,15 @@
 import {
-  ImageOff,
-  KeyRound,
-  Link2,
-  LogOut,
+  ImageOffIcon,
+  KeyRoundIcon,
+  Link2Icon,
+  LogOutIcon,
   type LucideIcon,
-  Mail,
-  Pencil,
-  Plus,
-  Trash2,
-  Unlink,
-  UserPlus,
+  MailIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  UnlinkIcon,
+  UserPlusIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -33,14 +33,14 @@ import { PrivateText } from '@/components/private-text';
 import { Badge } from '@/components/ui/badge';
 
 const icons: Record<ActivityType, LucideIcon> = {
-  CREATED: Plus,
-  UPDATED: Pencil,
-  DELETED: Trash2,
-  PASSWORD_CHANGED: KeyRound,
-  LINKED: Link2,
-  UNLINKED: Unlink,
-  SIGNED_OUT: LogOut,
-  PASSWORD_RESET_SENT: Mail,
+  CREATED: PlusIcon,
+  UPDATED: PencilIcon,
+  DELETED: Trash2Icon,
+  PASSWORD_CHANGED: KeyRoundIcon,
+  LINKED: Link2Icon,
+  UNLINKED: UnlinkIcon,
+  SIGNED_OUT: LogOutIcon,
+  PASSWORD_RESET_SENT: MailIcon,
 };
 
 const methodLabels: Record<string, string> = {
@@ -58,7 +58,7 @@ export function ActivityEntry({
   const Icon =
     entry.subject === ActivitySubject.USER &&
     entry.type === ActivityType.CREATED
-      ? UserPlus
+      ? UserPlusIcon
       : icons[entry.type];
   const changes =
     entry.subject === ActivitySubject.PLUSHIE
@@ -469,7 +469,7 @@ function Photo({
         )}
         title='This photo was deleted'
       >
-        <ImageOff className='size-4' aria-label='Deleted photo' />
+        <ImageOffIcon className='size-4' aria-label='Deleted photo' />
       </span>
     );
   }

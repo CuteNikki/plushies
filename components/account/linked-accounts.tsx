@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Loader2, Mail } from 'lucide-react';
+import { CheckIcon, Loader2Icon, MailIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -70,11 +70,11 @@ export function LinkedAccounts({
   return (
     <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
       <li className='flex items-center gap-3 p-3 px-4'>
-        <Mail className='size-5 text-muted-foreground' />
+        <MailIcon className='size-5 text-muted-foreground' />
         <span className='flex-1 font-medium'>Email and password</span>
         {hasPassword ? (
           <Button variant='secondary' size='sm' disabled>
-            <Check />
+            <CheckIcon />
             Done
           </Button>
         ) : (
@@ -98,12 +98,12 @@ export function LinkedAccounts({
             }
             onClick={disconnectDiscord}
           >
-            {pending && <Loader2 className='animate-spin' />}
+            {pending && <Loader2Icon className='animate-spin' />}
             Disconnect
           </Button>
         ) : (
           <Button size='sm' disabled={pending} onClick={connectDiscord}>
-            {pending && <Loader2 className='animate-spin' />}
+            {pending && <Loader2Icon className='animate-spin' />}
             Connect
           </Button>
         )}

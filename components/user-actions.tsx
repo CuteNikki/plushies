@@ -1,6 +1,11 @@
 'use client';
 
-import { KeyRound, LogOut, MoreHorizontal, Trash2 } from 'lucide-react';
+import {
+  KeyRoundIcon,
+  LogOutIcon,
+  MoreHorizontalIcon,
+  Trash2Icon,
+} from 'lucide-react';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -47,7 +52,7 @@ export function UserActions({
           disabled={disabled || pending}
           aria-label={`Actions for ${user.name}`}
         >
-          <MoreHorizontal />
+          <MoreHorizontalIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-auto min-w-52'>
@@ -59,7 +64,7 @@ export function UserActions({
             )
           }
         >
-          <KeyRound />
+          <KeyRoundIcon />
           Send password reset
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -70,7 +75,7 @@ export function UserActions({
             )
           }
         >
-          <LogOut />
+          <LogOutIcon />
           Sign out everywhere
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -90,7 +95,7 @@ export function UserActions({
             );
           }}
         >
-          <Trash2 />
+          <Trash2Icon />
           Delete account
         </DropdownMenuItem>
       </DropdownMenuContent>

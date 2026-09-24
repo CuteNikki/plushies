@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ export function BackButton({
   return (
     <Button variant='ghost' size='sm' className='w-fit' asChild>
       <Link href={href}>
-        <ArrowLeft />
+        <ArrowLeftIcon />
         {children}
       </Link>
     </Button>

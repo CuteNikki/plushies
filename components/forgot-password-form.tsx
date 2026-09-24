@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, MailCheckIcon } from 'lucide-react';
+import { Loader2Icon, MailCheckIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -68,7 +68,7 @@ export function ForgotPasswordForm() {
         </div>
         {error && <p className='text-sm text-destructive'>{error}</p>}
         <Button type='submit' disabled={pending}>
-          {pending && <Loader2 className='animate-spin' />}
+          {pending && <Loader2Icon className='animate-spin' />}
           Send Reset Link
         </Button>
       </form>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2 } from 'lucide-react';
+import { Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -58,7 +58,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       </div>
       {error && <p className='text-sm text-destructive'>{error}</p>}
       <Button type='submit' disabled={pending}>
-        {pending && <Loader2 className='animate-spin' />}
+        {pending && <Loader2Icon className='animate-spin' />}
         Change Password
       </Button>
     </form>

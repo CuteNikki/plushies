@@ -1,4 +1,4 @@
-import { Pencil, Plus } from 'lucide-react';
+import { PencilIcon, PlusIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -32,7 +32,7 @@ export default async function PlushiesPage() {
         </div>
         <Button asChild>
           <Link href='/dashboard/plushies/new'>
-            <Plus />
+            <PlusIcon />
             New Plushie
           </Link>
         </Button>
@@ -75,7 +75,7 @@ export default async function PlushiesPage() {
             </div>
             <Button variant='outline' size='sm' asChild>
               <Link href={`/dashboard/plushies/${plushie.id}`}>
-                <Pencil />
+                <PencilIcon />
                 Edit
               </Link>
             </Button>

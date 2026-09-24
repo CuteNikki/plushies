@@ -1,6 +1,6 @@
 'use client';
 
-import { BadgeCheck, Loader2 } from 'lucide-react';
+import { BadgeCheckIcon, Loader2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -69,7 +69,7 @@ export function EmailSettings({
         <span className='font-medium break-all'>{email}</span>
         {verified ? (
           <Badge>
-            <BadgeCheck />
+            <BadgeCheckIcon />
             Verified
           </Badge>
         ) : (
@@ -83,7 +83,7 @@ export function EmailSettings({
             onClick={resend}
             className='ml-auto'
           >
-            {resending && <Loader2 className='animate-spin' />}
+            {resending && <Loader2Icon className='animate-spin' />}
             Send Verification
           </Button>
         )}
@@ -105,7 +105,7 @@ export function EmailSettings({
             placeholder='new@example.com'
           />
           <Button type='submit' disabled={changing}>
-            {changing && <Loader2 className='animate-spin' />}
+            {changing && <Loader2Icon className='animate-spin' />}
             Change
           </Button>
         </div>

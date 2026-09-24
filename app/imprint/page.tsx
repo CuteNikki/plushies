@@ -1,4 +1,4 @@
-import { Mail, Phone } from 'lucide-react';
+import { MailIcon, PhoneIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 
 import { LegalPage, LegalSection, operator } from '@/components/legal';
@@ -20,14 +20,14 @@ export default function ImprintPage() {
             href={`mailto:${operator.email}`}
             className='flex w-fit items-center gap-2 hover:text-primary'
           >
-            <Mail className='size-4 text-primary' />
+            <MailIcon className='size-4 text-primary' />
             {operator.email}
           </a>
           <a
             href={`tel:${operator.phone.replaceAll(' ', '')}`}
             className='flex w-fit items-center gap-2 hover:text-primary'
           >
-            <Phone className='size-4 text-primary' />
+            <PhoneIcon className='size-4 text-primary' />
             {operator.phone}
           </a>
         </span>

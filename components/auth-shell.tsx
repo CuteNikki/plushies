@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react';
+import { HeartIcon } from 'lucide-react';
 import Image from 'next/image';
 
 import { getPlushies } from '@/data/plushies';
@@ -67,7 +67,7 @@ export async function AuthShell({ children }: { children: React.ReactNode }) {
               ))
             ) : (
               <div className='absolute inset-0 m-auto flex size-56 items-center justify-center rounded-3xl bg-card ring-1 ring-foreground/10'>
-                <Heart className='size-28 fill-primary text-primary' />
+                <HeartIcon className='size-28 fill-primary text-primary' />
               </div>
             )}
           </div>

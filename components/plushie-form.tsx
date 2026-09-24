@@ -1,13 +1,13 @@
 'use client';
 
 import {
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  Plus,
-  Star,
-  Trash2,
-  X,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  Loader2Icon,
+  PlusIcon,
+  StarIcon,
+  Trash2Icon,
+  XIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -106,7 +106,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
                 }}
                 aria-label='Remove thumbnail'
               >
-                <X />
+                <XIcon />
               </Button>
             </div>
           ) : (
@@ -147,14 +147,14 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
                     disabled={index === 0}
                     onClick={() => moveImage(index, -1)}
                   >
-                    <ArrowLeft />
+                    <ArrowLeftIcon />
                   </IconButton>
                   <IconButton
                     label='Move right'
                     disabled={index === gallery.length - 1}
                     onClick={() => moveImage(index, 1)}
                   >
-                    <ArrowRight />
+                    <ArrowRightIcon />
                   </IconButton>
                 </div>
                 <div className='flex gap-1'>
@@ -162,7 +162,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
                     label='Use as thumbnail'
                     onClick={() => makeThumbnail(index)}
                   >
-                    <Star />
+                    <StarIcon />
                   </IconButton>
                   <IconButton
                     label='Remove photo'
@@ -173,7 +173,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
                       );
                     }}
                   >
-                    <X />
+                    <XIcon />
                   </IconButton>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
                 setFacts((all) => all.filter((_, i) => i !== index))
               }
             >
-              <X />
+              <XIcon />
             </Button>
           </div>
         ))}
@@ -306,7 +306,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
           className='w-fit'
           onClick={() => setFacts((all) => [...all, { label: '', value: '' }])}
         >
-          <Plus />
+          <PlusIcon />
           Add Fact
         </Button>
       </Section>
@@ -320,7 +320,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
       <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-6'>
         <div className='flex gap-2'>
           <Button type='submit' disabled={saving || deleting}>
-            {saving && <Loader2 className='animate-spin' />}
+            {saving && <Loader2Icon className='animate-spin' />}
             {plushie ? 'Save' : 'Create'}
           </Button>
           <Button type='button' variant='ghost' asChild>
@@ -351,7 +351,11 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
               startDelete(() => deletePlushie(plushie.id));
             }}
           >
-            {deleting ? <Loader2 className='animate-spin' /> : <Trash2 />}
+            {deleting ? (
+              <Loader2Icon className='animate-spin' />
+            ) : (
+              <Trash2Icon />
+            )}
             Delete
           </Button>
         )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil } from 'lucide-react';
+import { PencilIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import { authClient } from '@/lib/auth-client';
@@ -15,7 +15,7 @@ export function EditPlushieButton({ id }: { id: string }) {
   return (
     <Button variant='outline' size='sm' asChild>
       <Link href={`/dashboard/plushies/${id}`}>
-        <Pencil />
+        <PencilIcon />
         Edit
       </Link>
     </Button>

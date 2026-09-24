@@ -1,6 +1,12 @@
 'use client';
 
-import { LayoutDashboard, LogOut, Pencil, Settings, Users } from 'lucide-react';
+import {
+  LayoutDashboardIcon,
+  LogOutIcon,
+  PencilIcon,
+  SettingsIcon,
+  UsersIcon,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -65,7 +71,7 @@ export function UserMenu() {
         {canEditPlushies(user.role) && (
           <DropdownMenuItem asChild>
             <Link href='/dashboard'>
-              <LayoutDashboard />
+              <LayoutDashboardIcon />
               Dashboard
             </Link>
           </DropdownMenuItem>
@@ -73,7 +79,7 @@ export function UserMenu() {
         {canEditPlushies(user.role) && (
           <DropdownMenuItem asChild>
             <Link href='/dashboard/plushies'>
-              <Pencil />
+              <PencilIcon />
               Plushies
             </Link>
           </DropdownMenuItem>
@@ -81,14 +87,14 @@ export function UserMenu() {
         {isAdmin(user.role) && (
           <DropdownMenuItem asChild>
             <Link href='/dashboard/users'>
-              <Users />
+              <UsersIcon />
               Users
             </Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem asChild>
           <Link href='/account'>
-            <Settings />
+            <SettingsIcon />
             Account
           </Link>
         </DropdownMenuItem>
@@ -101,7 +107,7 @@ export function UserMenu() {
             router.refresh();
           }}
         >
-          <LogOut />
+          <LogOutIcon />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

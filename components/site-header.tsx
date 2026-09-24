@@ -1,4 +1,4 @@
-import { Heart } from 'lucide-react';
+import { HeartIcon } from 'lucide-react';
 import Link from 'next/link';
 
 import { ThemeButton } from '@/components/theme-button';
@@ -12,7 +12,7 @@ export function SiteHeader() {
           href='/'
           className='flex items-center gap-2 font-heading text-lg font-semibold'
         >
-          <Heart className='size-5 fill-primary text-primary' />
+          <HeartIcon className='size-5 fill-primary text-primary' />
           Plushies
         </Link>
         <div className='flex items-center gap-2'>

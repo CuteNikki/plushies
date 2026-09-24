@@ -1,10 +1,10 @@
 import {
-  ChevronRight,
-  Heart,
-  History,
+  ChevronRightIcon,
+  HeartIcon,
+  HistoryIcon,
   type LucideIcon,
-  Plus,
-  Users,
+  PlusIcon,
+  UsersIcon,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -30,19 +30,19 @@ export default async function DashboardPage() {
   const links = [
     {
       href: '/dashboard/plushies',
-      icon: Heart,
+      icon: HeartIcon,
       title: 'Plushies',
       text: `${count(stats.plushies, 'plushie')} with ${count(stats.photos, 'photo')}`,
     },
     {
       href: '/dashboard/plushies/new',
-      icon: Plus,
+      icon: PlusIcon,
       title: 'New Plushie',
       text: 'Add a new soft friend',
     },
     {
       href: '/dashboard/activity',
-      icon: History,
+      icon: HistoryIcon,
       title: 'Activity',
       text: `${count(stats.recentChanges, 'change')} in the last 7 days`,
     },
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
       ? [
           {
             href: '/dashboard/users',
-            icon: Users,
+            icon: UsersIcon,
             title: 'Users',
             text: `${count(stats.users.total, 'account')}, ${count(stats.users.admins, 'admin')} and ${count(stats.users.editors, 'editor')}`,
           },
@@ -105,7 +105,7 @@ function DashboardLink({
           {text}
         </span>
       </span>
-      <ChevronRight
+      <ChevronRightIcon
         className='size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5'
         aria-hidden
       />

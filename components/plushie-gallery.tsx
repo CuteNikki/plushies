@@ -1,6 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import { useState } from 'react';
 
 import type { Plushie } from '@/data/plushies';
@@ -22,7 +22,7 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
   return (
     <div className='flex flex-col gap-6'>
       <Reveal className='relative max-w-sm'>
-        <Search className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
+        <SearchIcon className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
         <Input
           type='search'
           placeholder='Search by name, species, trait…'

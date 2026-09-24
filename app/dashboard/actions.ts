@@ -32,7 +32,8 @@ const optional = z
   .transform((value) => value || null);
 
 const plushieSchema = z.object({
-  id: optional,
+  // Only sent when editing an existing plushie.
+  id: z.string().optional(),
   name: z.string().trim().min(1, 'Give your plushie a name'),
   slug: z
     .string()

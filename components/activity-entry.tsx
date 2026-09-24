@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   ImageOff,
   KeyRound,
   Link2,
@@ -65,6 +64,8 @@ export function ActivityEntry({
     entry.subject === ActivitySubject.PLUSHIE
       ? plushieChanges(entry, context)
       : userChanges(entry);
+  // Edits compare before and after; new and deleted entries show one value.
+  const edited = !!entry.before && !!entry.after;
 
   return (
     <div className='flex flex-col gap-3 p-4'>
@@ -88,14 +89,48 @@ export function ActivityEntry({
         </div>
       </div>
       {changes.length > 0 && (
-        <dl className='flex flex-col gap-2 rounded-lg bg-muted/40 p-3 text-sm sm:ml-11'>
+        <dl
+          className={cn(
+            'grid gap-x-4 gap-y-2 rounded-lg bg-muted/40 p-3 text-sm sm:ml-11',
+            edited
+              ? 'grid-cols-2 sm:grid-cols-[7rem_1fr_1fr]'
+              : 'sm:grid-cols-[7rem_1fr]'
+          )}
+        >
+          {edited && (
+            <div className='contents text-xs text-muted-foreground' aria-hidden>
+              <span className='hidden sm:block' />
+              <span>Before</span>
+              <span>After</span>
+            </div>
+          )}
           {changes.map((change) => (
-            <div
-              key={change.label}
-              className='grid gap-0.5 sm:grid-cols-[7rem_1fr] sm:gap-3'
-            >
-              <dt className='text-muted-foreground'>{change.label}</dt>
-              <dd className='min-w-0'>{change.content}</dd>
+            <div key={change.label} className='contents'>
+              <dt
+                className={cn(
+                  'text-muted-foreground',
+                  // On phones the label gets its own line above the values,
+                  // smaller so it doesn't read like the old value.
+                  edited &&
+                    'col-span-2 -mb-1 text-xs font-medium sm:col-span-1 sm:mb-0 sm:text-sm sm:font-normal'
+                )}
+              >
+                {change.label}
+              </dt>
+              {edited ? (
+                <>
+                  <dd className='min-w-0'>
+                    <span className='sr-only'>Before: </span>
+                    {change.before}
+                  </dd>
+                  <dd className='min-w-0'>
+                    <span className='sr-only'>After: </span>
+                    {change.after}
+                  </dd>
+                </>
+              ) : (
+                <dd className='min-w-0'>{change.before ?? change.after}</dd>
+              )}
             </div>
           ))}
         </dl>
@@ -185,7 +220,12 @@ function sentence(entry: Activity, context: ActivityContext) {
   }
 }
 
-type Change = { label: string; content: React.ReactNode };
+/** One changed field. New entries only have `after`, deleted ones `before`. */
+type Change = {
+  label: string;
+  before?: React.ReactNode;
+  after?: React.ReactNode;
+};
 
 /**
  * The fields that changed. New entries list what they were created with,
@@ -238,81 +278,87 @@ function plushieChanges(entry: Activity, context: ActivityContext): Change[] {
   return order
     .filter((key) => keys.includes(key))
     .map((key) => {
-      const old = before?.[key];
-      const now = after?.[key];
-      let content: React.ReactNode;
-      switch (key) {
-        case 'thumbnail':
-          content = (
-            <Compare
-              old={old ? <Photo url={old as string} context={context} /> : null}
-              now={now ? <Photo url={now as string} context={context} /> : null}
-              hasOld={!!before}
-              hasNow={!!after}
-            />
+      const show = (
+        snapshot: PlushieSnapshot | null,
+        other: PlushieSnapshot | null,
+        highlight: Highlight
+      ): React.ReactNode => {
+        if (!snapshot) return undefined;
+        const value = snapshot[key];
+        // Items only on this side are what was removed or added.
+        const changed = (items: string[], otherItems: string[] | undefined) =>
+          new Set(
+            otherItems ? items.filter((item) => !otherItems.includes(item)) : []
           );
-          break;
-        case 'gallery':
-          content = (
-            <ListChange
-              old={(old ?? []) as string[]}
-              now={(now ?? []) as string[]}
-              render={(url) => <Photo url={url} context={context} />}
-              reordered='Reordered'
-              grouped
-              edited={!!before && !!after}
-            />
-          );
-          break;
-        case 'traits':
-          content = (
-            <ListChange
-              old={(old ?? []) as string[]}
-              now={(now ?? []) as string[]}
-              render={(trait, removed) => (
-                <Badge
-                  variant='secondary'
-                  className={cn(removed && 'line-through opacity-60')}
-                >
-                  {trait}
-                </Badge>
-              )}
-              reordered='Reordered'
-              edited={!!before && !!after}
-            />
-          );
-          break;
-        case 'facts':
-          content = (
-            <ListChange
-              old={((old ?? []) as PlushieSnapshot['facts']).map(factText)}
-              now={((now ?? []) as PlushieSnapshot['facts']).map(factText)}
-              render={(fact, removed) => (
-                <span
-                  className={cn(
-                    removed && 'text-muted-foreground line-through'
-                  )}
-                >
-                  {fact}
-                </span>
-              )}
-              reordered='Reordered'
-              edited={!!before && !!after}
-              column
-            />
-          );
-          break;
-        default:
-          content = (
-            <TextCompare
-              old={old as string | null | undefined}
-              now={now as string | null | undefined}
-              hasOld={!!before}
-              hasNow={!!after}
-            />
-          );
-      }
-      return { label: plushieLabels[key], content };
+        switch (key) {
+          case 'thumbnail':
+            return value ? (
+              <Photo url={value as string} context={context} />
+            ) : (
+              <Empty />
+            );
+          case 'gallery': {
+            const urls = value as string[];
+            return (
+              <List
+                items={urls}
+                changed={changed(urls, other?.gallery)}
+                render={(url, isChanged) => (
+                  <Photo
+                    url={url}
+                    context={context}
+                    highlight={isChanged ? highlight : undefined}
+                  />
+                )}
+              />
+            );
+          }
+          case 'traits': {
+            const traits = value as string[];
+            return (
+              <List
+                items={traits}
+                changed={changed(traits, other?.traits)}
+                render={(trait, isChanged) => (
+                  <Badge
+                    variant='secondary'
+                    className={cn(isChanged && highlights[highlight])}
+                  >
+                    {trait}
+                  </Badge>
+                )}
+              />
+            );
+          }
+          case 'facts': {
+            const facts = (value as PlushieSnapshot['facts']).map(factText);
+            return (
+              <List
+                column
+                items={facts}
+                changed={changed(facts, other?.facts.map(factText))}
+                render={(fact, isChanged) => (
+                  <span
+                    className={cn(
+                      '-mx-1 w-fit rounded px-1',
+                      isChanged && highlights[highlight]
+                    )}
+                  >
+                    {fact}
+                  </span>
+                )}
+              />
+            );
+          }
+          default:
+            return <Text value={value as string | null} />;
+        }
+      };
+      return {
+        label: plushieLabels[key],
+        before: show(before, after, 'removed'),
+        after: show(after, before, 'added'),
+      };
     });
 }
 
@@ -336,12 +382,19 @@ function userChanges(entry: Activity): Change[] {
     return [];
   }
   const { before, after, keys } = changedKeys<UserSnapshot>(entry);
-  const show = (key: keyof UserSnapshot, value: unknown) => {
-    if (value === undefined) return undefined;
-    if (key === 'emailVerified') return value ? 'Yes' : 'No';
-    if (key === 'role')
-      return isRole(value) ? roleLabels[value] : String(value);
-    return String(value);
+  const show = (snapshot: UserSnapshot | null, key: keyof UserSnapshot) => {
+    if (!snapshot) return undefined;
+    const value = snapshot[key];
+    switch (key) {
+      case 'email':
+        return <PrivateText>{snapshot.email}</PrivateText>;
+      case 'emailVerified':
+        return value ? 'Yes' : 'No';
+      case 'role':
+        return isRole(value) ? roleLabels[value] : String(value);
+      default:
+        return <Text value={String(value)} />;
+    }
   };
 
   // In a fixed order: the database doesn't keep the snapshot's key order.
@@ -350,159 +403,70 @@ function userChanges(entry: Activity): Change[] {
     .filter((key) => keys.includes(key))
     .map((key) => ({
       label: userLabels[key],
-      content:
-        key === 'email' ? (
-          <Compare
-            old={
-              before && (
-                <PrivateText className='line-through'>
-                  {before.email}
-                </PrivateText>
-              )
-            }
-            now={after && <PrivateText>{after.email}</PrivateText>}
-            hasOld={!!before}
-            hasNow={!!after}
-          />
-        ) : (
-          <TextCompare
-            old={show(key, before?.[key])}
-            now={show(key, after?.[key])}
-            hasOld={!!before}
-            hasNow={!!after}
-          />
-        ),
+      before: show(before, key),
+      after: show(after, key),
     }));
 }
 
-/** Old → new. Created entries only have a new value, deleted ones an old. */
-function Compare({
-  old,
-  now,
-  hasOld,
-  hasNow,
-}: {
-  old: React.ReactNode;
-  now: React.ReactNode;
-  hasOld: boolean;
-  hasNow: boolean;
-}) {
-  return (
-    <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-      {hasOld && (old ?? <Empty />)}
-      {hasOld && hasNow && (
-        <ArrowRight
-          className='size-3.5 shrink-0 text-muted-foreground'
-          aria-label='changed to'
-        />
-      )}
-      {hasNow && (now ?? <Empty />)}
-    </div>
-  );
+/** Tints for list items that only one side has. */
+type Highlight = 'removed' | 'added';
+
+const highlights: Record<Highlight, string> = {
+  removed: 'bg-destructive/15 text-destructive',
+  added: 'bg-primary/20 text-primary',
+};
+
+function Text({ value }: { value: string | null }) {
+  if (!value) return <Empty />;
+  return <span className='wrap-break-word whitespace-pre-line'>{value}</span>;
 }
 
-function TextCompare({
-  old,
-  now,
-  hasOld,
-  hasNow,
-}: {
-  old: string | null | undefined;
-  now: string | null | undefined;
-  hasOld: boolean;
-  hasNow: boolean;
-}) {
-  const oldText = old && (
-    <span
-      className={cn(
-        'wrap-break-word whitespace-pre-line',
-        hasNow && 'text-muted-foreground line-through'
-      )}
-    >
-      {old}
-    </span>
-  );
-  const newText = now && (
-    <span className='wrap-break-word whitespace-pre-line'>{now}</span>
-  );
-
-  // Long texts like descriptions read better one above the other.
-  if ((old?.length ?? 0) + (now?.length ?? 0) > 80) {
-    return (
-      <div className='flex flex-col gap-1'>
-        {hasOld && (oldText || <Empty />)}
-        {hasNow && (newText || <Empty />)}
-      </div>
-    );
-  }
-  return (
-    <Compare old={oldText} now={newText} hasOld={hasOld} hasNow={hasNow} />
-  );
-}
-
-/**
- * A list that changed: what was added, what was removed, and whether the
- * order changed.
- */
-function ListChange({
-  old,
-  now,
+/** A list, with the items in `changed` marked by `render`. */
+function List({
+  items,
+  changed,
   render,
-  reordered,
   column,
-  grouped,
-  edited,
 }: {
-  old: string[];
-  now: string[];
-  render: (item: string, removed: boolean) => React.ReactNode;
-  reordered: string;
+  items: string[];
+  changed: Set<string>;
+  render: (item: string, changed: boolean) => React.ReactNode;
   column?: boolean;
-  /** Label the added and removed items, for ones that can't be crossed out. */
-  grouped?: boolean;
-  /** False for created and deleted entries, which list what they had. */
-  edited: boolean;
 }) {
-  const removed = old.filter((item) => !now.includes(item));
-  const added = now.filter((item) => !old.includes(item));
-  const sameItems = removed.length === 0 && added.length === 0;
-  const list = (items: string[], isRemoved: (item: string) => boolean) => (
-    <div className={cn('flex flex-wrap gap-1.5', column && 'flex-col')}>
+  if (items.length === 0) return <Empty />;
+  return (
+    <div className={cn('flex flex-wrap gap-1.5', column && 'flex-col gap-1')}>
       {items.map((item) => (
         <span key={item} className='contents'>
-          {render(item, isRemoved(item) && edited)}
+          {render(item, changed.has(item))}
         </span>
       ))}
     </div>
   );
-
-  if (sameItems) {
-    return <span className='text-muted-foreground'>{reordered}</span>;
-  }
-  if (grouped && edited) {
-    const groups = [
-      { label: 'Added', items: added },
-      { label: 'Removed', items: removed },
-    ].filter((group) => group.items.length > 0);
-    return (
-      <div className='flex flex-col gap-2'>
-        {groups.map((group) => (
-          <div key={group.label} className='flex flex-col gap-1'>
-            <span className='text-xs text-muted-foreground'>{group.label}</span>
-            {list(group.items, () => group.label === 'Removed')}
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return list([...added, ...removed], (item) => removed.includes(item));
 }
 
-function Photo({ url, context }: { url: string; context: ActivityContext }) {
+function Photo({
+  url,
+  context,
+  highlight,
+}: {
+  url: string;
+  context: ActivityContext;
+  highlight?: Highlight;
+}) {
+  const ring =
+    highlight === 'removed'
+      ? 'ring-2 ring-destructive'
+      : highlight === 'added'
+        ? 'ring-2 ring-primary'
+        : 'ring-1 ring-foreground/10';
   if (!context.photos.has(url)) {
     return (
       <span
-        className='flex size-12 items-center justify-center rounded-md bg-muted text-muted-foreground'
+        className={cn(
+          'flex size-12 items-center justify-center rounded-md bg-muted text-muted-foreground',
+          highlight && ring
+        )}
         title='This photo was deleted'
       >
         <ImageOff className='size-4' aria-label='Deleted photo' />
@@ -510,7 +474,12 @@ function Photo({ url, context }: { url: string; context: ActivityContext }) {
     );
   }
   return (
-    <span className='relative size-12 overflow-hidden rounded-md bg-muted ring-1 ring-foreground/10'>
+    <span
+      className={cn(
+        'relative block size-12 overflow-hidden rounded-md bg-muted',
+        ring
+      )}
+    >
       <Image src={url} alt='' fill sizes='48px' className='object-cover' />
     </span>
   );

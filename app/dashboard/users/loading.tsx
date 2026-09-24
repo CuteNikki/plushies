@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function UsersLoading() {
   return (
     <LoadingPage className='gap-6'>
+      {/* Back to the dashboard. */}
+      <Skeleton className='h-6 w-24' />
       <HeadingSkeleton
         title='Users'
         subtitle='Editors can add and change plushies. Admins can also manage users.'

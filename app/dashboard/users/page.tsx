@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/session';
 
+import { BackButton } from '@/components/back-button';
 import { Reveal } from '@/components/motion';
 import { PrivateText } from '@/components/private-text';
 import { RoleSelect } from '@/components/role-select';
@@ -26,6 +27,9 @@ export default async function UsersPage() {
 
   return (
     <div className='flex flex-col gap-6'>
+      <Reveal className='flex'>
+        <BackButton href='/dashboard'>Dashboard</BackButton>
+      </Reveal>
       <Reveal>
         <h1 className='font-heading text-4xl font-semibold tracking-tight'>
           Users

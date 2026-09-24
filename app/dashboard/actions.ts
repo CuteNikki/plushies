@@ -178,7 +178,7 @@ export async function deletePlushie(id: string) {
   after(deleteOrphanedFiles);
 
   revalidatePath('/', 'layout');
-  redirect('/dashboard');
+  redirect('/dashboard/plushies');
 }
 
 /** Removes photos that were uploaded but never saved, e.g. on cancel. */

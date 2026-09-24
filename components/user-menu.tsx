@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, Pencil, Settings, Users } from 'lucide-react';
+import { LayoutDashboard, LogOut, Pencil, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -65,6 +65,14 @@ export function UserMenu() {
         {canEditPlushies(user.role) && (
           <DropdownMenuItem asChild>
             <Link href='/dashboard'>
+              <LayoutDashboard />
+              Dashboard
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {canEditPlushies(user.role) && (
+          <DropdownMenuItem asChild>
+            <Link href='/dashboard/plushies'>
               <Pencil />
               Plushies
             </Link>

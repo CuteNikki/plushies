@@ -1,12 +1,11 @@
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { formatBirthday } from '@/lib/birthday';
 import { getPlushie, getPlushies } from '@/lib/plushies';
 import { site } from '@/lib/site';
 
+import { BackButton } from '@/components/back-button';
 import { PlushieAge } from '@/components/plushie-age';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
 import {
@@ -17,7 +16,6 @@ import {
 } from '@/components/motion';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 export async function generateStaticParams() {
   const plushies = await getPlushies();
@@ -75,12 +73,7 @@ export default async function PlushiePage(
   return (
     <div className='flex flex-col gap-6'>
       <Reveal className='flex items-center justify-between gap-2'>
-        <Button variant='ghost' size='sm' className='w-fit' asChild>
-          <Link href='/'>
-            <ArrowLeft />
-            All plushies
-          </Link>
-        </Button>
+        <BackButton href='/'>All plushies</BackButton>
         <EditPlushieButton id={plushie.id} />
       </Reveal>
 

@@ -325,7 +325,9 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
           </Button>
           <Button type='button' variant='ghost' asChild>
             <Link
-              href={plushie ? `/plushies/${plushie.slug}` : '/dashboard'}
+              href={
+                plushie ? `/plushies/${plushie.slug}` : '/dashboard/plushies'
+              }
               onClick={() => {
                 const unsaved = [thumbnail, ...gallery]
                   .filter((image) => image && !savedKeys.has(image.key))

@@ -83,7 +83,15 @@ model User {
   role          Role          @default(USER)
   banned        Boolean?      @default(false)
   banReason     String?
+  /// When the ban ends by itself. Null bans for good.
   banExpires    DateTime?
+  /// The admin who banned them, and when. Better Auth doesn't know these,
+  /// and leaves them behind when a ban expires, so check banned first.
+  bannedById    String?
+  bannedBy      User?         @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
+  bannedAt      DateTime?
+  /// Accounts this admin banned.
+  usersBanned   User[]        @relation("BannedBy")
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   sessions      Session[]
@@ -166,6 +174,10 @@ enum ActivityType {
   PASSWORD_RESET_SENT
   /// An admin started viewing the site as them.
   IMPERSONATED
+  /// An admin banned them, with the reason and when it ends.
+  BANNED
+  /// An admin lifted their ban early.
+  UNBANNED
 }
 
 /// A change to a plushie or user, kept for 90 days.

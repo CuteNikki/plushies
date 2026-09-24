@@ -55,7 +55,10 @@ export type UserSnapshot = {
 /** For LINKED and UNLINKED: which sign-in method, e.g. 'discord'. */
 export type MethodSnapshot = { method: string };
 
-type Snapshot = PlushieSnapshot | UserSnapshot | MethodSnapshot;
+/** For BANNED and UNBANNED: why, and when it ends (ISO), or null for good. */
+export type BanSnapshot = { reason: string; expires: string | null };
+
+type Snapshot = PlushieSnapshot | UserSnapshot | MethodSnapshot | BanSnapshot;
 
 /**
  * Records a change. The entry is written after the response is sent, so

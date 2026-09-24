@@ -37,6 +37,8 @@ export function SignInForm({ next }: { next: string }) {
             callbackURL: '/verified',
           });
     setPending(false);
+    // The ban notice cookie is set now, so the page can say why.
+    if (error?.code === 'BANNED_USER') return router.push('/banned');
     if (error) return setError(error.message ?? 'Something went wrong');
     if (mode === 'sign-up') {
       toast.success('Account created! Check your inbox to verify your email.');
@@ -123,6 +125,8 @@ export function SignInForm({ next }: { next: string }) {
           authClient.signIn.social({
             provider: 'discord',
             callbackURL: next,
+            // Better Auth adds ?error=… to it.
+            errorCallbackURL: `/sign-in?next=${encodeURIComponent(next)}`,
           })
         }
       >

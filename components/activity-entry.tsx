@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import {
+  BanIcon,
   EyeIcon,
   ImageOffIcon,
   KeyRoundIcon,
@@ -10,6 +11,7 @@ import {
   MailIcon,
   PencilIcon,
   PlusIcon,
+  ShieldCheckIcon,
   Trash2Icon,
   Undo2Icon,
   UnlinkIcon,
@@ -20,6 +22,7 @@ import {
 import type { ActivityContext } from '@/data/activity';
 import {
   same,
+  type BanSnapshot,
   type MethodSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
@@ -49,6 +52,8 @@ const icons: Record<ActivityType, LucideIcon> = {
   SIGNED_OUT: LogOutIcon,
   PASSWORD_RESET_SENT: MailIcon,
   IMPERSONATED: EyeIcon,
+  BANNED: BanIcon,
+  UNBANNED: ShieldCheckIcon,
 };
 
 const methodLabels: Record<string, string> = {
@@ -77,7 +82,10 @@ export function ActivityEntry({
   const changes =
     entry.subject === ActivitySubject.PLUSHIE
       ? plushieChanges(entry, context)
-      : userChanges(entry);
+      : entry.type === ActivityType.BANNED ||
+          entry.type === ActivityType.UNBANNED
+        ? banChanges(entry)
+        : userChanges(entry);
   // Edits compare before and after; new and deleted entries show one value.
   const edited = !!entry.before && !!entry.after;
 
@@ -87,7 +95,8 @@ export function ActivityEntry({
         <span
           className={cn(
             'flex size-8 shrink-0 items-center justify-center rounded-md',
-            entry.type === ActivityType.DELETED
+            entry.type === ActivityType.DELETED ||
+              entry.type === ActivityType.BANNED
               ? 'bg-destructive/10 text-destructive'
               : 'bg-primary/15 text-primary'
           )}
@@ -266,7 +275,41 @@ function sentence(entry: Activity, context: ActivityContext) {
           {actor} viewed the site as {subject}
         </>
       );
+    case ActivityType.BANNED:
+      return (
+        <>
+          {actor} banned {subject}
+          {entry.revertOf && ' again'}
+        </>
+      );
+    case ActivityType.UNBANNED:
+      return entry.revertOf ? (
+        <>
+          {actor} undid {subject}&rsquo;s ban
+        </>
+      ) : (
+        <>
+          {actor} lifted {subject}&rsquo;s ban
+        </>
+      );
   }
+}
+
+/** The ban that was given or lifted: why, and when it ends. */
+function banChanges(entry: Activity): Change[] {
+  const ban = (entry.after ?? entry.before) as BanSnapshot | null;
+  if (!ban) return [];
+  return [
+    { label: 'Reason', after: <Text value={ban.reason} /> },
+    {
+      label: 'Ends',
+      after: ban.expires ? (
+        <LocalTime iso={ban.expires} absolute />
+      ) : (
+        'When lifted'
+      ),
+    },
+  ];
 }
 
 /** One changed field. New entries only have `after`, deleted ones `before`. */

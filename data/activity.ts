@@ -15,23 +15,38 @@ export type ActivityContext = {
 };
 
 /**
- * The latest entries, optionally only about plushies or users, with whether
+ * The latest entries, optionally only about plushies or users, or only the
+ * ones about or by one account, with whether
  * each can be reverted or already was, and what the page needs to know about
  * plushies as they are now.
  */
 export async function getActivity({
   subject,
+  userId,
   canRevertAccounts,
+  take = 200,
 }: {
-  subject: ActivitySubject | undefined;
-  /** Admins can revert role changes too. */
+  subject?: ActivitySubject;
+  /** Only changes to this account, or made by it. */
+  userId?: string;
+  /** Admins can revert account changes too. */
   canRevertAccounts: boolean;
+  take?: number;
 }) {
   const [entries, state] = await Promise.all([
     db.activity.findMany({
-      where: { subject, createdAt: { gte: activityCutoff() } },
+      where: {
+        subject,
+        createdAt: { gte: activityCutoff() },
+        ...(userId && {
+          OR: [
+            { subject: ActivitySubject.USER, subjectId: userId },
+            { actorId: userId },
+          ],
+        }),
+      },
       orderBy: { createdAt: 'desc' },
-      take: 200,
+      take,
     }),
     loadRevertState(),
   ]);

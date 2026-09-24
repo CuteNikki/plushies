@@ -9,6 +9,7 @@ import { nextCookies } from 'better-auth/next-js';
 import { admin } from 'better-auth/plugins';
 
 import { withAccountActivity } from '@/lib/activity';
+import { banNotice } from '@/lib/ban-notice';
 import { db } from '@/lib/db';
 import {
   sendDeleteAccountEmail,
@@ -154,11 +155,14 @@ export const auth = betterAuth({
     }),
   },
   plugins: [
+    // Before admin(), whose ban check stops sign-ins before later hooks run.
+    banNotice(),
     admin({
       ac,
       roles,
       defaultRole: Role.USER,
       adminRoles: [Role.ADMIN],
+      bannedUserMessage: 'This account is banned.',
     }),
     // Must be last: lets server actions set auth cookies.
     nextCookies(),

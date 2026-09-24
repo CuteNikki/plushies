@@ -1,6 +1,7 @@
 'use client';
 
 import { useOptimistic, useTransition } from 'react';
+import { toast } from 'sonner';
 
 import { setUserRole } from '@/actions/users';
 import { roleLabels, roleNames } from '@/lib/permissions';
@@ -35,7 +36,12 @@ export function RoleSelect({
       onValueChange={(value) =>
         startTransition(async () => {
           setOptimisticRole(value);
-          await setUserRole(userId, value);
+          try {
+            const { error } = await setUserRole(userId, value);
+            if (error) toast.error(error);
+          } catch {
+            toast.error('Something went wrong, try again');
+          }
         })
       }
     >

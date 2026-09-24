@@ -39,12 +39,12 @@ export default function PrivacyPage() {
             address and profile picture, along with sign-in tokens from Discord,
             which we store encrypted. We store your role (viewer, editor or
             admin) and when your account was created. Admins can see the name,
-            email address and sign-in methods of every account in order to
-            manage roles. To check what viewers and editors see, an admin can
-            temporarily view the site as another account (never another
-            admin&rsquo;s). They then see what that person sees, including their
-            account settings and sessions, but cannot change anything. This is
-            recorded in the activity log.
+            email address, sign-in methods, likes and activity log entries of
+            every account in order to manage accounts. To check what viewers and
+            editors see, an admin can temporarily view the site as another
+            account (never another admin&rsquo;s). They then see what that
+            person sees, including their account settings and sessions, but
+            cannot change anything. This is recorded in the activity log.
           </li>
           <li>
             <strong>Sessions:</strong> while you are signed in, we store a
@@ -64,10 +64,19 @@ export default function PrivacyPage() {
             and misuse.
           </li>
           <li>
+            <strong>Bans:</strong> if an admin bans an account, for example for
+            misuse, we store the reason, when the ban ends (if it does), which
+            admin banned it and when. The account is signed out everywhere and
+            cannot sign in until the ban ends or is lifted. When someone tries
+            to sign in to a banned account, we show them the reason. Bans and
+            lifted bans are recorded in the activity log. We do not ban IP
+            addresses.
+          </li>
+          <li>
             <strong>Likes:</strong> when you like a plushie, we store that your
             account likes it, so each account can like a plushie only once.
-            Everyone sees how many likes a plushie has, but not who gave them.
-            Your likes are deleted with your account.
+            Everyone sees how many likes a plushie has, but only admins can see
+            who gave them. Your likes are deleted with your account.
           </li>
           <li>
             <strong>Plushie content:</strong> the names, descriptions and photos
@@ -104,6 +113,11 @@ export default function PrivacyPage() {
             seven days, renewed while you use the site): keeps you signed in.
           </li>
           <li>
+            <strong>A ban notice cookie</strong> (only after trying to sign in
+            to a banned account, for 15 minutes): lets the page that explains
+            the ban show its reason to you and no one else.
+          </li>
+          <li>
             <strong>Local storage theme:</strong> remembers your light, dark or
             system theme choice.
           </li>
@@ -113,9 +127,10 @@ export default function PrivacyPage() {
       <LegalSection title='5. Why there is no cookie banner'>
         <p>
           The storage above is strictly necessary to provide functions you
-          explicitly use, such as staying signed in or switching the theme (§ 25
-          (2) no. 2 TDDDG). We use no advertising, analytics or other tracking
-          technologies, so there is nothing to ask consent for.
+          explicitly use, such as staying signed in, switching the theme or
+          seeing why an account is banned (§ 25 (2) no. 2 TDDDG). We use no
+          advertising, analytics or other tracking technologies, so there is
+          nothing to ask consent for.
         </p>
       </LegalSection>
 
@@ -178,13 +193,15 @@ export default function PrivacyPage() {
           deletes it. Deleting your account also removes your sessions and
           connected sign-in methods right away. Sessions end after at most seven
           days without use, password reset links expire after one hour, and
-          email verification links after 24 hours. Photos removed from a
-          plushie, or of a deleted plushie, are kept on UploadThing for 30 days
-          so the change can be undone, and deleted after that. Activity log
-          entries are deleted after 90 days, including those about accounts that
-          were deleted before then. Log data, if any, is kept only as long as
-          needed for security and troubleshooting. Browser storage stays on your
-          device until it expires or you clear it.
+          email verification links after 24 hours. Ban details are removed when
+          an admin lifts the ban, or when the account next signs in after the
+          ban ended. Photos removed from a plushie, or of a deleted plushie, are
+          kept on UploadThing for 30 days so the change can be undone, and
+          deleted after that. Activity log entries are deleted after 90 days,
+          including those about accounts that were deleted before then. Log
+          data, if any, is kept only as long as needed for security and
+          troubleshooting. Browser storage stays on your device until it expires
+          or you clear it.
         </p>
       </LegalSection>
 

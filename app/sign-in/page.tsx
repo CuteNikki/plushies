@@ -12,7 +12,9 @@ import { Toaster } from '@/components/ui/sonner';
 export const metadata: Metadata = { title: 'Sign In' };
 
 export default async function SignInPage(props: PageProps<'/sign-in'>) {
-  const { reset, next: nextParam } = await props.searchParams;
+  const { reset, error, next: nextParam } = await props.searchParams;
+  // Discord sign-ins come back here when they fail.
+  if (error === 'BANNED_USER') redirect('/banned');
   // Where to go afterwards, e.g. back to a plushie someone wanted to like.
   const next = safeNext(nextParam);
   if (await getSession()) redirect(next);
@@ -29,6 +31,11 @@ export default async function SignInPage(props: PageProps<'/sign-in'>) {
         {reset && (
           <p className='rounded-xl bg-primary/10 px-4 py-3 text-center text-sm'>
             Your password was changed. Sign in with your new one.
+          </p>
+        )}
+        {error && (
+          <p className='rounded-xl bg-destructive/10 px-4 py-3 text-center text-sm text-destructive'>
+            Signing in with Discord didn&rsquo;t work. Try again.
           </p>
         )}
         <Reveal>

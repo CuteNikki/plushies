@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -30,18 +31,30 @@ import {
 
 export function UserActions({
   user,
+  banned,
   disabled,
+  afterDelete,
 }: {
   user: { id: string; name: string; role: string };
+  /** Banned accounts can't be viewed as: they can't have a session. */
+  banned?: boolean;
   disabled?: boolean;
+  /** Where to go once the account is deleted, e.g. away from its page. */
+  afterDelete?: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function run(action: () => Promise<void>, success: string) {
+  function run(
+    action: () => Promise<void>,
+    success: string,
+    then?: () => void
+  ) {
     startTransition(async () => {
       try {
         await action();
         toast.success(success);
+        then?.();
       } catch {
         toast.error('Something went wrong, try again');
       }
@@ -62,7 +75,7 @@ export function UserActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-auto min-w-52'>
         {/* Admins can't be viewed as: they could do anything. */}
-        {!isAdmin(user.role) && (
+        {!isAdmin(user.role) && !banned && (
           <>
             <DropdownMenuItem
               onClick={() =>
@@ -118,7 +131,8 @@ export function UserActions({
             }
             run(
               () => deleteUser(user.id),
-              `${user.name}'s account was deleted`
+              `${user.name}'s account was deleted`,
+              afterDelete ? () => router.push(afterDelete) : undefined
             );
           }}
         >

@@ -6,12 +6,14 @@ import {
   plushieSnapshot,
   same,
   snapshotPhotos,
+  type BanSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
 } from '@/lib/activity';
+import { banSnapshot, isBanned } from '@/lib/bans';
 import { db } from '@/lib/db';
 import type { Activity } from '@/lib/generated/prisma/client';
-import { isRole, roleLabels } from '@/lib/permissions';
+import { isAdmin, isRole, roleLabels } from '@/lib/permissions';
 import { retainedPhotos } from '@/lib/uploads';
 
 /** How things are now, which decides what can still be reverted. */
@@ -20,6 +22,8 @@ export type RevertState = {
   plushies: Map<string, PlushieSnapshot>;
   /** Everyone's role now, by user id. */
   roles: Map<string, string>;
+  /** The ban in force now, by user id, for everyone who is banned. */
+  bans: Map<string, BanSnapshot>;
   /** Photo URLs whose files still exist. */
   photos: Set<string>;
 };
@@ -29,7 +33,15 @@ export async function loadRevertState(): Promise<RevertState> {
     db.plushie.findMany({
       include: { gallery: { orderBy: { position: 'asc' } } },
     }),
-    db.user.findMany({ select: { id: true, role: true } }),
+    db.user.findMany({
+      select: {
+        id: true,
+        role: true,
+        banned: true,
+        banReason: true,
+        banExpires: true,
+      },
+    }),
     retainedPhotos(),
   ]);
   const snapshots = new Map(
@@ -38,6 +50,11 @@ export async function loadRevertState(): Promise<RevertState> {
   return {
     plushies: snapshots,
     roles: new Map(users.map((user) => [user.id, user.role])),
+    bans: new Map(
+      users
+        .filter((user) => isBanned(user))
+        .map((user) => [user.id, banSnapshot(user)])
+    ),
     photos: new Set([
       ...retained,
       ...[...snapshots.values()].flatMap(snapshotPhotos),
@@ -72,6 +89,25 @@ export function revertOption(
   const name = entry.subjectName;
 
   if (entry.subject === ActivitySubject.USER) {
+    if (entry.type === ActivityType.BANNED) {
+      // Only the same ban, still in force: not one that ended or replaced it.
+      const ban = state.bans.get(entry.subjectId);
+      if (!ban || !same(ban, entry.after)) return null;
+      return { label: 'Unban', confirm: `Lift ${name}’s ban?` };
+    }
+    if (entry.type === ActivityType.UNBANNED) {
+      const before = entry.before as BanSnapshot;
+      const role = state.roles.get(entry.subjectId);
+      // Not if they're gone, banned again since, or an admin now.
+      if (!role || isAdmin(role) || state.bans.has(entry.subjectId)) {
+        return null;
+      }
+      // Nor once the ban would have ended by itself anyway.
+      if (before.expires && new Date(before.expires) <= new Date()) {
+        return null;
+      }
+      return { label: 'Ban again', confirm: `Ban ${name} again?` };
+    }
     if (entry.type !== ActivityType.UPDATED) return null;
     const before = entry.before as UserSnapshot;
     const after = entry.after as UserSnapshot;

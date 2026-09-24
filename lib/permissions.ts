@@ -21,10 +21,12 @@ export const roles = {
    * Can do everything, including managing users and their roles. Better Auth
    * serves every admin endpoint whether the site uses it or not, so admins
    * only get what the site offers: no creating users, setting their
-   * passwords or emails, or editing them otherwise.
+   * passwords or emails, or editing them otherwise. Bans go through the
+   * site's own actions (lib/bans.ts), which record who banned and never
+   * ban admins, so Better Auth's ban endpoints are off too.
    */
   [Role.ADMIN]: ac.newRole({
-    user: ['set-role', 'ban', 'impersonate', 'delete'],
+    user: ['set-role', 'impersonate', 'delete'],
     session: ['revoke'],
     plushie: ['create', 'update', 'delete'],
   }),

@@ -7,9 +7,11 @@ import {
   ActivityType,
   plushieSnapshot,
   writeActivity,
+  type BanSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
 } from '@/lib/activity';
+import { applyBan, liftBan } from '@/lib/bans';
 import { db } from '@/lib/db';
 import { Prisma, type Role } from '@/lib/generated/prisma/client';
 import {
@@ -83,6 +85,31 @@ export async function revertActivity(id: string): Promise<{ error?: string }> {
   };
 
   try {
+    if (entry.type === ActivityType.BANNED) {
+      const user = await db.user.findUniqueOrThrow({
+        where: { id: entry.subjectId },
+      });
+      await liftBan(user, actor, entry.id);
+      revalidatePath('/dashboard/users', 'layout');
+      return {};
+    }
+    if (entry.type === ActivityType.UNBANNED) {
+      const user = await db.user.findUniqueOrThrow({
+        where: { id: entry.subjectId },
+      });
+      const before = entry.before as BanSnapshot;
+      await applyBan(
+        user,
+        {
+          reason: before.reason,
+          expires: before.expires ? new Date(before.expires) : null,
+        },
+        actor,
+        entry.id
+      );
+      revalidatePath('/dashboard/users', 'layout');
+      return {};
+    }
     if (entry.subject === ActivitySubject.USER) {
       const before = entry.before as UserSnapshot;
       // Straight to the database: Better Auth's setRole would log it again.

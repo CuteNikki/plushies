@@ -1,17 +1,16 @@
 import type { Metadata } from 'next';
-
-import { BadgeCheckIcon } from 'lucide-react';
+import Link from 'next/link';
 
 import { getUsers } from '@/data/users';
-import { providerLabels } from '@/lib/providers';
+import { isBanned } from '@/lib/bans';
 import { requireAdmin } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
 import { Reveal } from '@/components/motion';
 import { PrivateText } from '@/components/private-text';
 import { RoleSelect } from '@/components/role-select';
-import { Badge } from '@/components/ui/badge';
 import { UserActions } from '@/components/user-actions';
+import { UserBadges } from '@/components/user-badges';
 
 export const metadata: Metadata = { title: 'Users' };
 
@@ -50,27 +49,18 @@ export default async function UsersPage() {
             >
               <div className='flex min-w-0 flex-col gap-1.5'>
                 <div className='flex min-w-0 items-center gap-1.5'>
-                  <p className='truncate font-heading font-semibold'>
+                  <Link
+                    href={`/dashboard/users/${user.id}`}
+                    className='truncate font-heading font-semibold hover:underline'
+                  >
                     {user.name}
-                  </p>
+                  </Link>
                 </div>
                 <PrivateText className='w-fit text-sm text-muted-foreground'>
                   {user.email}
                 </PrivateText>
                 <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
-                  {user.emailVerified ? (
-                    <Badge>
-                      <BadgeCheckIcon />
-                      Verified
-                    </Badge>
-                  ) : (
-                    <Badge variant='outline'>Unverified</Badge>
-                  )}
-                  {user.accounts.map(({ providerId }) => (
-                    <Badge key={providerId} variant='secondary'>
-                      {providerLabels[providerId] ?? providerId}
-                    </Badge>
-                  ))}
+                  <UserBadges user={user} banned={isBanned(user)} />
                   <span>
                     Joined{' '}
                     {user.createdAt.toLocaleDateString('en-US', {
@@ -84,6 +74,7 @@ export default async function UsersPage() {
               <div className='self-start xs:order-last xs:self-center'>
                 <UserActions
                   user={{ id: user.id, name: user.name, role: user.role }}
+                  banned={isBanned(user)}
                   disabled={isYou}
                 />
               </div>

@@ -127,6 +127,7 @@ export default async function DashboardPage() {
       <div className='grid items-start gap-8 lg:grid-cols-2'>
         <Section
           title='Recently edited'
+          description='Plushies that have been recently edited.'
           action={<SeeAll href='/dashboard/plushies'>All plushies</SeeAll>}
         >
           {dashboard.recentlyEdited.length > 0 ? (

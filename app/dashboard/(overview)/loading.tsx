@@ -59,7 +59,10 @@ export default function DashboardLoading() {
       </ul>
       <div className='grid items-start gap-8 lg:grid-cols-2'>
         <div className='flex flex-col gap-4'>
-          <SectionHeadingSkeleton title='Recently edited' />
+          <SectionHeadingSkeleton
+            title='Recently edited'
+            description='Plushies that have been recently edited.'
+          />
           <ListSkeleton rows={3} rowClassName='flex items-center gap-3 p-3'>
             <Skeleton className='size-10 shrink-0 rounded-lg' />
             <TextLinesSkeleton />

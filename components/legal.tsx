@@ -53,7 +53,7 @@ export function LegalSection({
   return (
     <Reveal
       as='section'
-      className='flex flex-col gap-3 leading-relaxed [&_a]:text-primary [&_a]:underline-offset-4 hover:[&_a]:underline [&_strong]:font-semibold [&_strong]:text-foreground'
+      className='flex flex-col gap-3 leading-relaxed [&_a]:text-primary hover:[&_a]:underline [&_strong]:font-semibold [&_strong]:text-foreground'
     >
       <h2 className='font-heading text-xl font-semibold'>{title}</h2>
       {children}

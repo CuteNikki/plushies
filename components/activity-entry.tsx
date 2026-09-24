@@ -175,7 +175,7 @@ function sentence(entry: Activity, context: ActivityContext) {
     const plushie = slug ? (
       <Link
         href={`/plushies/${slug}`}
-        className='font-semibold underline-offset-4 hover:underline'
+        className='font-semibold hover:underline'
       >
         {entry.subjectName}
       </Link>

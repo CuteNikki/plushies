@@ -18,6 +18,7 @@ import {
 import type { TwoFactorMethod } from '@/data/account';
 import { authClient } from '@/lib/auth-client';
 
+import { CodeInput } from '@/components/code-input';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -383,16 +384,7 @@ function AppSetup({
       >
         <div className='flex flex-col gap-1'>
           <Label htmlFor='totp-code'>Code from the app</Label>
-          <Input
-            id='totp-code'
-            name='code'
-            required
-            inputMode='numeric'
-            autoComplete='one-time-code'
-            pattern='[0-9]{6}'
-            maxLength={6}
-            className='w-40 tracking-widest'
-          />
+          <CodeInput id='totp-code' invalid={!!error} />
         </div>
         {error && <p className='text-sm text-destructive'>{error}</p>}
         <div className='flex flex-wrap gap-2'>

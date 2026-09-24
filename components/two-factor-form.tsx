@@ -5,10 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Loader2Icon } from 'lucide-react';
+import {
+  KeyRoundIcon,
+  Loader2Icon,
+  MailIcon,
+  SmartphoneIcon,
+} from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 
+import { CodeInput } from '@/components/code-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -125,37 +131,45 @@ export function TwoFactorForm({
     );
   }
 
-  const labels: Record<Mode, string> = {
-    app: 'Code from your authenticator app',
-    email: 'Code from your email',
-    backup: 'Backup code',
+  const prompts: Record<Mode, string> = {
+    app: 'Enter the 6-digit code from your authenticator app.',
+    email: 'Enter the 6-digit code we emailed you.',
+    backup: 'Enter one of the backup codes you saved.',
   };
 
+  // Laid out like the sign-in card: the code and Continue, then the other
+  // ways under an "or", as outline buttons like Discord and passkeys there.
   return (
     <div className='flex flex-col gap-4 rounded-2xl bg-card p-6 ring-1 ring-foreground/10'>
-      <form action={verify} className='flex flex-col gap-3'>
-        <div className='flex flex-col gap-1'>
-          <Label htmlFor={`${id}-code`}>{labels[mode]}</Label>
+      <form action={verify} className='flex flex-col items-center gap-4'>
+        <Label
+          htmlFor={`${id}-code`}
+          className='text-center text-sm font-normal text-pretty'
+        >
+          {prompts[mode]}
+        </Label>
+        {/* A new field for each kind of code, so none carries over. No
+            autofocus: password managers offer a code when the field gains
+            focus, which one focused before they notice it never does. */}
+        {mode === 'backup' ? (
           <Input
-            // A new field for each kind of code, so none carries over.
             key={mode}
             id={`${id}-code`}
             name='code'
             required
-            autoFocus
-            // Lets phones offer the code from a new email or text message.
-            autoComplete='one-time-code'
-            inputMode={mode === 'backup' ? 'text' : 'numeric'}
-            maxLength={mode === 'backup' ? 20 : 6}
-            className='text-center text-lg tracking-widest'
+            autoComplete='off'
+            maxLength={20}
+            className='w-52 text-center tracking-widest'
           />
-        </div>
+        ) : (
+          <CodeInput key={mode} id={`${id}-code`} invalid={!!error} />
+        )}
         {mode === 'email' && (
-          <p className='text-xs text-muted-foreground'>
+          <p className='text-center text-xs text-muted-foreground'>
             {sending
               ? 'Sending a code…'
               : sent
-                ? 'We sent a code to your email. It works for five minutes.'
+                ? 'It works for five minutes.'
                 : null}{' '}
             <button
               type='button'
@@ -169,7 +183,7 @@ export function TwoFactorForm({
         )}
         <label
           htmlFor={`${id}-trust`}
-          className='flex cursor-pointer items-center gap-2 text-sm'
+          className='flex cursor-pointer items-center gap-2 text-xs text-muted-foreground'
         >
           <Checkbox
             id={`${id}-trust`}
@@ -178,33 +192,50 @@ export function TwoFactorForm({
           />
           Don&rsquo;t ask again on this device for 30 days
         </label>
-        {error && <p className='text-sm text-destructive'>{error}</p>}
-        <Button type='submit' disabled={pending}>
+        {error && (
+          <p className='text-center text-sm text-destructive'>{error}</p>
+        )}
+        <Button type='submit' disabled={pending} className='w-full'>
           {pending && <Loader2Icon className='animate-spin' />}
           Continue
         </Button>
       </form>
 
-      <div className='flex flex-col items-center gap-1 text-sm'>
+      <div className='flex items-center gap-3 text-xs text-muted-foreground'>
+        <span className='h-px flex-1 bg-border' />
+        or
+        <span className='h-px flex-1 bg-border' />
+      </div>
+
+      <div className='flex flex-col gap-2'>
         {mode !== 'app' && hasApp && (
-          <SwitchMode onClick={() => switchTo('app')}>
+          <Button variant='outline' size='lg' onClick={() => switchTo('app')}>
+            <SmartphoneIcon />
             Use your authenticator app
-          </SwitchMode>
+          </Button>
         )}
         {mode !== 'email' && (
-          <SwitchMode
+          <Button
+            variant='outline'
+            size='lg'
             onClick={() => {
               switchTo('email');
               if (!sent) void sendCode();
             }}
           >
+            <MailIcon />
             Email me a code instead
-          </SwitchMode>
+          </Button>
         )}
         {mode !== 'backup' && hasApp && (
-          <SwitchMode onClick={() => switchTo('backup')}>
+          <Button
+            variant='outline'
+            size='lg'
+            onClick={() => switchTo('backup')}
+          >
+            <KeyRoundIcon />
             Use a backup code
-          </SwitchMode>
+          </Button>
         )}
       </div>
     </div>
@@ -214,22 +245,4 @@ export function TwoFactorForm({
     setMode(to);
     setError(undefined);
   }
-}
-
-function SwitchMode({
-  onClick,
-  children,
-}: {
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type='button'
-      onClick={onClick}
-      className='text-muted-foreground hover:text-primary hover:underline'
-    >
-      {children}
-    </button>
-  );
 }

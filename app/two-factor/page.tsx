@@ -28,9 +28,7 @@ export default async function TwoFactorPage(props: PageProps<'/two-factor'>) {
         <Reveal className='flex flex-col gap-1 text-center'>
           <h1 className='font-heading text-3xl font-semibold'>One more step</h1>
           <p className='text-sm text-pretty text-muted-foreground'>
-            {hasApp
-              ? 'Enter the code from your authenticator app.'
-              : 'We emailed you a code to finish signing in.'}
+            Your account asks for a code to finish signing in.
           </p>
         </Reveal>
         <Reveal>

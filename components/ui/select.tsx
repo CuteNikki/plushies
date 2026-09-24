@@ -6,6 +6,8 @@ import * as React from 'react';
 
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
+import { trimText } from '@/lib/trim-text';
+
 function Select({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
@@ -127,7 +129,8 @@ function SelectItem({
           <CheckIcon className='pointer-events-none' />
         </SelectPrimitive.ItemIndicator>
       </span>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {/* The trigger shows this same text, so it's centered there too. */}
+      <SelectPrimitive.ItemText>{trimText(children)}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );
 }

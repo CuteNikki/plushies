@@ -5,6 +5,8 @@ import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 
 import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 
+import { trimSlotText, trimText } from '@/lib/trim-text';
+
 function DropdownMenu({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -64,6 +66,8 @@ function DropdownMenuItem({
   className,
   inset,
   variant = 'default',
+  asChild,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
   inset?: boolean;
@@ -78,8 +82,11 @@ function DropdownMenuItem({
         "group/dropdown-menu-item relative flex min-h-7 cursor-default items-center gap-2 rounded-md px-2 py-1 text-xs/relaxed outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7.5 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 data-[variant=destructive]:*:[svg]:text-destructive",
         className
       )}
+      asChild={asChild}
       {...props}
-    />
+    >
+      {asChild ? trimSlotText(children) : trimText(children)}
+    </DropdownMenuPrimitive.Item>
   );
 }
 
@@ -111,7 +118,7 @@ function DropdownMenuCheckboxItem({
           <CheckIcon />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
-      {children}
+      {trimText(children)}
     </DropdownMenuPrimitive.CheckboxItem>
   );
 }
@@ -153,7 +160,7 @@ function DropdownMenuRadioItem({
           <CheckIcon />
         </DropdownMenuPrimitive.ItemIndicator>
       </span>
-      {children}
+      {trimText(children)}
     </DropdownMenuPrimitive.RadioItem>
   );
 }
@@ -231,7 +238,7 @@ function DropdownMenuSubTrigger({
       )}
       {...props}
     >
-      {children}
+      {trimText(children)}
       <ChevronRightIcon className='ml-auto' />
     </DropdownMenuPrimitive.SubTrigger>
   );

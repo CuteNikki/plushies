@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { UTApi } from 'uploadthing/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 
 import { auth } from '@/lib/auth';
@@ -12,8 +12,7 @@ import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { canEditPlushies, isAdmin, isRole } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
-
-const utapi = new UTApi();
+import { deleteFiles, deleteOrphanedFiles, unusedKeys } from '@/lib/uploads';
 
 export type FormState = { error?: string };
 
@@ -92,16 +91,6 @@ async function assertEditor() {
   }
 }
 
-async function deleteFiles(keys: string[]) {
-  if (keys.length === 0) return;
-  try {
-    await utapi.deleteFiles(keys);
-  } catch (error) {
-    // The plushie is already saved; a leftover file is not worth failing for.
-    console.error('Failed to delete UploadThing files', error);
-  }
-}
-
 export async function savePlushie(
   _state: FormState,
   formData: FormData
@@ -169,6 +158,7 @@ export async function savePlushie(
   }
 
   await deleteFiles(removedKeys);
+  after(deleteOrphanedFiles);
   revalidatePath('/', 'layout');
   redirect(`/plushies/${slug}`);
 }
@@ -185,6 +175,7 @@ export async function deletePlushie(id: string) {
       (key): key is string => !!key
     )
   );
+  after(deleteOrphanedFiles);
 
   revalidatePath('/', 'layout');
   redirect('/dashboard');
@@ -193,20 +184,9 @@ export async function deletePlushie(id: string) {
 /** Removes photos that were uploaded but never saved, e.g. on cancel. */
 export async function discardUploads(keys: string[]) {
   await assertEditor();
+  if (keys.length === 0) return;
 
-  const saved = await db.plushieImage.findMany({
-    where: { key: { in: keys } },
-    select: { key: true },
-  });
-  const thumbnails = await db.plushie.findMany({
-    where: { thumbnailKey: { in: keys } },
-    select: { thumbnailKey: true },
-  });
-  const inUse = new Set([
-    ...saved.map((i) => i.key),
-    ...thumbnails.map((p) => p.thumbnailKey),
-  ]);
-  await deleteFiles(keys.filter((key) => !inUse.has(key)));
+  await deleteFiles(await unusedKeys(keys));
 }
 
 /** Only admins can manage users, and never their own account from here. */

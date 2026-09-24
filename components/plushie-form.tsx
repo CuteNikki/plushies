@@ -50,7 +50,8 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
   const [uploadError, setUploadError] = useState<string>();
   const [deleting, startDelete] = useTransition();
 
-  // Photos from this visit that aren't saved yet are cleaned up when removed.
+  // Photos from this visit that aren't saved yet are cleaned up when removed
+  // or on cancel. Ones left behind by closing the tab are swept up later.
   const savedKeys = new Set(
     [plushie?.thumbnail, ...(plushie?.gallery ?? [])].map((i) => i?.key)
   );
@@ -323,7 +324,15 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             {plushie ? 'Save' : 'Create'}
           </Button>
           <Button type='button' variant='ghost' asChild>
-            <Link href={plushie ? `/plushies/${plushie.slug}` : '/dashboard'}>
+            <Link
+              href={plushie ? `/plushies/${plushie.slug}` : '/dashboard'}
+              onClick={() => {
+                const unsaved = [thumbnail, ...gallery]
+                  .filter((image) => image && !savedKeys.has(image.key))
+                  .map((image) => image!.key);
+                if (unsaved.length > 0) void discardUploads(unsaved);
+              }}
+            >
               Cancel
             </Link>
           </Button>

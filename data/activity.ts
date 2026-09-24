@@ -12,6 +12,11 @@ export type ActivityContext = {
   slugs: Map<string, string>;
   /** Photo URLs whose files still exist; the others show as deleted. */
   photos: Set<string>;
+  /**
+   * Accounts whose names link to their page: the ones that still exist,
+   * and only for admins, who are the only ones who can open those pages.
+   */
+  users: Set<string>;
 };
 
 /**
@@ -23,14 +28,14 @@ export type ActivityContext = {
 export async function getActivity({
   subject,
   userId,
-  canRevertAccounts,
+  admin,
   take = 200,
 }: {
   subject?: ActivitySubject;
   /** Only changes to this account, or made by it. */
   userId?: string;
-  /** Admins can revert account changes too. */
-  canRevertAccounts: boolean;
+  /** Admins can revert account changes too, and open account pages. */
+  admin: boolean;
   take?: number;
 }) {
   const [entries, state] = await Promise.all([
@@ -65,13 +70,14 @@ export async function getActivity({
       [...state.plushies].map(([id, plushie]) => [id, plushie.slug])
     ),
     photos: state.photos,
+    users: admin ? new Set(state.roles.keys()) : new Set(),
   };
   return {
     entries: entries.map((entry) => ({
       entry,
       revertedBy: revertedBy.get(entry.id) ?? null,
       revert:
-        entry.subject === ActivitySubject.USER && !canRevertAccounts
+        entry.subject === ActivitySubject.USER && !admin
           ? null
           : revertOption(entry, state),
     })),

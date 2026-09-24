@@ -35,7 +35,7 @@ export default async function ActivityPage(
 
   const { entries, context } = await getActivity({
     subject,
-    canRevertAccounts: admin,
+    admin,
   });
 
   return (

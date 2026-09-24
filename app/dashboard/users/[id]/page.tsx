@@ -31,7 +31,7 @@ export default async function UserPage(
   const { id } = await props.params;
   const [user, activity] = await Promise.all([
     getUser(id),
-    getActivity({ userId: id, canRevertAccounts: true, take: 50 }),
+    getActivity({ userId: id, admin: true, take: 50 }),
   ]);
   if (!user) notFound();
 

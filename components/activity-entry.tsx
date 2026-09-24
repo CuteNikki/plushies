@@ -175,8 +175,35 @@ export function ActivityEntry({
   );
 }
 
+/** Someone's name, linked to their page when the viewer can open it. */
+function Person({
+  id,
+  name,
+  context,
+}: {
+  id: string | null;
+  name: string;
+  context: ActivityContext;
+}) {
+  if (!id || !context.users.has(id)) return <strong>{name}</strong>;
+  return (
+    <Link
+      href={`/dashboard/users/${id}`}
+      className='font-semibold hover:underline'
+    >
+      {name}
+    </Link>
+  );
+}
+
 function sentence(entry: Activity, context: ActivityContext) {
-  const actor = <strong>{entry.actorName ?? 'Someone'}</strong>;
+  const actor = (
+    <Person
+      id={entry.actorId}
+      name={entry.actorName ?? 'Someone'}
+      context={context}
+    />
+  );
   const self = entry.actorId === entry.subjectId;
 
   if (entry.subject === ActivitySubject.PLUSHIE) {
@@ -213,7 +240,9 @@ function sentence(entry: Activity, context: ActivityContext) {
     );
   }
 
-  const subject = <strong>{entry.subjectName}</strong>;
+  const subject = (
+    <Person id={entry.subjectId} name={entry.subjectName} context={context} />
+  );
   // "their account" when people change their own, "Mochi's account" otherwise.
   const whose = self ? 'their' : <>{subject}&rsquo;s</>;
   const method = (snapshot: unknown) =>

@@ -1,13 +1,14 @@
 'use client';
 
 import {
-  motion,
+  LazyMotion,
   MotionConfig,
   stagger,
   useInView,
   type HTMLMotionProps,
   type Variants,
 } from 'motion/react';
+import * as m from 'motion/react-m';
 import {
   Children,
   createContext,
@@ -128,15 +129,16 @@ function useReveal(seconds: number) {
   return { ref, delay };
 }
 
+// The lightweight `m` components: MotionProvider loads what they animate with.
 const elements = {
-  div: motion.div,
-  section: motion.section,
-  header: motion.header,
-  article: motion.article,
-  ul: motion.ul,
-  dl: motion.dl,
-  li: motion.li,
-  p: motion.p,
+  div: m.div,
+  section: m.section,
+  header: m.header,
+  article: m.article,
+  ul: m.ul,
+  dl: m.dl,
+  li: m.li,
+  p: m.p,
 };
 
 type Element = keyof typeof elements;
@@ -156,7 +158,7 @@ export function Reveal({
   direction?: Direction;
   children?: React.ReactNode;
 }) {
-  const Component = elements[as] as typeof motion.div;
+  const Component = elements[as] as typeof m.div;
   const { ref, delay } = useReveal(STEP);
   return (
     <Component
@@ -187,7 +189,7 @@ export function RevealGroup({
   /** Seconds between each child. */
   interval?: number;
 }) {
-  const Component = elements[as] as typeof motion.div;
+  const Component = elements[as] as typeof m.div;
   const count = Children.count(props.children);
   const { ref, delay } = useReveal(interval * Math.max(count, 1));
   return (
@@ -217,18 +219,25 @@ export function RevealItem({
   direction?: Direction;
   as?: Element;
 }) {
-  const Component = elements[as] as typeof motion.div;
+  const Component = elements[as] as typeof m.div;
   return <Component variants={fadeIn(direction)} {...props} />;
 }
 
+const loadFeatures = () =>
+  import('@/components/motion-features').then((mod) => mod.default);
+
 /**
  * Site-wide setup: one queue for every page, and no movement for people who
- * ask their system to reduce motion.
+ * ask their system to reduce motion. The animation code loads after the page;
+ * `strict` makes a stray full `motion` component an error instead of quietly
+ * bundling everything again.
  */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (
-    <MotionConfig reducedMotion='user'>
-      <RevealQueue>{children}</RevealQueue>
-    </MotionConfig>
+    <LazyMotion features={loadFeatures} strict>
+      <MotionConfig reducedMotion='user'>
+        <RevealQueue>{children}</RevealQueue>
+      </MotionConfig>
+    </LazyMotion>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Fredoka, Geist_Mono, Nunito } from 'next/font/google';
+import { Fredoka, Nunito } from 'next/font/google';
 
 import { brand, site } from '@/lib/site';
 import { cn } from '@/lib/utils';
@@ -8,18 +8,12 @@ import { MotionProvider } from '@/components/motion';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/sonner';
 
 import './globals.css';
 
 const nunito = Nunito({ subsets: ['latin'], variable: '--font-sans' });
 
 const fredoka = Fredoka({ subsets: ['latin'], variable: '--font-heading' });
-
-const fontMono = Geist_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-});
 
 export const metadata: Metadata = {
   metadataBase: site.url,
@@ -67,7 +61,6 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(
         'antialiased',
-        fontMono.variable,
         'font-sans',
         nunito.variable,
         fredoka.variable
@@ -83,7 +76,6 @@ export default function RootLayout({
               {children}
             </main>
             <SiteFooter />
-            <Toaster />
           </MotionProvider>
         </ThemeProvider>
       </body>

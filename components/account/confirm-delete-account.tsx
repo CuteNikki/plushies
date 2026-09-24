@@ -33,7 +33,7 @@ export function ConfirmDeleteAccount({
           : (error.message ?? 'Something went wrong')
       );
     }
-    // A full reload so every part of the page forgets the old session.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- A full reload, so every part of the page forgets the old session.
     window.location.href = '/';
   }
 

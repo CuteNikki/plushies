@@ -69,7 +69,7 @@ export function UserActions({
                 startTransition(async () => {
                   try {
                     await viewAsUser(user.id);
-                    // A full reload so every part of the page uses their session.
+                    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- A full reload, so every part of the page uses their session.
                     window.location.href = '/';
                   } catch {
                     toast.error('Something went wrong, try again');

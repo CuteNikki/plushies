@@ -118,6 +118,7 @@ export function UserMenu() {
 
 function Avatar({ user }: { user: { name: string; image?: string | null } }) {
   if (user.image) {
+    // eslint-disable-next-line @next/next/no-img-element -- Loaded straight from Discord, as the privacy policy says, not through our server.
     return <img src={user.image} alt='' className='size-full object-cover' />;
   }
   return (

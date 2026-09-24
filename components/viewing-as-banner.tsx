@@ -34,7 +34,7 @@ export function ViewingAsBanner() {
           onClick={() =>
             startTransition(async () => {
               await stopViewingAs();
-              // A full reload so every part of the page uses your session again.
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- A full reload, so every part of the page uses your session again.
               window.location.href = '/dashboard/users';
             })
           }

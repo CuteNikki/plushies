@@ -121,9 +121,14 @@ function useReveal(seconds: number) {
   useEffect(() => {
     // React runs child effects before parent ones, so without waiting, rows
     // inside a card would queue ahead of the card and play while it's hidden.
-    if (inView && parentClaimed && delay === null) {
-      setDelay(queue ? queue.claim(seconds) : 0);
-    }
+    if (!inView || !parentClaimed || delay !== null) return;
+    // Claimed on the next frame rather than during the effect, which would
+    // render again right away. Frames run in effect order, so elements that
+    // come into view together still queue top to bottom.
+    const frame = requestAnimationFrame(() =>
+      setDelay(queue ? queue.claim(seconds) : 0)
+    );
+    return () => cancelAnimationFrame(frame);
   }, [inView, parentClaimed, delay, queue, seconds]);
 
   return { ref, delay };

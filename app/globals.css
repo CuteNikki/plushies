@@ -146,3 +146,29 @@
     @apply font-sans;
   }
 }
+
+/* A placeholder bar behind hidden text (TextSkeleton), so it wraps exactly
+   like the real text. Drawn as a background because an inline box can't be
+   made shorter than its font: a rounded bar, 80% of the line tall, leaving a
+   gap between lines. With box-decoration-clone, every line gets its own. */
+@utility text-skeleton {
+  /* Whole pixels, since browsers round background sizes but not positions. */
+  --bar: round(0.8lh, 1px);
+  --r: var(--radius-md);
+  --c: var(--color-muted);
+  --dot: radial-gradient(circle closest-side, var(--c) 96%, transparent);
+  color: transparent;
+  background:
+    var(--dot) left top calc(50% - (var(--bar) - 2 * var(--r)) / 2) /
+      calc(2 * var(--r)) calc(2 * var(--r)) no-repeat,
+    var(--dot) left top calc(50% + (var(--bar) - 2 * var(--r)) / 2) /
+      calc(2 * var(--r)) calc(2 * var(--r)) no-repeat,
+    var(--dot) right top calc(50% - (var(--bar) - 2 * var(--r)) / 2) /
+      calc(2 * var(--r)) calc(2 * var(--r)) no-repeat,
+    var(--dot) right top calc(50% + (var(--bar) - 2 * var(--r)) / 2) /
+      calc(2 * var(--r)) calc(2 * var(--r)) no-repeat,
+    linear-gradient(var(--c), var(--c)) center / 100%
+      calc(var(--bar) - 2 * var(--r)) no-repeat,
+    linear-gradient(var(--c), var(--c)) center / calc(100% - 2 * var(--r))
+      var(--bar) no-repeat;
+}

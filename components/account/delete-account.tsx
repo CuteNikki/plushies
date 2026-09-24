@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { Loader2Icon, Trash2Icon } from 'lucide-react';
+import { Loader2Icon, MailCheckIcon, Trash2Icon } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
 
@@ -14,23 +14,19 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string>();
   const [pending, setPending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
     setError(undefined);
+    // Sends the email with the link that actually deletes the account.
     const { error } = await authClient.deleteUser({
       password: hasPassword ? String(formData.get('password')) : undefined,
     });
-    if (error) {
-      setPending(false);
-      return setError(
-        error.code === 'SESSION_EXPIRED'
-          ? 'For safety, sign out and back in, then try again.'
-          : (error.message ?? 'Something went wrong')
-      );
-    }
-    // A full reload so every part of the page forgets the old session.
-    window.location.href = '/';
+    setPending(false);
+    if (error) return setError(error.message ?? 'Something went wrong');
+    setOpen(false);
+    setSent(true);
   }
 
   return (
@@ -38,10 +34,17 @@ export function DeleteAccount({ hasPassword }: { hasPassword: boolean }) {
       <div>
         <p className='font-medium'>Delete Account</p>
         <p className='text-sm text-muted-foreground'>
-          This removes your account and signs you out everywhere.
+          This removes your account and signs you out everywhere. We&rsquo;ll
+          email you a link to confirm first.
         </p>
       </div>
-      {open ? (
+      {sent ? (
+        <p className='flex items-start gap-2 text-sm'>
+          <MailCheckIcon className='mt-0.5 size-4 shrink-0 text-primary' />
+          Check your inbox: we sent you a link to confirm. It works for one
+          hour, in this browser.
+        </p>
+      ) : open ? (
         <form action={handleSubmit} className='flex flex-col gap-3'>
           {hasPassword ? (
             <div className='flex flex-col gap-1'>

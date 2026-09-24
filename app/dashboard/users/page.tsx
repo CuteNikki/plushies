@@ -87,7 +87,7 @@ export default async function UsersPage() {
               </div>
               <div className='self-start xs:order-last xs:self-center'>
                 <UserActions
-                  user={{ id: user.id, name: user.name }}
+                  user={{ id: user.id, name: user.name, role: user.role }}
                   disabled={isYou}
                 />
               </div>

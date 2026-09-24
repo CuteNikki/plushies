@@ -36,10 +36,15 @@ export default function PrivacyPage() {
             <strong>Account data:</strong> your name, email address, and a
             securely hashed password if you set one. If you sign in with
             Discord, we also receive your Discord account ID, username, email
-            address and profile picture. We store your role (viewer, editor or
+            address and profile picture, along with sign-in tokens from Discord,
+            which we store encrypted. We store your role (viewer, editor or
             admin) and when your account was created. Admins can see the name,
             email address and sign-in methods of every account in order to
-            manage roles.
+            manage roles. To check what viewers and editors see, an admin can
+            temporarily view the site as another account (never another
+            admin&rsquo;s). They then see what that person sees, including their
+            account settings and sessions, but cannot change anything. This is
+            recorded in the activity log.
           </li>
           <li>
             <strong>Sessions:</strong> while you are signed in, we store a
@@ -68,7 +73,8 @@ export default function PrivacyPage() {
             or change it, we send a link to confirm it belongs to you. When you
             change a confirmed address, we first ask you to confirm from the old
             one. If you ask to reset your password, we send an email with a
-            reset link. We store whether your address is confirmed.
+            reset link, and if you ask to delete your account, we send a link to
+            confirm. We store whether your address is confirmed.
           </li>
           <li>
             <strong>Technical data:</strong> when you visit the site, your IP

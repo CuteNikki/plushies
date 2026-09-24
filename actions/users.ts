@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import { ActivitySubject, ActivityType, logActivity } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { isAdmin, isRole } from '@/lib/permissions';
+import { isAdmin, isRole, Role } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
 
 /**
@@ -75,4 +75,34 @@ export async function deleteUser(userId: string) {
   await assertCanManage(userId);
   await auth.api.removeUser({ body: { userId }, headers: await headers() });
   revalidatePath('/dashboard/users');
+}
+
+/**
+ * Lets an admin see the site as someone else, e.g. to check what editors or
+ * viewers see. Only for looking: changes are turned off until they stop.
+ */
+export async function viewAsUser(userId: string) {
+  const actor = await assertCanManage(userId);
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error('User not found');
+  if (user.role === Role.ADMIN) {
+    throw new Error("Admins can't view the site as other admins");
+  }
+
+  await auth.api.impersonateUser({
+    body: { userId },
+    headers: await headers(),
+  });
+  logActivity({
+    type: ActivityType.IMPERSONATED,
+    subject: ActivitySubject.USER,
+    subjectId: user.id,
+    subjectName: user.name,
+    actor,
+  });
+}
+
+/** Switches back to the admin's own session. */
+export async function stopViewingAs() {
+  await auth.api.stopImpersonating({ headers: await headers() });
 }

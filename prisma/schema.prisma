@@ -149,6 +149,8 @@ enum ActivityType {
   SIGNED_OUT
   /// An admin sent them a password reset link.
   PASSWORD_RESET_SENT
+  /// An admin started viewing the site as them.
+  IMPERSONATED
 }
 
 /// A change to a plushie or user, kept for 90 days.

@@ -4,6 +4,7 @@ import { useTransition } from 'react';
 import { toast } from 'sonner';
 
 import {
+  EyeIcon,
   KeyRoundIcon,
   LogOutIcon,
   MoreHorizontalIcon,
@@ -14,7 +15,9 @@ import {
   deleteUser,
   sendUserPasswordReset,
   signOutUser,
+  viewAsUser,
 } from '@/actions/users';
+import { isAdmin } from '@/lib/permissions';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +32,7 @@ export function UserActions({
   user,
   disabled,
 }: {
-  user: { id: string; name: string };
+  user: { id: string; name: string; role: string };
   disabled?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
@@ -58,6 +61,28 @@ export function UserActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-auto min-w-52'>
+        {/* Admins can't be viewed as: they could do anything. */}
+        {!isAdmin(user.role) && (
+          <>
+            <DropdownMenuItem
+              onClick={() =>
+                startTransition(async () => {
+                  try {
+                    await viewAsUser(user.id);
+                    // A full reload so every part of the page uses their session.
+                    window.location.href = '/';
+                  } catch {
+                    toast.error('Something went wrong, try again');
+                  }
+                })
+              }
+            >
+              <EyeIcon />
+              View as {user.name}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           onClick={() =>
             run(

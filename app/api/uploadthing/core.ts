@@ -2,7 +2,11 @@ import { createUploadthing, type FileRouter } from 'uploadthing/next';
 import { UploadThingError } from 'uploadthing/server';
 
 import { auth } from '@/lib/auth';
-import { canEditPlushies } from '@/lib/permissions';
+import {
+  canEditPlushies,
+  isViewingAs,
+  VIEWING_AS_MESSAGE,
+} from '@/lib/permissions';
 
 const f = createUploadthing();
 
@@ -11,6 +15,7 @@ async function requireEditor({ req }: { req: Request }) {
   if (!canEditPlushies(session?.user.role)) {
     throw new UploadThingError('Only editors can upload photos');
   }
+  if (isViewingAs(session)) throw new UploadThingError(VIEWING_AS_MESSAGE);
   return { userId: session!.user.id };
 }
 

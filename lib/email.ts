@@ -77,6 +77,22 @@ export async function sendEmailChangeConfirmation(
   });
 }
 
+export async function sendDeleteAccountEmail(
+  to: string,
+  name: string,
+  url: string
+) {
+  await sendEmail({
+    to,
+    subject: 'Confirm deleting your Plushies account',
+    text: `Hi ${name},\n\nSomeone (hopefully you) asked to delete your Plushies account. Open this link in the browser where you're signed in to confirm:\n\n${url}\n\nThe link works for one hour. If you didn't ask for this, ignore this email and consider changing your password.`,
+    html: `<p>Hi ${escapeHtml(name)},</p>
+<p>Someone (hopefully you) asked to delete your Plushies account. Open the link below in the browser where you're signed in to confirm:</p>
+<p><a href="${url}">Delete my account</a></p>
+<p>The link works for one hour. If you didn't ask for this, ignore this email and consider changing your password.</p>`,
+  });
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll('&', '&amp;')

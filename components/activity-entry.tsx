@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import {
+  EyeIcon,
   ImageOffIcon,
   KeyRoundIcon,
   Link2Icon,
@@ -42,6 +43,7 @@ const icons: Record<ActivityType, LucideIcon> = {
   UNLINKED: UnlinkIcon,
   SIGNED_OUT: LogOutIcon,
   PASSWORD_RESET_SENT: MailIcon,
+  IMPERSONATED: EyeIcon,
 };
 
 const methodLabels: Record<string, string> = {
@@ -216,6 +218,12 @@ function sentence(entry: Activity, context: ActivityContext) {
       return (
         <>
           {actor} sent {subject} a password reset link
+        </>
+      );
+    case ActivityType.IMPERSONATED:
+      return (
+        <>
+          {actor} viewed the site as {subject}
         </>
       );
   }

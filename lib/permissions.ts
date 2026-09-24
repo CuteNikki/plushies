@@ -48,3 +48,14 @@ export function isAdmin(role: string | null | undefined) {
 export function canEditPlushies(role: string | null | undefined) {
   return role === Role.ADMIN || role === Role.EDITOR;
 }
+
+/** Shown when someone tries to change something while viewing as a user. */
+export const VIEWING_AS_MESSAGE =
+  "You're viewing the site as someone else, so changes are turned off.";
+
+/** Whether an admin is viewing the site as this session's user. */
+export function isViewingAs(
+  session: { session: { impersonatedBy?: string | null } } | null
+) {
+  return !!session?.session.impersonatedBy;
+}

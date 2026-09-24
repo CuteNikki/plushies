@@ -14,7 +14,11 @@ import {
 import { isNotInFuture, parseBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import { canEditPlushies } from '@/lib/permissions';
+import {
+  canEditPlushies,
+  isViewingAs,
+  VIEWING_AS_MESSAGE,
+} from '@/lib/permissions';
 import { getSession } from '@/lib/session';
 import { deleteFiles, deleteOrphanedFiles, unusedKeys } from '@/lib/uploads';
 
@@ -95,6 +99,7 @@ async function assertEditor() {
   if (!canEditPlushies(session?.user.role)) {
     throw new Error('Only editors can change plushies');
   }
+  if (isViewingAs(session)) throw new Error(VIEWING_AS_MESSAGE);
   return { id: session.user.id, name: session.user.name };
 }
 

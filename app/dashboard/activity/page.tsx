@@ -33,7 +33,10 @@ export default async function ActivityPage(
         ? ActivitySubject.USER
         : undefined;
 
-  const { entries, context } = await getActivity({ subject });
+  const { entries, context } = await getActivity({
+    subject,
+    canRevertAccounts: admin,
+  });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -82,9 +85,14 @@ export default async function ActivityPage(
           as='ul'
           className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
         >
-          {entries.map((entry) => (
+          {entries.map(({ entry, revert, revertedBy }) => (
             <Reveal as='li' direction='none' key={entry.id}>
-              <ActivityEntry entry={entry} context={context} />
+              <ActivityEntry
+                entry={entry}
+                context={context}
+                revert={revert}
+                revertedBy={revertedBy}
+              />
             </Reveal>
           ))}
         </Reveal>

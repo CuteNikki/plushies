@@ -169,6 +169,8 @@ model Activity {
   /// The relevant fields before and after the change.
   before      Json?
   after       Json?
+  /// For reverts: the entry whose change this undid.
+  revertOf    String?
 
   @@index([createdAt])
   @@index([subject, createdAt])

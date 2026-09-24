@@ -11,16 +11,18 @@ import {
   PencilIcon,
   PlusIcon,
   Trash2Icon,
+  Undo2Icon,
   UnlinkIcon,
   UserPlusIcon,
   type LucideIcon,
 } from 'lucide-react';
 
 import type { ActivityContext } from '@/data/activity';
-import type {
-  MethodSnapshot,
-  PlushieSnapshot,
-  UserSnapshot,
+import {
+  same,
+  type MethodSnapshot,
+  type PlushieSnapshot,
+  type UserSnapshot,
 } from '@/lib/activity';
 import {
   ActivitySubject,
@@ -28,11 +30,14 @@ import {
   type Activity,
 } from '@/lib/generated/prisma/client';
 import { isRole, roleLabels } from '@/lib/permissions';
+import type { RevertOption } from '@/lib/revert';
 import { cn } from '@/lib/utils';
 
 import { LocalTime } from '@/components/local-time';
 import { PrivateText } from '@/components/private-text';
+import { RevertButton } from '@/components/revert-button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 const icons: Record<ActivityType, LucideIcon> = {
   CREATED: PlusIcon,
@@ -54,9 +59,15 @@ const methodLabels: Record<string, string> = {
 export function ActivityEntry({
   entry,
   context,
+  revert,
+  revertedBy,
 }: {
   entry: Activity;
   context: ActivityContext;
+  /** Set when the change can be undone now. */
+  revert: RevertOption | null;
+  /** Who undid this change, if someone did. */
+  revertedBy: string | null;
 }) {
   const Icon =
     entry.subject === ActivitySubject.USER &&
@@ -72,7 +83,7 @@ export function ActivityEntry({
 
   return (
     <div className='flex flex-col gap-3 p-4'>
-      <div className='flex items-start gap-3'>
+      <div className='flex flex-wrap items-start gap-x-3 gap-y-2'>
         <span
           className={cn(
             'flex size-8 shrink-0 items-center justify-center rounded-md',
@@ -83,13 +94,26 @@ export function ActivityEntry({
         >
           <Icon className='size-4' aria-hidden />
         </span>
-        <div className='flex min-w-0 flex-col'>
+        <div className='flex min-w-0 flex-1 flex-col'>
           <p className='text-sm text-pretty'>{sentence(entry, context)}</p>
           <LocalTime
             iso={entry.createdAt.toISOString()}
             className='text-xs text-muted-foreground'
           />
         </div>
+        {(revertedBy || revert) && (
+          // Below the text on phones, beside it on wider screens.
+          <div className='ml-11 w-full sm:ml-0 sm:w-auto sm:shrink-0'>
+            {revertedBy ? (
+              <Button disabled variant='outline'>
+                Reverted by {revertedBy}
+                <Undo2Icon />
+              </Button>
+            ) : (
+              revert && <RevertButton id={entry.id} {...revert} />
+            )}
+          </div>
+        )}
       </div>
       {changes.length > 0 && (
         <dl
@@ -158,6 +182,18 @@ function sentence(entry: Activity, context: ActivityContext) {
     ) : (
       <strong>{entry.subjectName}</strong>
     );
+    if (entry.revertOf) {
+      const what = {
+        UPDATED: <>reverted a change to {plushie}</>,
+        CREATED: <>restored {plushie}</>,
+        DELETED: <>undid adding {plushie}</>,
+      }[entry.type as 'UPDATED' | 'CREATED' | 'DELETED'];
+      return (
+        <>
+          {actor} {what}
+        </>
+      );
+    }
     const verb = { CREATED: 'added', DELETED: 'deleted' }[
       entry.type as 'CREATED' | 'DELETED'
     ];
@@ -179,7 +215,11 @@ function sentence(entry: Activity, context: ActivityContext) {
     case ActivityType.CREATED:
       return <>{subject} signed up</>;
     case ActivityType.UPDATED:
-      return (
+      return entry.revertOf ? (
+        <>
+          {actor} reverted {whose} role
+        </>
+      ) : (
         <>
           {actor} changed {whose} account
         </>
@@ -248,9 +288,7 @@ function changedKeys<T extends object>(entry: Activity) {
     before,
     after,
     keys: keys.filter((key) => {
-      if (before && after) {
-        return JSON.stringify(before[key]) !== JSON.stringify(after[key]);
-      }
+      if (before && after) return !same(before[key], after[key]);
       return !isEmpty((after ?? before)![key]);
     }),
   };

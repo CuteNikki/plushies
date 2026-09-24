@@ -136,7 +136,7 @@ export async function savePlushie(
     position,
   }));
 
-  let removedKeys: string[] = [];
+  let logged: Promise<void>;
   try {
     if (id) {
       const existing = await db.plushie.findUnique({
@@ -144,12 +144,6 @@ export async function savePlushie(
         include: withGallery,
       });
       if (!existing) return { error: 'This plushie no longer exists' };
-
-      const keptKeys = new Set([thumbnail?.key, ...gallery.map((i) => i.key)]);
-      removedKeys = [
-        existing.thumbnailKey,
-        ...existing.gallery.map((i) => i.key),
-      ].filter((key): key is string => !!key && !keptKeys.has(key));
 
       const updated = await db.plushie.update({
         where: { id },
@@ -159,7 +153,7 @@ export async function savePlushie(
         },
         include: withGallery,
       });
-      logActivity({
+      logged = logActivity({
         type: ActivityType.UPDATED,
         subject: ActivitySubject.PLUSHIE,
         subjectId: id,
@@ -173,7 +167,7 @@ export async function savePlushie(
         data: { ...data, gallery: { create: galleryRows } },
         include: withGallery,
       });
-      logActivity({
+      logged = logActivity({
         type: ActivityType.CREATED,
         subject: ActivitySubject.PLUSHIE,
         subjectId: created.id,
@@ -192,9 +186,10 @@ export async function savePlushie(
     throw error;
   }
 
-  // Photos are deleted after the response; they aren't shown anywhere now.
+  // Removed photos stay for PHOTO_RETENTION_DAYS, for reverts. The cleanup
+  // waits for the entry that keeps them, then deletes older leftovers.
   after(async () => {
-    await deleteFiles(removedKeys);
+    await logged;
     await deleteOrphanedFiles();
   });
   revalidatePath('/', 'layout');
@@ -208,7 +203,7 @@ export async function deletePlushie(id: string) {
     where: { id },
     include: withGallery,
   });
-  logActivity({
+  const logged = logActivity({
     type: ActivityType.DELETED,
     subject: ActivitySubject.PLUSHIE,
     subjectId: plushie.id,
@@ -216,12 +211,9 @@ export async function deletePlushie(id: string) {
     actor,
     before: plushieSnapshot(plushie),
   });
+  // Its photos stay for PHOTO_RETENTION_DAYS, so it can be restored.
   after(async () => {
-    await deleteFiles(
-      [plushie.thumbnailKey, ...plushie.gallery.map((i) => i.key)].filter(
-        (key): key is string => !!key
-      )
-    );
+    await logged;
     await deleteOrphanedFiles();
   });
 

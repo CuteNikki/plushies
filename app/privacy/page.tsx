@@ -172,8 +172,9 @@ export default function PrivacyPage() {
           deletes it. Deleting your account also removes your sessions and
           connected sign-in methods right away. Sessions end after at most seven
           days without use, password reset links expire after one hour, and
-          email verification links after 24 hours. Plushie photos are deleted
-          from UploadThing when they are removed from a plushie. Activity log
+          email verification links after 24 hours. Photos removed from a
+          plushie, or of a deleted plushie, are kept on UploadThing for 30 days
+          so the change can be undone, and deleted after that. Activity log
           entries are deleted after 90 days, including those about accounts that
           were deleted before then. Log data, if any, is kept only as long as
           needed for security and troubleshooting. Browser storage stays on your

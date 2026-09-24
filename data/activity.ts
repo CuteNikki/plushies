@@ -2,56 +2,64 @@ import 'server-only';
 
 import { after } from 'next/server';
 
-import {
-  activityCutoff,
-  pruneActivity,
-  type ActivitySubject,
-} from '@/lib/activity';
+import { activityCutoff, ActivitySubject, pruneActivity } from '@/lib/activity';
 import { db } from '@/lib/db';
+import { loadRevertState, revertOption } from '@/lib/revert';
 
 /** What the page knows about plushies as they are now. */
 export type ActivityContext = {
   /** Current slug by plushie id, for plushies that still exist. */
   slugs: Map<string, string>;
-  /** Photo URLs still in use. The others were deleted from UploadThing. */
+  /** Photo URLs whose files still exist; the others show as deleted. */
   photos: Set<string>;
 };
 
 /**
- * The latest entries, optionally only about plushies or users, and what the
- * page needs to know about plushies as they are now.
+ * The latest entries, optionally only about plushies or users, with whether
+ * each can be reverted or already was, and what the page needs to know about
+ * plushies as they are now.
  */
 export async function getActivity({
   subject,
+  canRevertAccounts,
 }: {
   subject: ActivitySubject | undefined;
+  /** Admins can revert role changes too. */
+  canRevertAccounts: boolean;
 }) {
-  const [entries, plushies] = await Promise.all([
+  const [entries, state] = await Promise.all([
     db.activity.findMany({
       where: { subject, createdAt: { gte: activityCutoff() } },
       orderBy: { createdAt: 'desc' },
       take: 200,
     }),
-    db.plushie.findMany({
-      select: {
-        id: true,
-        slug: true,
-        thumbnailUrl: true,
-        gallery: { select: { url: true } },
-      },
-    }),
+    loadRevertState(),
   ]);
+  const reverts = await db.activity.findMany({
+    where: { revertOf: { in: entries.map((entry) => entry.id) } },
+    select: { revertOf: true, actorName: true },
+  });
   // Entries are also removed as new ones come in; this covers quiet times.
   after(pruneActivity);
 
+  const revertedBy = new Map(
+    reverts.map((revert) => [revert.revertOf!, revert.actorName ?? 'Someone'])
+  );
   const context: ActivityContext = {
-    slugs: new Map(plushies.map((plushie) => [plushie.id, plushie.slug])),
-    photos: new Set(
-      plushies.flatMap((plushie) => [
-        ...(plushie.thumbnailUrl ? [plushie.thumbnailUrl] : []),
-        ...plushie.gallery.map((image) => image.url),
-      ])
+    slugs: new Map(
+      [...state.plushies].map(([id, plushie]) => [id, plushie.slug])
     ),
+    photos: state.photos,
   };
-  return { entries, context };
+  return {
+    entries: entries.map((entry) => ({
+      entry,
+      revertedBy: revertedBy.get(entry.id) ?? null,
+      revert:
+        entry.subject === ActivitySubject.USER && !canRevertAccounts
+          ? null
+          : revertOption(entry, state),
+    })),
+    context,
+  };
 }

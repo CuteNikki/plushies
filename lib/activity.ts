@@ -59,7 +59,8 @@ type Snapshot = PlushieSnapshot | UserSnapshot | MethodSnapshot;
 
 /**
  * Records a change. The entry is written after the response is sent, so
- * logging never slows down or breaks the change itself.
+ * logging never slows down or breaks the change itself. The returned promise
+ * settles once it is written, for work that has to come after it.
  */
 export function logActivity(entry: {
   type: ActivityType;
@@ -69,30 +70,46 @@ export function logActivity(entry: {
   actor: Actor | null;
   before?: Snapshot;
   after?: Snapshot;
-}) {
+  /** For reverts: the entry whose change this undoes. */
+  revertOf?: string;
+}): Promise<void> {
   // e.g. a plushie saved without changes.
   if (entry.type === ActivityType.UPDATED && same(entry.before, entry.after)) {
-    return;
+    return Promise.resolve();
   }
-  after(async () => {
-    try {
-      await db.activity.create({
-        data: {
-          type: entry.type,
-          subject: entry.subject,
-          subjectId: entry.subjectId,
-          subjectName: entry.subjectName,
-          actorId: entry.actor?.id,
-          actorName: entry.actor?.name,
-          before: entry.before as Prisma.InputJsonValue | undefined,
-          after: entry.after as Prisma.InputJsonValue | undefined,
-        },
-      });
-      await pruneActivity();
-    } catch (error) {
-      console.error('Failed to log activity', error);
-    }
+  return new Promise((resolve) => {
+    after(async () => {
+      await writeActivity(entry);
+      resolve();
+    });
   });
+}
+
+type ActivityEntryInput = Parameters<typeof logActivity>[0];
+
+/**
+ * Writes an entry right away, for when the page shown next must include it.
+ * Errors are logged, not thrown: the change itself already went through.
+ */
+export async function writeActivity(entry: ActivityEntryInput) {
+  try {
+    await db.activity.create({
+      data: {
+        type: entry.type,
+        subject: entry.subject,
+        subjectId: entry.subjectId,
+        subjectName: entry.subjectName,
+        actorId: entry.actor?.id,
+        actorName: entry.actor?.name,
+        before: entry.before as Prisma.InputJsonValue | undefined,
+        after: entry.after as Prisma.InputJsonValue | undefined,
+        revertOf: entry.revertOf,
+      },
+    });
+    await pruneActivity();
+  } catch (error) {
+    console.error('Failed to log activity', error);
+  }
 }
 
 export function plushieSnapshot(row: {
@@ -125,6 +142,16 @@ export function plushieSnapshot(row: {
   };
 }
 
+/** The photo URLs in a plushie snapshot: the thumbnail and the gallery. */
+export function snapshotPhotos(snapshot: unknown): string[] {
+  const plushie = snapshot as Partial<PlushieSnapshot> | null;
+  if (!plushie) return [];
+  return [
+    ...(plushie.thumbnail ? [plushie.thumbnail] : []),
+    ...(plushie.gallery ?? []),
+  ];
+}
+
 const userSelect = {
   id: true,
   name: true,
@@ -144,8 +171,23 @@ function userSnapshot(user: UserRow): UserSnapshot {
   };
 }
 
-function same(a: unknown, b: unknown) {
-  return JSON.stringify(a) === JSON.stringify(b);
+/**
+ * Whether two snapshots or values are equal. Key order is ignored: the
+ * database doesn't keep it.
+ */
+export function same(a: unknown, b: unknown) {
+  return stableJson(a) === stableJson(b);
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const entries = Object.entries(value)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`).join(',')}}`;
+  }
+  return JSON.stringify(value ?? null);
 }
 
 /**

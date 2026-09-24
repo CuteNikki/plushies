@@ -126,24 +126,17 @@
     @apply border-border outline-ring/50;
   }
   html {
-    /* Always reserve room for the scrollbar, so pages don't shift sideways
-       when navigating between short and long pages. */
-    scrollbar-gutter: stable;
+    @apply scrollbar-gutter-stable font-sans;
   }
   html body[data-scroll-locked] {
-    /* Menus and selects lock scrolling and add a margin for the hidden
-       scrollbar. The gutter above already keeps that space, so skip it. */
-    margin-right: 0 !important;
+    @apply mr-0!;
   }
   body {
     @apply bg-background text-foreground;
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
-    cursor: pointer;
-  }
-  html {
-    @apply font-sans;
+    @apply cursor-pointer;
   }
 }
 

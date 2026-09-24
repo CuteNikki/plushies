@@ -351,7 +351,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
               const confirmed = await ask({
                 title: `Delete ${plushie.name}?`,
                 description:
-                  'This also deletes all their photos. You can restore them from the activity page for 30 days.',
+                  'This also deletes their photos and comments. You can restore them and their photos from the activity page for 30 days, but not their comments.',
                 action: 'Delete',
                 destructive: true,
               });

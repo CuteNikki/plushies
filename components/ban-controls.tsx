@@ -13,7 +13,7 @@ import {
   type BanDuration,
 } from '@/lib/ban-options';
 
-import { useConfirm, type ConfirmOptions } from '@/components/confirm-dialog';
+import { useConfirm, type Confirm } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -159,10 +159,7 @@ export function BanDialog({
 }
 
 /** Asks before lifting someone's ban, with `ask` from useConfirm. */
-export function confirmLiftBan(
-  user: BanUser,
-  ask: (options: ConfirmOptions) => Promise<boolean>
-) {
+export function confirmLiftBan(user: BanUser, ask: Confirm) {
   return ask({
     title: `Lift ${user.name}’s ban?`,
     description: 'They can sign in again right away.',

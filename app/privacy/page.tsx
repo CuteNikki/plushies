@@ -18,9 +18,10 @@ export default function PrivacyPage() {
 
       <LegalSection title='2. The short version'>
         <p>
-          You can look at all the plushies without an account. Accounts are only
-          needed to edit them. There are no ads and no analytics or tracking. We
-          do not sell personal data and we do not build profiles.
+          You can look at all the plushies and read their comments without an
+          account. Accounts are only needed to like plushies, comment on them or
+          edit them. There are no ads and no analytics or tracking. We do not
+          sell personal data and we do not build profiles.
         </p>
       </LegalSection>
 
@@ -71,6 +72,16 @@ export default function PrivacyPage() {
             someone tries to sign in to a banned account, we show them the
             reason, if any. Bans and lifted bans are recorded in the activity
             log. We do not ban IP addresses.
+          </li>
+          <li>
+            <strong>Comments:</strong> when you comment on a plushie, we store
+            the text, which plushie and comment it replies to, and when it was
+            written or last edited. Comments are public: everyone sees them with
+            your name, profile picture and role. You can edit and delete your
+            own comments. Editors and admins can delete any comment; such
+            deletions are recorded in the activity log together with the
+            comment, so they can be undone. To stop spam, we check how many
+            comments your account posted in the last minute.
           </li>
           <li>
             <strong>Likes:</strong> when you like a plushie, we store that your
@@ -145,7 +156,8 @@ export default function PrivacyPage() {
             sign in with Discord or connect your Discord account. You are
             redirected to Discord, and Discord&rsquo;s own privacy policy
             applies there. Your Discord profile picture is loaded from
-            Discord&rsquo;s servers when it is shown to you.
+            Discord&rsquo;s servers wherever it is shown, including next to your
+            comments, so the browsers of visitors who see it contact Discord.
           </li>
           <li>
             <strong>UploadThing</strong> (Ping Labs, Inc., USA): stores the
@@ -195,13 +207,16 @@ export default function PrivacyPage() {
           days without use, password reset links expire after one hour, and
           email verification links after 24 hours. Ban details are removed when
           an admin lifts the ban, or when the account next signs in after the
-          ban ended. Photos removed from a plushie, or of a deleted plushie, are
-          kept on UploadThing for 30 days so the change can be undone, and
-          deleted after that. Activity log entries are deleted after 90 days,
-          including those about accounts that were deleted before then. Log
-          data, if any, is kept only as long as needed for security and
-          troubleshooting. Browser storage stays on your device until it expires
-          or you clear it.
+          ban ended. Comments are kept until you, an editor or an admin deletes
+          them. When your account is deleted, your comments are deleted with it;
+          one that others replied to stays as &ldquo;[deleted]&rdquo;, without
+          your name or text, until its replies are gone. Photos removed from a
+          plushie, or of a deleted plushie, are kept on UploadThing for 30 days
+          so the change can be undone, and deleted after that. Activity log
+          entries are deleted after 90 days, including those about accounts that
+          were deleted before then. Log data, if any, is kept only as long as
+          needed for security and troubleshooting. Browser storage stays on your
+          device until it expires or you clear it.
         </p>
       </LegalSection>
 

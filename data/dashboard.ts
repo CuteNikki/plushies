@@ -48,11 +48,11 @@ export async function getDashboard({ admin }: { admin: boolean }) {
         orderBy: { updatedAt: 'desc' },
       }),
       db.plushieLike.count(),
-      // Editors only see plushie changes on the activity page.
+      // Editors don't see account changes on the activity page.
       db.activity.count({
         where: {
           createdAt: { gte: since },
-          subject: admin ? undefined : ActivitySubject.PLUSHIE,
+          subject: admin ? undefined : { not: ActivitySubject.USER },
         },
       }),
       admin

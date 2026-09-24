@@ -26,12 +26,13 @@ export type ActivityContext = {
  * plushies as they are now.
  */
 export async function getActivity({
-  subject,
+  subjects,
   userId,
   admin,
   take = 200,
 }: {
-  subject?: ActivitySubject;
+  /** Only entries about these; all of them when left out. */
+  subjects?: ActivitySubject[];
   /** Only changes to this account, or made by it. */
   userId?: string;
   /** Admins can revert account changes too, and open account pages. */
@@ -41,7 +42,7 @@ export async function getActivity({
   const [entries, state] = await Promise.all([
     db.activity.findMany({
       where: {
-        subject,
+        subject: subjects && { in: subjects },
         createdAt: { gte: activityCutoff() },
         ...(userId && {
           OR: [

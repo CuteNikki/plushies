@@ -1,16 +1,19 @@
 import 'server-only';
 
 import {
+  activityCutoff,
   ActivitySubject,
   ActivityType,
   plushieSnapshot,
   same,
   snapshotPhotos,
   type BanSnapshot,
+  type CommentSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
 } from '@/lib/activity';
 import { banSnapshot, isBanned } from '@/lib/bans';
+import { theReplies } from '@/lib/comment-rules';
 import { db } from '@/lib/db';
 import type { Activity } from '@/lib/generated/prisma/client';
 import { isAdmin, isRole, roleLabels } from '@/lib/permissions';
@@ -24,12 +27,17 @@ export type RevertState = {
   roles: Map<string, string>;
   /** The ban in force now, by user id, for everyone who is banned. */
   bans: Map<string, BanSnapshot>;
+  /**
+   * The comments deleted comments answered, and the deleted ones
+   * themselves, by id, if they exist: true when they show as "[deleted]".
+   */
+  comments: Map<string, boolean>;
   /** Photo URLs whose files still exist. */
   photos: Set<string>;
 };
 
 export async function loadRevertState(): Promise<RevertState> {
-  const [plushies, users, retained] = await Promise.all([
+  const [plushies, users, retained, comments] = await Promise.all([
     db.plushie.findMany({
       include: { gallery: { orderBy: { position: 'asc' } } },
     }),
@@ -43,6 +51,7 @@ export async function loadRevertState(): Promise<RevertState> {
       },
     }),
     retainedPhotos(),
+    relevantComments(),
   ]);
   const snapshots = new Map(
     plushies.map((plushie) => [plushie.id, plushieSnapshot(plushie)])
@@ -50,6 +59,7 @@ export async function loadRevertState(): Promise<RevertState> {
   return {
     plushies: snapshots,
     roles: new Map(users.map((user) => [user.id, user.role])),
+    comments,
     bans: new Map(
       users
         .filter((user) => isBanned(user))
@@ -60,6 +70,28 @@ export async function loadRevertState(): Promise<RevertState> {
       ...[...snapshots.values()].flatMap(snapshotPhotos),
     ]),
   };
+}
+
+/** The comments that deleted comments in the activity log refer to. */
+async function relevantComments() {
+  const entries = await db.activity.findMany({
+    where: {
+      subject: ActivitySubject.COMMENT,
+      createdAt: { gte: activityCutoff() },
+    },
+    select: { subjectId: true, before: true },
+  });
+  const ids = entries.flatMap((entry) => {
+    const before = entry.before as CommentSnapshot | null;
+    return [entry.subjectId, before?.parentId].filter(
+      (id): id is string => !!id
+    );
+  });
+  const rows = await db.comment.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, deletedAt: true },
+  });
+  return new Map(rows.map((row) => [row.id, !!row.deletedAt]));
 }
 
 export type RevertOption = {
@@ -87,6 +119,30 @@ export function revertOption(
   state: RevertState
 ): RevertOption | null {
   const name = entry.subjectName;
+
+  if (entry.subject === ActivitySubject.COMMENT) {
+    if (entry.type !== ActivityType.DELETED) return null;
+    const before = entry.before as CommentSnapshot;
+    // Not if it's back already, or what it belonged to is gone.
+    if (state.comments.get(entry.subjectId) === false) return null;
+    if (!state.plushies.has(before.plushieId)) return null;
+    // A "[deleted]" one comes back as that, so its author doesn't matter.
+    if (
+      !before.deleted &&
+      (!before.authorId || !state.roles.has(before.authorId))
+    ) {
+      return null;
+    }
+    if (before.parentId && !state.comments.has(before.parentId)) return null;
+    return {
+      label: 'Restore',
+      confirm: before.deleted
+        ? `Bring back ${theReplies(before.replies?.length ?? 0)} under the deleted comment?`
+        : before.replies?.length
+          ? `Bring back ${name}’s comment and ${theReplies(before.replies.length)} under it?`
+          : `Bring back ${name}’s comment?`,
+    };
+  }
 
   if (entry.subject === ActivitySubject.USER) {
     if (entry.type === ActivityType.BANNED) {

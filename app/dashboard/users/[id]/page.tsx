@@ -172,6 +172,40 @@ export default async function UserPage(
       </Section>
 
       <Section
+        title='Comments'
+        description={
+          user._count.comments > user.comments.length
+            ? `${count(user._count.comments, 'comment')}, the latest ${user.comments.length} shown.`
+            : `${count(user._count.comments, 'comment')}.`
+        }
+      >
+        {user.comments.length > 0 ? (
+          <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+            {user.comments.map((comment) => (
+              <li key={comment.id} className='flex flex-col gap-1 p-4'>
+                <p className='text-xs text-muted-foreground'>
+                  On{' '}
+                  <Link
+                    href={`/plushies/${comment.plushie.slug}`}
+                    className='font-semibold text-foreground hover:underline'
+                  >
+                    {comment.plushie.name}
+                  </Link>{' '}
+                  <LocalTime iso={comment.createdAt.toISOString()} />
+                  {comment.editedAt && ' (edited)'}
+                </p>
+                <p className='text-sm wrap-break-word whitespace-pre-line'>
+                  {comment.body}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Empty>No comments yet.</Empty>
+        )}
+      </Section>
+
+      <Section
         title='Activity'
         description={`Changes to this account and changes they made, from the last ${ACTIVITY_DAYS} days.`}
       >

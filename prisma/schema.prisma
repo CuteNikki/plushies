@@ -28,6 +28,7 @@ model Plushie {
   thumbnailUrl String?
   gallery      PlushieImage[]
   likes        PlushieLike[]
+  comments     Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,6 +48,39 @@ model PlushieImage {
 
   @@index([plushieId, position])
   @@map("plushie_image")
+}
+
+/// A comment on a plushie's page. Replies nest under the comment they
+/// answer, as deep as people go.
+model Comment {
+  id             String    @id @default(cuid())
+  plushieId      String
+  plushie        Plushie   @relation(fields: [plushieId], references: [id], onDelete: Cascade)
+  /// Null only on a deleted comment kept for its replies.
+  authorId       String?
+  author         User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  /// The top-level comment the thread started with; null for top-level ones.
+  /// Lets a page load whole threads at once.
+  threadId       String?
+  thread         Comment?  @relation("Thread", fields: [threadId], references: [id], onDelete: Cascade)
+  threadComments Comment[] @relation("Thread")
+  /// The comment this answers; null for top-level ones.
+  parentId       String?
+  parent         Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[] @relation("Replies")
+  /// Plain text. Empty on a deleted comment kept for its replies.
+  body           String
+  createdAt      DateTime  @default(now())
+  editedAt       DateTime?
+  /// Set on a comment that was deleted while it had replies. It shows as
+  /// "[deleted]" and goes once its last reply does.
+  deletedAt      DateTime?
+
+  @@index([plushieId, threadId, createdAt])
+  @@index([threadId, createdAt])
+  @@index([parentId])
+  @@index([authorId, createdAt])
+  @@map("comment")
 }
 
 /// A signed-in account liking a plushie. The key allows one per account.
@@ -97,6 +131,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   likes         PlushieLike[]
+  comments      Comment[]
 
   @@map("user")
 }
@@ -155,6 +190,8 @@ model Verification {
 enum ActivitySubject {
   PLUSHIE
   USER
+  /// Only comments editors or admins deleted from someone else.
+  COMMENT
 }
 
 /// What happened. CREATED, UPDATED and DELETED apply to plushies and users;
@@ -186,7 +223,8 @@ model Activity {
   createdAt   DateTime        @default(now())
   type        ActivityType
   subject     ActivitySubject
-  /// The plushie's or user's id. Not a relation, so entries outlive them.
+  /// The plushie's, user's or comment's id. Not a relation, so entries
+  /// outlive them.
   subjectId   String
   /// Their name at the time, for when they have been deleted since.
   subjectName String

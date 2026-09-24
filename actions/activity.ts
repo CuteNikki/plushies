@@ -8,10 +8,12 @@ import {
   plushieSnapshot,
   writeActivity,
   type BanSnapshot,
+  type CommentSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
 } from '@/lib/activity';
 import { applyBan, liftBan } from '@/lib/bans';
+import { restoreReplies } from '@/lib/comments';
 import { db } from '@/lib/db';
 import { Prisma, type Role } from '@/lib/generated/prisma/client';
 import {
@@ -85,6 +87,52 @@ export async function revertActivity(id: string): Promise<{ error?: string }> {
   };
 
   try {
+    if (entry.subject === ActivitySubject.COMMENT) {
+      const before = entry.before as CommentSnapshot;
+      // One that showed as "[deleted]" comes back as that.
+      const data = before.deleted
+        ? { body: '', authorId: null, deletedAt: new Date(), editedAt: null }
+        : {
+            body: before.body,
+            authorId: before.authorId,
+            deletedAt: null,
+            editedAt: null,
+          };
+      // Still there as "[deleted]" when it had replies; gone otherwise.
+      const placeholder = await db.comment.findUnique({
+        where: { id: entry.subjectId },
+      });
+      if (placeholder) {
+        await db.comment.update({ where: { id: entry.subjectId }, data });
+      } else {
+        await db.comment.create({
+          data: {
+            ...data,
+            // The same id, so its history still matches.
+            id: entry.subjectId,
+            plushieId: before.plushieId,
+            threadId: before.threadId,
+            parentId: before.parentId,
+            createdAt: new Date(before.createdAt),
+          },
+        });
+      }
+      await restoreReplies(before.replies ?? []);
+      // Nothing to hold a "[deleted]" one up if none of its replies came back.
+      if (
+        before.deleted &&
+        !(await db.comment.count({ where: { parentId: entry.subjectId } }))
+      ) {
+        await db.comment.delete({ where: { id: entry.subjectId } });
+      }
+      await writeActivity({
+        ...log,
+        type: ActivityType.CREATED,
+        subjectName: entry.subjectName,
+        after: before,
+      });
+      return {};
+    }
     if (entry.type === ActivityType.BANNED) {
       const user = await db.user.findUniqueOrThrow({
         where: { id: entry.subjectId },

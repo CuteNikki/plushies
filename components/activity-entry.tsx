@@ -9,6 +9,8 @@ import {
   Link2Icon,
   LogOutIcon,
   MailIcon,
+  MessageCircleIcon,
+  MessageCircleOffIcon,
   PencilIcon,
   PlusIcon,
   ShieldCheckIcon,
@@ -23,6 +25,7 @@ import type { ActivityContext } from '@/data/activity';
 import {
   same,
   type BanSnapshot,
+  type CommentSnapshot,
   type MethodSnapshot,
   type PlushieSnapshot,
   type UserSnapshot,
@@ -75,17 +78,23 @@ export function ActivityEntry({
   revertedBy: string | null;
 }) {
   const Icon =
-    entry.subject === ActivitySubject.USER &&
-    entry.type === ActivityType.CREATED
-      ? UserPlusIcon
-      : icons[entry.type];
+    entry.subject === ActivitySubject.COMMENT
+      ? entry.type === ActivityType.DELETED
+        ? MessageCircleOffIcon
+        : MessageCircleIcon
+      : entry.subject === ActivitySubject.USER &&
+          entry.type === ActivityType.CREATED
+        ? UserPlusIcon
+        : icons[entry.type];
   const changes =
     entry.subject === ActivitySubject.PLUSHIE
       ? plushieChanges(entry, context)
-      : entry.type === ActivityType.BANNED ||
-          entry.type === ActivityType.UNBANNED
-        ? banChanges(entry)
-        : userChanges(entry);
+      : entry.subject === ActivitySubject.COMMENT
+        ? commentChanges(entry)
+        : entry.type === ActivityType.BANNED ||
+            entry.type === ActivityType.UNBANNED
+          ? banChanges(entry)
+          : userChanges(entry);
   // Edits compare before and after; new and deleted entries show one value.
   const edited = !!entry.before && !!entry.after;
 
@@ -206,6 +215,44 @@ function sentence(entry: Activity, context: ActivityContext) {
   );
   const self = entry.actorId === entry.subjectId;
 
+  if (entry.subject === ActivitySubject.COMMENT) {
+    const comment = (entry.before ?? entry.after) as CommentSnapshot;
+    const author = (
+      <Person
+        id={comment.authorId}
+        name={entry.subjectName}
+        context={context}
+      />
+    );
+    const slug = context.slugs.get(comment.plushieId);
+    const plushie = slug ? (
+      <Link
+        href={`/plushies/${slug}`}
+        className='font-semibold hover:underline'
+      >
+        {comment.plushieName}
+      </Link>
+    ) : (
+      <strong>{comment.plushieName}</strong>
+    );
+    const verb = entry.type === ActivityType.DELETED ? 'deleted' : 'restored';
+    if (comment.deleted) {
+      const count = comment.replies?.length ?? 0;
+      return (
+        <>
+          {actor} {verb} {count} {count === 1 ? 'reply' : 'replies'} under a
+          deleted comment on {plushie}
+        </>
+      );
+    }
+    return (
+      <>
+        {actor} {verb} {author}&rsquo;s comment on {plushie}
+        {replyCount(comment)}
+      </>
+    );
+  }
+
   if (entry.subject === ActivitySubject.PLUSHIE) {
     const slug = context.slugs.get(entry.subjectId);
     const plushie = slug ? (
@@ -325,6 +372,20 @@ function sentence(entry: Activity, context: ActivityContext) {
 }
 
 /** The ban that was given or lifted: why, and when it ends. */
+/** e.g. ' and 3 replies', for comments deleted with their replies. */
+function replyCount(comment: CommentSnapshot) {
+  const count = comment.replies?.length ?? 0;
+  if (count === 0) return null;
+  return ` and ${count} ${count === 1 ? 'reply' : 'replies'}`;
+}
+
+/** The comment that was deleted or restored. */
+function commentChanges(entry: Activity): Change[] {
+  const comment = (entry.before ?? entry.after) as CommentSnapshot | null;
+  if (!comment || comment.deleted) return [];
+  return [{ label: 'Comment', after: <Text value={comment.body} /> }];
+}
+
 function banChanges(entry: Activity): Change[] {
   const ban = (entry.after ?? entry.before) as BanSnapshot | null;
   if (!ban) return [];

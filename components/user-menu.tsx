@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { UserAvatar } from '@/components/user-avatar';
 
 // A client component so the public pages can stay statically rendered.
 export function UserMenu() {
@@ -50,14 +51,14 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant='outline' size='icon' className='overflow-hidden'>
-          <Avatar user={user} />
+          <UserAvatar user={user} />
           <span className='sr-only'>Account</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-auto max-w-72 min-w-48'>
         <DropdownMenuLabel className='flex items-center gap-2.5 py-2 font-normal'>
           <span className='flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary ring-1 ring-primary/20'>
-            <Avatar user={user} />
+            <UserAvatar user={user} />
           </span>
           <span className='flex min-w-0 flex-col'>
             <span className='truncate font-heading font-semibold text-foreground'>
@@ -113,15 +114,5 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-function Avatar({ user }: { user: { name: string; image?: string | null } }) {
-  if (user.image) {
-    // eslint-disable-next-line @next/next/no-img-element -- Loaded straight from Discord, as the privacy policy says, not through our server.
-    return <img src={user.image} alt='' className='size-full object-cover' />;
-  }
-  return (
-    <span className='font-heading'>{user.name.charAt(0).toUpperCase()}</span>
   );
 }

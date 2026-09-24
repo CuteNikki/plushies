@@ -13,11 +13,26 @@ import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Activity' };
 
-const filters = [
-  { show: undefined, label: 'All' },
-  { show: 'plushies', label: 'Plushies' },
-  { show: 'users', label: 'Users' },
-] as const;
+type Filter = {
+  /** The ?show= value; none for all. */
+  show?: string;
+  label: string;
+  subjects?: ActivitySubject[];
+  /** Account changes are only for admins. */
+  adminOnly?: boolean;
+};
+
+const filters: Filter[] = [
+  { label: 'All' },
+  { show: 'plushies', label: 'Plushies', subjects: [ActivitySubject.PLUSHIE] },
+  { show: 'comments', label: 'Comments', subjects: [ActivitySubject.COMMENT] },
+  {
+    show: 'users',
+    label: 'Users',
+    subjects: [ActivitySubject.USER],
+    adminOnly: true,
+  },
+];
 
 export default async function ActivityPage(
   props: PageProps<'/dashboard/activity'>
@@ -25,18 +40,13 @@ export default async function ActivityPage(
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
   const { show } = await props.searchParams;
-  // Editors only see plushie changes; account changes are for admins.
-  const subject =
-    !admin || show === 'plushies'
-      ? ActivitySubject.PLUSHIE
-      : show === 'users'
-        ? ActivitySubject.USER
-        : undefined;
+  const shown = filters.filter((filter) => admin || !filter.adminOnly);
+  const filter = shown.find((filter) => filter.show === show) ?? shown[0];
+  const subjects: ActivitySubject[] | undefined =
+    filter.subjects ??
+    (admin ? undefined : [ActivitySubject.PLUSHIE, ActivitySubject.COMMENT]);
 
-  const { entries, context } = await getActivity({
-    subject,
-    admin,
-  });
+  const { entries, context } = await getActivity({ subjects, admin });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -49,34 +59,32 @@ export default async function ActivityPage(
         </h1>
         <p className='text-pretty text-muted-foreground'>
           {admin
-            ? `Changes to plushies and accounts from the last ${ACTIVITY_DAYS} days.`
-            : `Changes to plushies from the last ${ACTIVITY_DAYS} days.`}
+            ? `Changes to plushies and accounts, and deleted comments, from the last ${ACTIVITY_DAYS} days.`
+            : `Changes to plushies, and deleted comments, from the last ${ACTIVITY_DAYS} days.`}
         </p>
       </Reveal>
 
-      {admin && (
-        <Reveal as='header' className='flex gap-1'>
-          {filters.map((filter) => (
-            <Button
-              key={filter.label}
-              variant={filter.show === show ? 'secondary' : 'ghost'}
-              size='sm'
-              asChild
+      <Reveal as='header' className='flex flex-wrap gap-1'>
+        {shown.map((option) => (
+          <Button
+            key={option.label}
+            variant={option === filter ? 'secondary' : 'ghost'}
+            size='sm'
+            asChild
+          >
+            <Link
+              href={
+                option.show
+                  ? `/dashboard/activity?show=${option.show}`
+                  : '/dashboard/activity'
+              }
+              aria-current={option === filter ? 'page' : undefined}
             >
-              <Link
-                href={
-                  filter.show
-                    ? `/dashboard/activity?show=${filter.show}`
-                    : '/dashboard/activity'
-                }
-                aria-current={filter.show === show ? 'page' : undefined}
-              >
-                {filter.label}
-              </Link>
-            </Button>
-          ))}
-        </Reveal>
-      )}
+              {option.label}
+            </Link>
+          </Button>
+        ))}
+      </Reveal>
 
       {entries.length > 0 ? (
         // The card rises as a whole, then its rows fade in without moving, so

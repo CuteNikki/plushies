@@ -165,3 +165,65 @@
     linear-gradient(var(--c), var(--c)) center / calc(100% - 2 * var(--r))
       var(--bar) no-repeat;
 }
+
+/*
+ * Replies under a comment, joined to it like on YouTube: a line runs down
+ * from the comment's avatar (.comment-line) and curves into each reply. The
+ * colour is solid, as see-through lines would show darker where they meet.
+ * Children marked data-unthreaded, like an opened "Continue this thread",
+ * get no curve.
+ */
+@layer components {
+  .comment-line,
+  .comment-replies {
+    --thread-line: color-mix(
+      in oklab,
+      var(--foreground) 15%,
+      var(--background)
+    );
+  }
+
+  .comment-line {
+    width: 2px;
+    background: var(--thread-line);
+  }
+
+  .comment-replies {
+    /* Lines up with the middle of the avatar above; INDENT in comments.tsx
+       adds these two up. */
+    --reply-indent: calc(0.75rem + 2px);
+    margin-left: 1rem;
+    padding-left: var(--reply-indent);
+  }
+
+  .comment-replies > :not([data-unthreaded]) {
+    position: relative;
+    /* Lines are placed from inside the border, so a bordered child (like a
+       button) sets its border width here to keep them lined up. */
+    --reply-border: 0px;
+  }
+
+  /* The curve, from the line above (across the 1rem gap) to the middle of
+     the avatar, or of whatever --reply-center says is there instead. */
+  .comment-replies > :not([data-unthreaded])::before {
+    content: '';
+    position: absolute;
+    top: calc(-1rem - var(--reply-border));
+    left: calc(-1 * var(--reply-indent) - 1px - var(--reply-border));
+    width: calc(var(--reply-indent) - 3px);
+    height: calc(1rem + var(--reply-center, 1rem) + 1px);
+    border-bottom: 2px solid var(--thread-line);
+    border-left: 2px solid var(--thread-line);
+    border-bottom-left-radius: 0.75rem;
+  }
+
+  /* The line carries on past every reply but the last. */
+  .comment-replies > :not([data-unthreaded]):not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: calc(-1rem - var(--reply-border));
+    left: calc(-1 * var(--reply-indent) - 1px - var(--reply-border));
+    border-left: 2px solid var(--thread-line);
+  }
+}

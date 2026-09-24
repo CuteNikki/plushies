@@ -11,8 +11,8 @@ export async function getUsers() {
 }
 
 /**
- * One account for its page: sign-in methods, who banned them, and the
- * plushies they like, most recent first.
+ * One account for its page: sign-in methods, who banned them, the plushies
+ * they like and their latest comments, most recent first.
  */
 export async function getUser(id: string) {
   return db.user.findUnique({
@@ -20,6 +20,19 @@ export async function getUser(id: string) {
     include: {
       accounts: { select: { providerId: true } },
       bannedBy: { select: { id: true, name: true } },
+      comments: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          editedAt: true,
+          plushie: { select: { slug: true, name: true } },
+        },
+      },
+      _count: { select: { comments: { where: { deletedAt: null } } } },
       likes: {
         orderBy: { createdAt: 'desc' },
         select: {

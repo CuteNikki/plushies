@@ -2,6 +2,7 @@ import 'server-only';
 
 import { after } from 'next/server';
 
+import { removeCommentsOf } from '@/lib/comments';
 import { db } from '@/lib/db';
 import {
   ActivitySubject,
@@ -55,13 +56,37 @@ export type UserSnapshot = {
 /** For LINKED and UNLINKED: which sign-in method, e.g. 'discord'. */
 export type MethodSnapshot = { method: string };
 
+/** A comment an editor or admin deleted, so it can be restored. */
+export type CommentSnapshot = {
+  body: string;
+  plushieId: string;
+  plushieName: string;
+  authorId: string | null;
+  authorName: string | null;
+  threadId: string | null;
+  parentId: string | null;
+  createdAt: string;
+  /** It showed as "[deleted]" already; an admin removed it with its replies. */
+  deleted?: boolean;
+  /**
+   * The replies an admin deleted along with it, however deep, oldest first.
+   * `deleted` ones showed as "[deleted]".
+   */
+  replies?: (CommentSnapshot & { id: string; deleted: boolean })[];
+};
+
 /**
  * For BANNED and UNBANNED: why, if a reason was given, and when it ends
  * (ISO), or null for good.
  */
 export type BanSnapshot = { reason: string | null; expires: string | null };
 
-type Snapshot = PlushieSnapshot | UserSnapshot | MethodSnapshot | BanSnapshot;
+type Snapshot =
+  | PlushieSnapshot
+  | UserSnapshot
+  | MethodSnapshot
+  | BanSnapshot
+  | CommentSnapshot;
 
 /**
  * Records a change. The entry is written after the response is sent, so
@@ -311,12 +336,14 @@ export function withAccountActivity(client: typeof db) {
         },
         async delete({ args, query }) {
           const before = await usersWhere(args.where);
+          await removeCommentsOf(args.where);
           const result = await query(args);
           await logDeletes(before);
           return result;
         },
         async deleteMany({ args, query }) {
           const before = await usersWhere(args.where);
+          if (args.where) await removeCommentsOf(args.where);
           const result = await query(args);
           await logDeletes(before);
           return result;

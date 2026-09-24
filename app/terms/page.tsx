@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Terms of Service' };
 
 export default function TermsPage() {
   return (
-    <LegalPage title='Terms of Service' updated='September 23, 2026'>
+    <LegalPage title='Terms of Service' updated='September 24, 2026'>
       <LegalSection title='1. Scope'>
         <p>
           These terms apply to your use of Plushies, a free website that shows a
@@ -44,11 +44,24 @@ export default function TermsPage() {
             other people;
           </li>
           <li>
+            post comments that are hateful, harassing, sexual, misleading,
+            advertising or spam, or that share anyone&rsquo;s personal
+            information;
+          </li>
+          <li>
+            get around the comment rules, for example the ban on links or the
+            limit on how many comments you can post;
+          </li>
+          <li>
             attack, overload, probe or scrape the site, or try to get around
             technical limits or permissions;
           </li>
           <li>use the service for anything unlawful.</li>
         </LegalList>
+        <p>
+          Editors and admins may delete comments that break these rules, and
+          admins may ban accounts, for a time or for good.
+        </p>
       </LegalSection>
 
       <LegalSection title='5. Content from editors'>

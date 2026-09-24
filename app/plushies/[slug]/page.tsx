@@ -6,6 +6,7 @@ import { formatBirthday } from '@/lib/birthday';
 import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
+import { Comments } from '@/components/comments';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
 import { LikeButton } from '@/components/like-button';
 import {
@@ -17,6 +18,7 @@ import {
 import { PlushieAge } from '@/components/plushie-age';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
+import { Toaster } from '@/components/ui/sonner';
 
 export async function generateStaticParams() {
   const plushies = await getPlushies();
@@ -142,6 +144,12 @@ export default async function PlushiePage(
           </div>
         </RevealQueue>
       </article>
+
+      <Reveal className='mt-6'>
+        <Comments plushieId={plushie.id} slug={plushie.slug} />
+      </Reveal>
+      {/* For the comments. */}
+      <Toaster />
     </div>
   );
 }

@@ -37,6 +37,7 @@ export default function UserLoading() {
           ))}
         </div>
       </div>
+      <SectionSkeleton title='Comments' height='h-32' />
       <SectionSkeleton title='Activity' height='h-48' />
     </LoadingPage>
   );

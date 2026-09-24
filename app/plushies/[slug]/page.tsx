@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { getPlushie, getPlushies } from '@/data/plushies';
 import { formatBirthday } from '@/lib/birthday';
-import { getPlushie, getPlushies } from '@/lib/plushies';
 import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';

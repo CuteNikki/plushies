@@ -3,7 +3,7 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
-import type { Plushie } from '@/lib/plushies';
+import type { Plushie } from '@/data/plushies';
 
 import { Reveal } from '@/components/motion';
 import { PlushieCard } from '@/components/plushie-card';

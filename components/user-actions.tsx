@@ -8,7 +8,7 @@ import {
   deleteUser,
   sendUserPasswordReset,
   signOutUser,
-} from '@/app/dashboard/actions';
+} from '@/actions/users';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,

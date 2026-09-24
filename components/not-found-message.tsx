@@ -1,7 +1,7 @@
 import { HeartCrackIcon, HouseIcon } from 'lucide-react';
 import Link from 'next/link';
 
-import { getPlushies } from '@/lib/plushies';
+import { getPlushies } from '@/data/plushies';
 
 import { Reveal } from '@/components/motion';
 import { PlushieCard } from '@/components/plushie-card';

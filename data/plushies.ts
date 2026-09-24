@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { cache } from 'react';
+
 import { db } from '@/lib/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 
@@ -58,20 +60,22 @@ function toPlushie(row: PlushieRow): Plushie {
   };
 }
 
-export async function getPlushies() {
+// Wrapped in cache() so a page and its metadata share one query per request.
+
+export const getPlushies = cache(async () => {
   const rows = await db.plushie.findMany({
     include,
     orderBy: { createdAt: 'asc' },
   });
   return rows.map(toPlushie);
-}
+});
 
-export async function getPlushie(slug: string) {
+export const getPlushie = cache(async (slug: string) => {
   const row = await db.plushie.findUnique({ where: { slug }, include });
   return row ? toPlushie(row) : null;
-}
+});
 
-export async function getPlushieById(id: string) {
+export const getPlushieById = cache(async (id: string) => {
   const row = await db.plushie.findUnique({ where: { id }, include });
   return row ? toPlushie(row) : null;
-}
+});

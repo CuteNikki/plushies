@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 
 import { authClient } from '@/lib/auth-client';
 
-import { setPassword } from '@/app/account/actions';
+import { setPassword } from '@/actions/account';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

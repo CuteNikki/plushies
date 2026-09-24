@@ -17,7 +17,7 @@ import {
 import { formatDate, relative } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
-import { revokeOtherSessions, revokeSession } from '@/app/account/actions';
+import { revokeOtherSessions, revokeSession } from '@/actions/account';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

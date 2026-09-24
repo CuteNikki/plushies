@@ -2,7 +2,7 @@ import { Pencil, Plus } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { getPlushies } from '@/lib/plushies';
+import { getPlushies } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';

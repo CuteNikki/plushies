@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { after } from 'next/server';
+
 import { db } from '@/lib/db';
 import {
   ActivitySubject,
@@ -15,6 +17,13 @@ export const ACTIVITY_DAYS = 90;
 
 export function activityCutoff() {
   return new Date(Date.now() - ACTIVITY_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** Deletes entries older than ACTIVITY_DAYS. */
+export async function pruneActivity() {
+  await db.activity.deleteMany({
+    where: { createdAt: { lt: activityCutoff() } },
+  });
 }
 
 export type Actor = { id: string; name: string };
@@ -48,7 +57,11 @@ export type MethodSnapshot = { method: string };
 
 type Snapshot = PlushieSnapshot | UserSnapshot | MethodSnapshot;
 
-export async function logActivity(entry: {
+/**
+ * Records a change. The entry is written after the response is sent, so
+ * logging never slows down or breaks the change itself.
+ */
+export function logActivity(entry: {
   type: ActivityType;
   subject: ActivitySubject;
   subjectId: string;
@@ -61,26 +74,25 @@ export async function logActivity(entry: {
   if (entry.type === ActivityType.UPDATED && same(entry.before, entry.after)) {
     return;
   }
-  try {
-    await db.activity.create({
-      data: {
-        type: entry.type,
-        subject: entry.subject,
-        subjectId: entry.subjectId,
-        subjectName: entry.subjectName,
-        actorId: entry.actor?.id,
-        actorName: entry.actor?.name,
-        before: entry.before as Prisma.InputJsonValue | undefined,
-        after: entry.after as Prisma.InputJsonValue | undefined,
-      },
-    });
-    await db.activity.deleteMany({
-      where: { createdAt: { lt: activityCutoff() } },
-    });
-  } catch (error) {
-    // The change itself went through; a missing entry is not worth failing it.
-    console.error('Failed to log activity', error);
-  }
+  after(async () => {
+    try {
+      await db.activity.create({
+        data: {
+          type: entry.type,
+          subject: entry.subject,
+          subjectId: entry.subjectId,
+          subjectName: entry.subjectName,
+          actorId: entry.actor?.id,
+          actorName: entry.actor?.name,
+          before: entry.before as Prisma.InputJsonValue | undefined,
+          after: entry.after as Prisma.InputJsonValue | undefined,
+        },
+      });
+      await pruneActivity();
+    } catch (error) {
+      console.error('Failed to log activity', error);
+    }
+  });
 }
 
 export function plushieSnapshot(row: {
@@ -168,7 +180,7 @@ export function withAccountActivity(client: typeof db) {
     for (const old of before) {
       const now = after.find((user) => user.id === old.id);
       if (!now || same(userSnapshot(old), userSnapshot(now))) continue;
-      await logActivity({
+      logActivity({
         type: ActivityType.UPDATED,
         subject: ActivitySubject.USER,
         subjectId: now.id,
@@ -182,7 +194,7 @@ export function withAccountActivity(client: typeof db) {
 
   async function logDeletes(before: UserRow[]) {
     for (const old of before) {
-      await logActivity({
+      logActivity({
         type: ActivityType.DELETED,
         subject: ActivitySubject.USER,
         subjectId: old.id,
@@ -207,7 +219,7 @@ export function withAccountActivity(client: typeof db) {
       select: { user: { select: { id: true, name: true } } },
     });
     if (!account) return;
-    await logActivity({
+    logActivity({
       type: ActivityType.PASSWORD_CHANGED,
       subject: ActivitySubject.USER,
       subjectId: account.user.id,
@@ -226,7 +238,7 @@ export function withAccountActivity(client: typeof db) {
             select: userSelect,
           });
           if (user) {
-            await logActivity({
+            logActivity({
               type: ActivityType.CREATED,
               subject: ActivitySubject.USER,
               subjectId: user.id,
@@ -274,7 +286,7 @@ export function withAccountActivity(client: typeof db) {
             select: { id: true, name: true },
           });
           if (existing > 0 && user) {
-            await logActivity({
+            logActivity({
               type: ActivityType.LINKED,
               subject: ActivitySubject.USER,
               subjectId: user.id,
@@ -310,7 +322,7 @@ export function withAccountActivity(client: typeof db) {
           });
           const result = await query(args);
           if (account) {
-            await logActivity({
+            logActivity({
               type: ActivityType.UNLINKED,
               subject: ActivitySubject.USER,
               subjectId: account.user.id,

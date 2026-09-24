@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import type { Plushie } from '@/lib/plushies';
+import type { Plushie } from '@/data/plushies';
 
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { Badge } from '@/components/ui/badge';

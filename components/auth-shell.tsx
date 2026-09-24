@@ -1,7 +1,7 @@
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 
-import { getPlushies } from '@/lib/plushies';
+import { getPlushies } from '@/data/plushies';
 import { cn } from '@/lib/utils';
 
 import { Reveal, RevealQueue } from '@/components/motion';

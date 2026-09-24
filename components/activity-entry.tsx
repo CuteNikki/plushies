@@ -15,6 +15,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 
+import type { ActivityContext } from '@/data/activity';
 import type {
   MethodSnapshot,
   PlushieSnapshot,
@@ -31,14 +32,6 @@ import { cn } from '@/lib/utils';
 import { LocalTime } from '@/components/local-time';
 import { PrivateText } from '@/components/private-text';
 import { Badge } from '@/components/ui/badge';
-
-/** What the page knows about plushies as they are now. */
-export type ActivityContext = {
-  /** Current slug by plushie id, for plushies that still exist. */
-  slugs: Map<string, string>;
-  /** Photo URLs still in use. The others were deleted from UploadThing. */
-  photos: Set<string>;
-};
 
 const icons: Record<ActivityType, LucideIcon> = {
   CREATED: Plus,

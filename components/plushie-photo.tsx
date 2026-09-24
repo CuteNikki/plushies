@@ -2,7 +2,7 @@ import Image from 'next/image';
 
 import { HeartCrackIcon } from 'lucide-react';
 
-import type { Plushie } from '@/lib/plushies';
+import type { Plushie } from '@/data/plushies';
 import { cn } from '@/lib/utils';
 
 export function PlushiePhoto({

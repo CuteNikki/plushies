@@ -1,5 +1,5 @@
+import { getPlushie, getPlushies } from '@/data/plushies';
 import { framePhoto, ogCard, ogSize } from '@/lib/og';
-import { getPlushie, getPlushies } from '@/lib/plushies';
 import { site } from '@/lib/site';
 
 export const alt = `A plushie from ${site.name}, with their photo and description`;

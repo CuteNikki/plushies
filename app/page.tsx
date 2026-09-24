@@ -1,4 +1,4 @@
-import { getPlushies } from '@/lib/plushies';
+import { getPlushies } from '@/data/plushies';
 
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { PlushieGallery } from '@/components/plushie-gallery';

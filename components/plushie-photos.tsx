@@ -3,8 +3,8 @@
 import Image from 'next/image';
 import { useState } from 'react';
 
+import type { Plushie } from '@/data/plushies';
 import { cn } from '@/lib/utils';
-import type { Plushie } from '@/lib/plushies';
 
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';

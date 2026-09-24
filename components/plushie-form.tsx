@@ -13,7 +13,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useActionState, useState, useTransition } from 'react';
 
-import type { Plushie, PlushieFact, PlushieImage } from '@/lib/plushies';
+import type { Plushie, PlushieFact, PlushieImage } from '@/data/plushies';
 import { UploadDropzone } from '@/lib/uploadthing';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +22,7 @@ import {
   discardUploads,
   savePlushie,
   type FormState,
-} from '@/app/dashboard/actions';
+} from '@/actions/plushies';
 import { BirthdayField } from '@/components/birthday-field';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';

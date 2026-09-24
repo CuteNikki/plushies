@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { after } from 'next/server';
 
-import { ACTIVITY_DAYS, activityCutoff, ActivitySubject } from '@/lib/activity';
-import { db } from '@/lib/db';
+import { getActivity } from '@/data/activity';
+import { ACTIVITY_DAYS, ActivitySubject } from '@/lib/activity';
 import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
 
@@ -34,35 +33,7 @@ export default async function ActivityPage(
         ? ActivitySubject.USER
         : undefined;
 
-  const [entries, plushies] = await Promise.all([
-    db.activity.findMany({
-      where: { subject, createdAt: { gte: activityCutoff() } },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    }),
-    db.plushie.findMany({
-      select: {
-        id: true,
-        slug: true,
-        thumbnailUrl: true,
-        gallery: { select: { url: true } },
-      },
-    }),
-  ]);
-  // Entries are also removed as new ones come in; this covers quiet times.
-  after(() =>
-    db.activity.deleteMany({ where: { createdAt: { lt: activityCutoff() } } })
-  );
-
-  const context = {
-    slugs: new Map(plushies.map((plushie) => [plushie.id, plushie.slug])),
-    photos: new Set(
-      plushies.flatMap((plushie) => [
-        ...(plushie.thumbnailUrl ? [plushie.thumbnailUrl] : []),
-        ...plushie.gallery.map((image) => image.url),
-      ])
-    ),
-  };
+  const { entries, context } = await getActivity({ subject });
 
   return (
     <div className='flex flex-col gap-6'>

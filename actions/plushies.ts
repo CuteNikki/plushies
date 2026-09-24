@@ -1,7 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { after } from 'next/server';
 import { z } from 'zod';
@@ -12,11 +11,10 @@ import {
   logActivity,
   plushieSnapshot,
 } from '@/lib/activity';
-import { auth } from '@/lib/auth';
 import { isNotInFuture, parseBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
-import { canEditPlushies, isAdmin, isRole } from '@/lib/permissions';
+import { canEditPlushies } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
 import { deleteFiles, deleteOrphanedFiles, unusedKeys } from '@/lib/uploads';
 
@@ -156,7 +154,7 @@ export async function savePlushie(
         },
         include: withGallery,
       });
-      await logActivity({
+      logActivity({
         type: ActivityType.UPDATED,
         subject: ActivitySubject.PLUSHIE,
         subjectId: id,
@@ -170,7 +168,7 @@ export async function savePlushie(
         data: { ...data, gallery: { create: galleryRows } },
         include: withGallery,
       });
-      await logActivity({
+      logActivity({
         type: ActivityType.CREATED,
         subject: ActivitySubject.PLUSHIE,
         subjectId: created.id,
@@ -189,8 +187,11 @@ export async function savePlushie(
     throw error;
   }
 
-  await deleteFiles(removedKeys);
-  after(deleteOrphanedFiles);
+  // Photos are deleted after the response; they aren't shown anywhere now.
+  after(async () => {
+    await deleteFiles(removedKeys);
+    await deleteOrphanedFiles();
+  });
   revalidatePath('/', 'layout');
   redirect(`/plushies/${slug}`);
 }
@@ -202,7 +203,7 @@ export async function deletePlushie(id: string) {
     where: { id },
     include: withGallery,
   });
-  await logActivity({
+  logActivity({
     type: ActivityType.DELETED,
     subject: ActivitySubject.PLUSHIE,
     subjectId: plushie.id,
@@ -210,12 +211,14 @@ export async function deletePlushie(id: string) {
     actor,
     before: plushieSnapshot(plushie),
   });
-  await deleteFiles(
-    [plushie.thumbnailKey, ...plushie.gallery.map((i) => i.key)].filter(
-      (key): key is string => !!key
-    )
-  );
-  after(deleteOrphanedFiles);
+  after(async () => {
+    await deleteFiles(
+      [plushie.thumbnailKey, ...plushie.gallery.map((i) => i.key)].filter(
+        (key): key is string => !!key
+      )
+    );
+    await deleteOrphanedFiles();
+  });
 
   revalidatePath('/', 'layout');
   redirect('/dashboard/plushies');
@@ -227,72 +230,4 @@ export async function discardUploads(keys: string[]) {
   if (keys.length === 0) return;
 
   await deleteFiles(await unusedKeys(keys));
-}
-
-/**
- * Only admins can manage users, and never their own account from here.
- * Returns who is doing it, for the activity log.
- */
-async function assertCanManage(userId: string) {
-  const session = await getSession();
-  if (!isAdmin(session?.user.role)) {
-    throw new Error('Only admins can do that');
-  }
-  if (session.user.id === userId) {
-    throw new Error("You can't do that to your own account");
-  }
-  return { id: session.user.id, name: session.user.name };
-}
-
-export async function setUserRole(userId: string, role: string) {
-  await assertCanManage(userId);
-  if (!isRole(role)) throw new Error('Unknown role');
-
-  await auth.api.setRole({
-    body: { userId, role },
-    headers: await headers(),
-  });
-  revalidatePath('/dashboard/users');
-}
-
-export async function sendUserPasswordReset(userId: string) {
-  const actor = await assertCanManage(userId);
-  const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error('User not found');
-
-  // Also works for Discord-only accounts: it adds a password to them.
-  await auth.api.requestPasswordReset({
-    body: { email: user.email, redirectTo: '/reset-password' },
-  });
-  await logActivity({
-    type: ActivityType.PASSWORD_RESET_SENT,
-    subject: ActivitySubject.USER,
-    subjectId: user.id,
-    subjectName: user.name,
-    actor,
-  });
-}
-
-export async function signOutUser(userId: string) {
-  const actor = await assertCanManage(userId);
-  const user = await db.user.findUnique({ where: { id: userId } });
-  if (!user) throw new Error('User not found');
-
-  await auth.api.revokeUserSessions({
-    body: { userId },
-    headers: await headers(),
-  });
-  await logActivity({
-    type: ActivityType.SIGNED_OUT,
-    subject: ActivitySubject.USER,
-    subjectId: user.id,
-    subjectName: user.name,
-    actor,
-  });
-}
-
-export async function deleteUser(userId: string) {
-  await assertCanManage(userId);
-  await auth.api.removeUser({ body: { userId }, headers: await headers() });
-  revalidatePath('/dashboard/users');
 }

@@ -2,13 +2,15 @@ import 'server-only';
 
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 
 import { auth } from '@/lib/auth';
 import { canEditPlushies, isAdmin } from '@/lib/permissions';
 
-export async function getSession() {
-  return auth.api.getSession({ headers: await headers() });
-}
+/** The signed-in session, looked up once per request however often asked. */
+export const getSession = cache(async () =>
+  auth.api.getSession({ headers: await headers() })
+);
 
 /** Redirects to sign in if signed out, or to /no-access if not an editor/admin. */
 export async function requireEditor() {

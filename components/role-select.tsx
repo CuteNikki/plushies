@@ -5,7 +5,7 @@ import { useOptimistic, useTransition } from 'react';
 import { roleLabels, roleNames } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
-import { setUserRole } from '@/app/dashboard/actions';
+import { setUserRole } from '@/actions/users';
 import {
   Select,
   SelectContent,

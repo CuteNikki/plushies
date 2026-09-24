@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getPlushieById } from '@/lib/plushies';
+import { getPlushieById } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 
 import { Reveal } from '@/components/motion';

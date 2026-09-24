@@ -9,9 +9,8 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { ActivitySubject } from '@/lib/activity';
-import { db } from '@/lib/db';
-import { isAdmin, Role } from '@/lib/permissions';
+import { getDashboardStats } from '@/data/dashboard';
+import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
 
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
@@ -26,33 +25,14 @@ export default async function DashboardPage() {
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
 
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const [plushies, thumbnails, galleryPhotos, roles, changes] =
-    await Promise.all([
-      db.plushie.count(),
-      db.plushie.count({ where: { thumbnailKey: { not: null } } }),
-      db.plushieImage.count(),
-      admin
-        ? db.user.groupBy({ by: ['role'], _count: true })
-        : Promise.resolve([]),
-      // Editors only see plushie changes on the activity page.
-      db.activity.count({
-        where: {
-          createdAt: { gte: weekAgo },
-          subject: admin ? undefined : ActivitySubject.PLUSHIE,
-        },
-      }),
-    ]);
-  const users = roles.reduce((sum, row) => sum + row._count, 0);
-  const withRole = (role: Role) =>
-    roles.find((row) => row.role === role)?._count ?? 0;
+  const stats = await getDashboardStats({ admin });
 
   const links = [
     {
       href: '/dashboard/plushies',
       icon: Heart,
       title: 'Plushies',
-      text: `${count(plushies, 'plushie')} with ${count(thumbnails + galleryPhotos, 'photo')}`,
+      text: `${count(stats.plushies, 'plushie')} with ${count(stats.photos, 'photo')}`,
     },
     {
       href: '/dashboard/plushies/new',
@@ -64,15 +44,15 @@ export default async function DashboardPage() {
       href: '/dashboard/activity',
       icon: History,
       title: 'Activity',
-      text: `${count(changes, 'change')} in the last 7 days`,
+      text: `${count(stats.recentChanges, 'change')} in the last 7 days`,
     },
-    ...(admin
+    ...(stats.users
       ? [
           {
             href: '/dashboard/users',
             icon: Users,
             title: 'Users',
-            text: `${count(users, 'account')}, ${count(withRole(Role.ADMIN), 'admin')} and ${count(withRole(Role.EDITOR), 'editor')}`,
+            text: `${count(stats.users.total, 'account')}, ${count(stats.users.admins, 'admin')} and ${count(stats.users.editors, 'editor')}`,
           },
         ]
       : []),

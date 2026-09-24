@@ -1,7 +1,7 @@
 import { BadgeCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 
-import { db } from '@/lib/db';
+import { getUsers } from '@/data/users';
 import { requireAdmin } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
@@ -20,10 +20,7 @@ const providerLabels: Record<string, string> = {
 
 export default async function UsersPage() {
   const session = await requireAdmin();
-  const users = await db.user.findMany({
-    orderBy: { createdAt: 'asc' },
-    include: { accounts: { select: { providerId: true } } },
-  });
+  const users = await getUsers();
 
   return (
     <div className='flex flex-col gap-6'>

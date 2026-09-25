@@ -21,6 +21,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "make-admin": "bun scripts/make-admin.ts",
+    "sample-comments": "bun scripts/sample-comments.ts",
     "encrypt-oauth-tokens": "bun scripts/encrypt-oauth-tokens.ts"
   },
   "dependencies": {

@@ -5,6 +5,7 @@ import {
   APIError,
   createAuthMiddleware,
   getSessionFromCtx,
+  isAPIError,
 } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { admin, twoFactor } from 'better-auth/plugins';
@@ -40,6 +41,22 @@ const allowedWhileViewingAs = new Set([
   '/sign-out',
   '/admin/stop-impersonating',
 ]);
+
+/**
+ * Where Better Auth keeps the devices that skip two-step sign-in ("Don't ask
+ * again"), one verification row each, holding the user's id.
+ */
+export function trustedDevicesWhere(userId: string) {
+  return {
+    identifier: { startsWith: 'trust-device-' },
+    value: userId,
+  };
+}
+
+/** Makes every device ask for a code again at the next sign-in. */
+export async function forgetTrustedDevices(userId: string) {
+  await db.verification.deleteMany({ where: trustedDevicesWhere(userId) });
+}
 
 /** Stops the only admin from deleting their account and leaving none. */
 async function assertNotLastAdmin(user: { role?: string | null }) {
@@ -166,6 +183,14 @@ export const auth = betterAuth({
       if (ctx.path === '/delete-user' && !ctx.body?.token && session) {
         await assertNotLastAdmin(session.user as { role?: string });
       }
+    }),
+    // Turning two-step sign-in off forgets every trusted device, not just
+    // this one as Better Auth does, so turning it back on asks everywhere.
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== '/two-factor/disable') return;
+      if (isAPIError(ctx.context.returned)) return;
+      const session = await getSessionFromCtx(ctx);
+      if (session) await forgetTrustedDevices(session.user.id);
     }),
   },
   plugins: [

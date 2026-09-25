@@ -1,22 +1,12 @@
 import 'server-only';
 
+import { trustedDevicesWhere } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getIpLocation } from '@/lib/ip-location';
 import { describeUserAgent } from '@/lib/user-agent';
 
 /** How signing in with a password asks for a second step, if at all. */
 export type TwoFactorMethod = 'app' | 'email' | null;
-
-/**
- * Where Better Auth keeps the devices that skip two-step sign-in ("Don't ask
- * again"), one verification row each, holding the user's id.
- */
-export function trustedDevicesWhere(userId: string) {
-  return {
-    identifier: { startsWith: 'trust-device-' },
-    value: userId,
-  };
-}
 
 /**
  * Sign-in methods, two-step sign-in, passkeys and sessions for the account page. Takes the signed-in

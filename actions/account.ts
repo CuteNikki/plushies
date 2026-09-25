@@ -3,8 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
-import { trustedDevicesWhere } from '@/data/account';
-import { auth } from '@/lib/auth';
+import { auth, forgetTrustedDevices as forget } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isViewingAs, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
@@ -57,9 +56,7 @@ export async function forgetTrustedDevices(): Promise<ActionResult> {
   // Straight to the database, so Better Auth's hook doesn't catch this.
   if (isViewingAs(session)) return { error: VIEWING_AS_MESSAGE };
 
-  await db.verification.deleteMany({
-    where: trustedDevicesWhere(session.user.id),
-  });
+  await forget(session.user.id);
   revalidatePath('/account');
   return {};
 }

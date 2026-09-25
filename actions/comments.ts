@@ -178,21 +178,25 @@ export async function deleteComment(
       },
     });
 
-  // Anything reported about it is dealt with now. A comment that's gone
-  // takes its reports with it; one left as "[deleted]" keeps them, closed.
-  const closed = () =>
-    closeReports([comment.id], ReportOutcome.DELETED, session.user.id);
+  // Anything reported about it, or about what went with it, is dealt with
+  // now, by whoever deleted it.
+  const closed = (removal: Removal) =>
+    closeReports(
+      [comment.id, ...removal.removed],
+      ReportOutcome.DELETED,
+      session.user.id
+    );
 
   if (options.withReplies) {
     const { removal, replies } = await removeBranch(comment);
     // Their own comment on its own is like anyone deleting theirs.
     if (!own || replies.length > 0) await log(replies);
-    await closed();
+    await closed(removal);
     return { ok: true, removal };
   }
 
   const removal = await removeComment(db, comment);
   if (!own) await log();
-  await closed();
+  await closed(removal);
   return { ok: true, removal };
 }

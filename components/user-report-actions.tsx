@@ -17,6 +17,7 @@ import {
   dismissUserReports,
   resetReportedUser,
 } from '@/actions/reports';
+import { UserReportReason } from '@/lib/generated/prisma/enums';
 
 import { BanDialog } from '@/components/ban-controls';
 import { useConfirm } from '@/components/confirm-dialog';
@@ -24,14 +25,18 @@ import { Button } from '@/components/ui/button';
 
 /**
  * What to do about a reported account: nothing, reset its name or picture,
- * or ban it. Each closes its reports. Only Dismiss unless `canAct`: editors
- * can't act on editors, and no one on admins.
+ * or ban it. Each closes its reports. Resetting the name or picture only
+ * when someone reported that. Only Dismiss unless `canAct`: editors can't
+ * act on editors, and no one on admins.
  */
 export function UserReportActions({
   user,
+  reasons,
   canAct,
 }: {
   user: { id: string; name: string; image: string | null; banned: boolean };
+  /** Why the open reports say they reported them. */
+  reasons: UserReportReason[];
   canAct: boolean;
 }) {
   const router = useRouter();
@@ -74,29 +79,31 @@ export function UserReportActions({
       </Button>
       {canAct && (
         <>
-          <Button
-            variant='destructive'
-            size='sm'
-            disabled={pending}
-            onClick={async () => {
-              const confirmed = await ask({
-                title: `Reset ${user.name}’s name?`,
-                description:
-                  'They get a neutral name like “Plushie friend 1234”, and their account page asks them to pick a new one.',
-                action: 'Reset name',
-              });
-              if (!confirmed) return;
-              run(
-                'name',
-                () => resetReportedUser(user.id, 'name'),
-                `${user.name}’s name was reset`
-              );
-            }}
-          >
-            {spinner('name', <RotateCcwIcon />)}
-            Reset name
-          </Button>
-          {user.image && (
+          {reasons.includes(UserReportReason.NAME) && (
+            <Button
+              variant='destructive'
+              size='sm'
+              disabled={pending}
+              onClick={async () => {
+                const confirmed = await ask({
+                  title: `Reset ${user.name}’s name?`,
+                  description:
+                    'They get a neutral name like “Plushie friend 1234”, and their account page asks them to pick a new one.',
+                  action: 'Reset name',
+                });
+                if (!confirmed) return;
+                run(
+                  'name',
+                  () => resetReportedUser(user.id, 'name'),
+                  `${user.name}’s name was reset`
+                );
+              }}
+            >
+              {spinner('name', <RotateCcwIcon />)}
+              Reset name
+            </Button>
+          )}
+          {user.image && reasons.includes(UserReportReason.PICTURE) && (
             <Button
               variant='destructive'
               size='sm'

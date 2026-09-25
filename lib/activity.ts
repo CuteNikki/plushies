@@ -10,6 +10,7 @@ import {
   type Prisma,
 } from '@/lib/generated/prisma/client';
 import { isAdmin } from '@/lib/permissions';
+import { closeGoneReports } from '@/lib/reports';
 
 export { ActivitySubject, ActivityType };
 
@@ -375,6 +376,7 @@ export function withAccountActivity(client: typeof db) {
           const before = await usersWhere(args.where);
           await removeCommentsOf(args.where);
           const result = await query(args);
+          await closeGoneReports();
           await logDeletes(before);
           return result;
         },
@@ -382,6 +384,7 @@ export function withAccountActivity(client: typeof db) {
           const before = await usersWhere(args.where);
           if (args.where) await removeCommentsOf(args.where);
           const result = await query(args);
+          await closeGoneReports();
           await logDeletes(before);
           return result;
         },

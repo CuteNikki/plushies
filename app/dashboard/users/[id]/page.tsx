@@ -2,10 +2,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { HeartIcon, HistoryIcon, MessageCircleIcon } from 'lucide-react';
+import {
+  FlagIcon,
+  HeartIcon,
+  HistoryIcon,
+  MessageCircleIcon,
+} from 'lucide-react';
 
 import { getActivity } from '@/data/activity';
 import { toCommentRow } from '@/data/comment-rows';
+import { getReportsForUser } from '@/data/reports';
 import { getUser } from '@/data/users';
 import { ACTIVITY_DAYS } from '@/lib/activity';
 import { isBanned } from '@/lib/bans';
@@ -20,11 +26,14 @@ import { CommentRow } from '@/components/comment-row';
 import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
+import { PlushieContextMenu } from '@/components/plushie-menu';
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { PrivateText } from '@/components/private-text';
+import { ReportCaseCard } from '@/components/report-history';
 import { RoleSelect } from '@/components/role-select';
 import { UserActions } from '@/components/user-actions';
 import { UserBadges } from '@/components/user-badges';
+import { UserContextMenu } from '@/components/user-context-menu';
 
 // Not the name: metadata is worked out apart from the page's admin check.
 export const metadata: Metadata = { title: 'User' };
@@ -34,9 +43,10 @@ export default async function UserPage(
 ) {
   const session = await requireAdmin();
   const { id } = await props.params;
-  const [user, activity] = await Promise.all([
+  const [user, activity, reports] = await Promise.all([
     getUser(id),
     getActivity({ userId: id, admin: true, take: 50 }),
+    getReportsForUser(id),
   ]);
   if (!user) notFound();
 
@@ -98,12 +108,14 @@ export default async function UserPage(
                   <>
                     {' '}
                     by{' '}
-                    <Link
-                      href={`/dashboard/users/${user.bannedBy.id}`}
-                      className='font-semibold hover:underline'
-                    >
-                      {user.bannedBy.name}
-                    </Link>
+                    <UserContextMenu user={user.bannedBy}>
+                      <Link
+                        href={`/dashboard/users/${user.bannedBy.id}`}
+                        className='font-semibold hover:underline'
+                      >
+                        {user.bannedBy.name}
+                      </Link>
+                    </UserContextMenu>
                   </>
                 )}
                 {user.bannedAt && (
@@ -150,35 +162,77 @@ export default async function UserPage(
           <ul className='grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-8'>
             {user.likes.map(({ plushie }) => (
               <li key={plushie.id}>
-                <Link
-                  href={`/plushies/${plushie.slug}`}
-                  className='group flex flex-col gap-1.5'
-                >
-                  <PlushiePhoto
-                    plushie={{
-                      name: plushie.name,
-                      thumbnail:
-                        plushie.thumbnailKey && plushie.thumbnailUrl
-                          ? {
-                              key: plushie.thumbnailKey,
-                              url: plushie.thumbnailUrl,
-                            }
-                          : null,
-                    }}
-                    sizes='128px'
-                    compact
-                    className='w-full rounded-xl'
-                  />
-                  <span className='truncate text-sm font-medium group-hover:underline'>
-                    {plushie.name}
-                  </span>
-                </Link>
+                <PlushieContextMenu plushie={plushie} as='div'>
+                  <Link
+                    href={`/plushies/${plushie.slug}`}
+                    className='group flex flex-col gap-1.5'
+                  >
+                    <PlushiePhoto
+                      plushie={{
+                        name: plushie.name,
+                        thumbnail:
+                          plushie.thumbnailKey && plushie.thumbnailUrl
+                            ? {
+                                key: plushie.thumbnailKey,
+                                url: plushie.thumbnailUrl,
+                              }
+                            : null,
+                      }}
+                      sizes='128px'
+                      compact
+                      className='w-full rounded-xl'
+                    />
+                    <span className='truncate text-sm font-medium group-hover:underline'>
+                      {plushie.name}
+                    </span>
+                  </Link>
+                </PlushieContextMenu>
               </li>
             ))}
           </ul>
         ) : (
           <EmptyState icon={HeartIcon}>No likes yet.</EmptyState>
         )}
+      </Section>
+
+      <Section
+        title='Reports'
+        description={`${count(
+          reports.about.reduce((sum, item) => sum + item.reports.length, 0),
+          'report'
+        )} about them, ${count(
+          reports.sent.reduce((sum, item) => sum + item.reports.length, 0),
+          'report'
+        )} sent by them.`}
+      >
+        <div className='flex flex-col gap-2'>
+          <h3 className='text-sm font-semibold'>About them</h3>
+          {reports.about.length > 0 ? (
+            <ul className='flex flex-col gap-4'>
+              {reports.about.map((item) => (
+                <ReportCaseCard key={item.key} item={item} />
+              ))}
+            </ul>
+          ) : (
+            <EmptyState icon={FlagIcon}>
+              No one has reported them or their comments.
+            </EmptyState>
+          )}
+        </div>
+        <div className='flex flex-col gap-2'>
+          <h3 className='text-sm font-semibold'>Sent by them</h3>
+          {reports.sent.length > 0 ? (
+            <ul className='flex flex-col gap-4'>
+              {reports.sent.map((item) => (
+                <ReportCaseCard key={item.key} item={item} />
+              ))}
+            </ul>
+          ) : (
+            <EmptyState icon={FlagIcon}>
+              They haven’t reported anything.
+            </EmptyState>
+          )}
+        </div>
       </Section>
 
       <Section

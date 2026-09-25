@@ -66,7 +66,10 @@ export type CommentView = {
    * they and its author get its text and author; others see it's hidden.
    */
   hidden: boolean;
-  /** Reported by the viewer, who can't report it again. */
+  /**
+   * The viewer reported it and that's still open, so they can't again until
+   * an editor or admin deals with it.
+   */
   reported: boolean;
   /** The comments answering this one, oldest first, with theirs. */
   replies: CommentView[];

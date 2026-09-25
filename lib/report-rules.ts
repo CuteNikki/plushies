@@ -1,6 +1,11 @@
 // Shared by the report form and the server, so keep this free of server-only imports.
 
-import { ReportReason, UserReportReason } from '@/lib/generated/prisma/enums';
+import {
+  ReportOutcome,
+  ReportReason,
+  UserReportOutcome,
+  UserReportReason,
+} from '@/lib/generated/prisma/enums';
 
 /** Why someone can report a comment, as the form lists them. */
 export const reportReasons = {
@@ -71,3 +76,17 @@ export const REPORT_WINDOW_HOURS = 24;
  * hour, so no one can hide lots of comments with a few accounts.
  */
 export const REPORTS_PER_HOUR = 10;
+
+/** What was done about reported comments, as the history says it. */
+export const reportOutcomes = {
+  [ReportOutcome.KEPT]: 'Kept',
+  [ReportOutcome.DELETED]: 'Deleted',
+} as const satisfies Record<ReportOutcome, string>;
+
+/** What was done about reported accounts, as the history says it. */
+export const userReportOutcomes = {
+  [UserReportOutcome.DISMISSED]: 'Dismissed',
+  [UserReportOutcome.RESET]: 'Name or picture reset',
+  [UserReportOutcome.BANNED]: 'Banned',
+  [UserReportOutcome.DELETED]: 'Account deleted',
+} as const satisfies Record<UserReportOutcome, string>;

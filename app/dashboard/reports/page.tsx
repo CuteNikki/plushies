@@ -1,15 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { FlagIcon, UserRoundXIcon } from 'lucide-react';
+import { EyeOffIcon, FlagIcon, UserRoundXIcon } from 'lucide-react';
 
 import {
+  getClosedReports,
+  getClosedUserReports,
   getOpenReports,
   getOpenUserReports,
   type OpenReport,
   type OpenUserReport,
 } from '@/data/reports';
 import { Role } from '@/lib/generated/prisma/enums';
+import { withQuery } from '@/lib/list-params';
 import { isAdmin, roleLabels } from '@/lib/permissions';
 import {
   REPORT_WINDOW_HOURS,
@@ -21,15 +24,20 @@ import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
-import { CommentAuthor } from '@/components/comment-author';
-import { CommentRow } from '@/components/comment-row';
 import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
-import { PrivateText } from '@/components/private-text';
 import { ReportActions } from '@/components/report-actions';
+import {
+  AccountSubject,
+  CommentSubject,
+  ReportCard,
+} from '@/components/report-card';
+import {
+  ClosedReportItem,
+  ClosedUserReportItem,
+} from '@/components/report-history';
 import { Badge } from '@/components/ui/badge';
-import { UserAvatar } from '@/components/user-avatar';
 import { UserReportActions } from '@/components/user-report-actions';
 
 export const metadata: Metadata = { title: 'Reports' };
@@ -40,17 +48,185 @@ export default async function ReportsPage(
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
   const viewer = { id: session.user.id, admin };
-  const { show } = await props.searchParams;
-  const showUsers = show === 'users';
-  const [comments, users] = await Promise.all([
+  const { show, status } = await props.searchParams;
+  // Both kinds unless one is picked.
+  const kind: Kind = show === 'comments' || show === 'users' ? show : 'all';
+  const closed = status === 'closed';
+  const [comments, users, closedComments, closedUsers] = await Promise.all([
     getOpenReports(),
-    getOpenUserReports({ admin }),
+    getOpenUserReports(),
+    // Only the history being looked at.
+    closed && kind !== 'users' ? getClosedReports() : null,
+    closed && kind !== 'comments' ? getClosedUserReports() : null,
   ]);
 
-  const tabs = [
-    { key: 'comments', label: 'Comments', count: comments.length },
-    { key: 'users', label: 'Users', count: users.length },
+  const href = (next: { kind?: Kind; closed?: boolean }) => {
+    const nextKind = next.kind ?? kind;
+    return withQuery('/dashboard/reports', {
+      show: nextKind === 'all' ? null : nextKind,
+      status: (next.closed ?? closed) ? 'closed' : null,
+    });
+  };
+  const tabs = (
+    [
+      ['all', 'All', comments.length + users.length],
+      ['comments', 'Comments', comments.length],
+      ['users', 'Users', users.length],
+    ] as const
+  ).map(([key, label, open]) => ({
+    label,
+    count: open,
+    href: href({ kind: key }),
+    current: kind === key,
+  }));
+  const statuses = [
+    { label: 'Open', href: href({ closed: false }), current: !closed },
+    { label: 'Closed', href: href({ closed: true }), current: closed },
   ];
+
+  // One list, newest first, of what's picked: open reports by their latest
+  // report, closed ones by when they were closed.
+  const commentRows: Row[] = closedComments
+    ? closedComments.map((item) => ({
+        at: item.resolvedAt,
+        node: (
+          <ClosedReportItem key={`c:${item.key}`} item={item} admin={admin} />
+        ),
+      }))
+    : comments.map((item) => ({
+        at: item.reports[0].createdAt,
+        node: (
+          <ReportCard
+            key={`c:${item.comment.id}`}
+            kind='comment'
+            admin={admin}
+            status={{
+              open: true,
+              reports: item.reports.length,
+              latestAt: item.reports[0].createdAt,
+            }}
+            flags={
+              item.comment.hidden && (
+                <Badge
+                  variant='destructive'
+                  title='Hidden until it’s kept or deleted'
+                >
+                  <EyeOffIcon />
+                  Hidden
+                </Badge>
+              )
+            }
+            subject={
+              <CommentSubject
+                comment={{
+                  ...item.comment,
+                  author: item.author,
+                  exists: true,
+                }}
+                admin={admin}
+                badges={
+                  item.author && (
+                    <>
+                      {item.author.role !== Role.USER && (
+                        <Badge variant='secondary'>
+                          {roleLabels[item.author.role]}
+                        </Badge>
+                      )}
+                      {item.author.banned && (
+                        <Badge variant='destructive'>Banned</Badge>
+                      )}
+                    </>
+                  )
+                }
+              />
+            }
+            reports={item.reports.map((report) => ({
+              ...report,
+              reason: reportReasons[report.reason].label,
+            }))}
+            actions={
+              <ReportActions
+                comment={{ id: item.comment.id, replies: item.comment.replies }}
+                author={item.author}
+                viewer={viewer}
+                canBan={
+                  !!item.author &&
+                  !item.author.banned &&
+                  canActOn(item.author, session.user.id, admin)
+                }
+              />
+            }
+          />
+        ),
+      }));
+  const userRows: Row[] = closedUsers
+    ? closedUsers.map((item) => ({
+        at: item.resolvedAt,
+        node: (
+          <ClosedUserReportItem
+            key={`u:${item.key}`}
+            item={item}
+            admin={admin}
+          />
+        ),
+      }))
+    : users.map(({ user, reports }) => ({
+        at: reports[0].createdAt,
+        node: (
+          <ReportCard
+            key={`u:${user.id}`}
+            kind='user'
+            admin={admin}
+            status={{
+              open: true,
+              reports: reports.length,
+              latestAt: reports[0].createdAt,
+            }}
+            flags={user.banned && <Badge variant='destructive'>Banned</Badge>}
+            subject={
+              <AccountSubject
+                user={{ ...user, exists: true }}
+                admin={admin}
+                badges={
+                  user.role !== Role.USER && (
+                    <Badge variant='secondary'>{roleLabels[user.role]}</Badge>
+                  )
+                }
+                details={
+                  <span>
+                    Joined <LocalTime iso={user.createdAt} />
+                  </span>
+                }
+              />
+            }
+            reports={reports.map((report) => ({
+              ...report,
+              reason: userReportReasons[report.reason].label,
+            }))}
+            actions={
+              <UserReportActions
+                user={{
+                  id: user.id,
+                  name: user.name,
+                  image: user.image,
+                  banned: user.banned,
+                }}
+                reasons={reports.map((report) => report.reason)}
+                canAct={canActOn(user, session.user.id, admin)}
+              />
+            }
+          />
+        ),
+      }));
+  const rows = [
+    ...(kind !== 'users' ? commentRows : []),
+    ...(kind !== 'comments' ? userRows : []),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  const what = { all: '', comments: ' comment', users: ' account' }[kind];
+  const empty = closed
+    ? `No closed${what} reports yet.`
+    : { all: 'Nothing', comments: 'No comments', users: 'No accounts' }[kind] +
+      ' reported right now.';
 
   return (
     <div className='flex flex-col gap-6'>
@@ -62,118 +238,41 @@ export default async function ReportsPage(
           Reports
         </h1>
         <p className='text-pretty text-muted-foreground'>
-          {showUsers
-            ? 'Accounts people reported, e.g. for their name or picture.'
-            : `Comments people reported. ${count(REPORTS_TO_HIDE, 'report')} in ${REPORT_WINDOW_HOURS} hours hide a comment until it’s kept or deleted.`}
+          {closed
+            ? 'What was done about reports, and by whom, the latest first.'
+            : kind === 'users'
+              ? 'Accounts people reported, e.g. for their name or picture.'
+              : `${kind === 'all' ? 'Comments and accounts' : 'Comments'} people reported. ${count(REPORTS_TO_HIDE, 'report')} in ${REPORT_WINDOW_HOURS} hours hide a comment until it’s kept or deleted.`}
         </p>
       </Reveal>
 
-      <Reveal
-        as='nav'
-        aria-label='Show'
-        className='flex w-fit max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1'
-      >
-        {tabs.map((tab) => {
-          const current = (tab.key === 'users') === showUsers;
-          return (
-            <Link
-              key={tab.key}
-              href={
-                tab.key === 'users'
-                  ? '/dashboard/reports?show=users'
-                  : '/dashboard/reports'
-              }
-              aria-current={current ? 'page' : undefined}
-              className={cn(
-                'flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                current
-                  ? 'bg-background shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {tab.label}
-              <span className='text-xs text-muted-foreground'>{tab.count}</span>
-            </Link>
-          );
-        })}
+      <Reveal className='flex flex-wrap gap-2'>
+        {/* What was reported, and whether it's still to do or done. The
+            counts are what's open. */}
+        <Segments label='Reported' items={tabs} />
+        <Segments label='Status' items={statuses} />
       </Reveal>
 
-      {showUsers ? (
-        users.length > 0 ? (
-          <Reveal
-            as='ul'
-            className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'
-          >
-            {users.map((item) => (
-              <Reveal
-                as='li'
-                direction='none'
-                key={item.user.id}
-                className='flex items-start gap-3 p-4'
-              >
-                <UserReportRow
-                  item={item}
-                  admin={admin}
-                  canAct={canActOn(item.user, session.user.id, admin)}
-                />
-              </Reveal>
-            ))}
-          </Reveal>
-        ) : (
-          <Reveal>
-            <EmptyState icon={UserRoundXIcon}>
-              No accounts reported right now.
-            </EmptyState>
-          </Reveal>
-        )
-      ) : comments.length > 0 ? (
-        // The card rises as a whole, then its rows fade in without moving.
-        <Reveal
-          as='ul'
-          className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'
-        >
-          {comments.map((item) => (
-            <CommentRow
-              key={item.comment.id}
-              comment={item.comment}
-              viewer={viewer}
-              reportsPage
-            >
-              <div className='flex flex-col gap-3'>
-                <ReportList
-                  reports={item.reports.map((report) => ({
-                    ...report,
-                    reason: reportReasons[report.reason].label,
-                  }))}
-                  admin={admin}
-                />
-                <ReportActions
-                  comment={{
-                    id: item.comment.id,
-                    replies: item.comment.replies,
-                  }}
-                  author={item.author}
-                  viewer={viewer}
-                  canBan={
-                    !!item.author &&
-                    !item.author.banned &&
-                    canActOn(item.author, session.user.id, admin)
-                  }
-                />
-              </div>
-            </CommentRow>
-          ))}
+      {rows.length > 0 ? (
+        // A card per reported comment or account.
+        <Reveal as='ul' className='flex flex-col gap-4'>
+          {rows.map((row) => row.node)}
         </Reveal>
       ) : (
         <Reveal>
-          <EmptyState icon={FlagIcon}>
-            No comments reported right now.
+          <EmptyState icon={kind === 'users' ? UserRoundXIcon : FlagIcon}>
+            {empty}
           </EmptyState>
         </Reveal>
       )}
     </div>
   );
 }
+
+type Kind = 'all' | 'comments' | 'users';
+
+/** A row in the list, and when it happened, to sort by. */
+type Row = { at: string; node: React.ReactNode };
 
 /**
  * Whether they can ban or reset someone from here: editors only regular
@@ -188,110 +287,37 @@ function canActOn(
   return target.role === Role.USER || admin;
 }
 
-/** A reported account: who it is, why they were reported, what to do. */
-function UserReportRow({
-  item,
-  admin,
-  canAct,
+/** Links that pick one of a few views, like tabs. */
+function Segments({
+  label,
+  items,
 }: {
-  item: OpenUserReport;
-  admin: boolean;
-  canAct: boolean;
-}) {
-  const { user } = item;
-  return (
-    <>
-      <span className='flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary ring-1 ring-primary/20'>
-        <UserAvatar user={user} />
-      </span>
-      <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
-        <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-          {/* Only admins have the users pages. */}
-          {admin ? (
-            <Link
-              href={`/dashboard/users/${user.id}`}
-              className='truncate font-heading font-semibold hover:underline'
-            >
-              {user.name}
-            </Link>
-          ) : (
-            <span className='truncate font-heading font-semibold'>
-              {user.name}
-            </span>
-          )}
-          {user.role !== Role.USER && (
-            <Badge variant='secondary'>{roleLabels[user.role]}</Badge>
-          )}
-          {user.banned && <Badge variant='destructive'>Banned</Badge>}
-        </div>
-        <div className='flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground'>
-          {user.email && (
-            <>
-              <PrivateText className='w-fit'>{user.email}</PrivateText>
-              <span>·</span>
-            </>
-          )}
-          <span>
-            Joined <LocalTime iso={user.createdAt} />
-          </span>
-        </div>
-        <div className='mt-2 flex flex-col gap-3'>
-          <ReportList
-            reports={item.reports.map((report) => ({
-              ...report,
-              reason: userReportReasons[report.reason].label,
-            }))}
-            admin={admin}
-          />
-          <UserReportActions
-            user={{
-              id: user.id,
-              name: user.name,
-              image: user.image,
-              banned: user.banned,
-            }}
-            canAct={canAct}
-          />
-        </div>
-      </div>
-    </>
-  );
-}
-
-/** Why each person reported it, newest first. */
-function ReportList({
-  reports,
-  admin,
-}: {
-  reports: {
-    id: string;
-    reason: string;
-    note: string | null;
-    createdAt: string;
-    reporter: { id: string; name: string } | null;
-  }[];
-  admin: boolean;
+  label: string;
+  items: { label: string; href: string; current: boolean; count?: number }[];
 }) {
   return (
-    <ul className='flex flex-col gap-2 rounded-lg bg-muted/50 p-3 text-sm'>
-      {reports.map((report) => (
-        <li key={report.id} className='flex flex-col gap-0.5'>
-          <p>
-            <span className='font-semibold'>{report.reason}</span>
-            <span className='text-muted-foreground'>
-              {' · '}
-              <CommentAuthor author={report.reporter} link={admin} />
-              {' · '}
-              <LocalTime iso={report.createdAt} />
-            </span>
-          </p>
-          {report.note && (
-            <p className='wrap-break-word whitespace-pre-line text-muted-foreground'>
-              {report.note}
-            </p>
+    <nav
+      aria-label={label}
+      className='flex w-fit max-w-full flex-wrap gap-1 rounded-lg bg-muted p-1'
+    >
+      {items.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          aria-current={item.current ? 'page' : undefined}
+          className={cn(
+            'flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            item.current
+              ? 'bg-background shadow-sm'
+              : 'text-muted-foreground hover:text-foreground'
           )}
-        </li>
+        >
+          {item.label}
+          {item.count !== undefined && (
+            <span className='text-xs text-muted-foreground'>{item.count}</span>
+          )}
+        </Link>
       ))}
-    </ul>
+    </nav>
   );
 }

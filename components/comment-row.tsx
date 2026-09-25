@@ -11,28 +11,23 @@ import { DeleteCommentButton } from '@/components/delete-comment-button';
 import { ItemMenuButton } from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
-import { PlushiePhoto } from '@/components/plushie-photo';
+import { PlushieThumb } from '@/components/plushie-thumb';
 import { RowLink } from '@/components/row-link';
 import { Badge } from '@/components/ui/badge';
 
 /**
  * A comment in the dashboard: which plushie it's on, who wrote it and when,
  * what it answers, whether it's reported or hidden, and a way to delete it.
- * Without `showAuthor` on pages where they're all by the same person. On the
- * reports page, `children` go under it, and deleting is among them instead.
+ * Without `showAuthor` on pages where they're all by the same person.
  */
 export function CommentRow({
   comment,
   viewer,
   showAuthor = true,
-  reportsPage = false,
-  children,
 }: {
   comment: CommentRowData;
   viewer: { id: string; admin: boolean };
   showAuthor?: boolean;
-  reportsPage?: boolean;
-  children?: React.ReactNode;
 }) {
   return (
     <Reveal as='li' direction='none'>
@@ -43,11 +38,10 @@ export function CommentRow({
         viewer={viewer}
         className='relative flex items-start gap-3 p-4'
       >
-        <PlushiePhoto
+        <PlushieThumb
           plushie={comment.plushie}
           sizes='40px'
-          compact
-          className='size-10 shrink-0 rounded-lg'
+          className='size-10 rounded-lg'
         />
         <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
           <div className='flex items-start justify-between gap-3'>
@@ -82,10 +76,9 @@ export function CommentRow({
                     Hidden
                   </Badge>
                 )}
-                {/* The reports page lists them; elsewhere this goes there. */}
-                {comment.openReports > 0 && !reportsPage && (
+                {comment.openReports > 0 && (
                   <Badge variant='outline' className='relative' asChild>
-                    <Link href='/dashboard/reports'>
+                    <Link href='/dashboard/reports?show=comments'>
                       <FlagIcon />
                       {count(comment.openReports, 'report')}
                     </Link>
@@ -94,17 +87,15 @@ export function CommentRow({
               </div>
             </div>
             <div className='relative flex shrink-0 gap-1'>
-              {!reportsPage && (
-                <DeleteCommentButton
-                  comment={{
-                    id: comment.id,
-                    authorName: comment.author?.name ?? null,
-                    replies: comment.replies,
-                  }}
-                  own={comment.author?.id === viewer.id}
-                  canPurge={viewer.admin}
-                />
-              )}
+              <DeleteCommentButton
+                comment={{
+                  id: comment.id,
+                  authorName: comment.author?.name ?? null,
+                  replies: comment.replies,
+                }}
+                own={comment.author?.id === viewer.id}
+                canPurge={viewer.admin}
+              />
               <ItemMenuButton size='icon-sm' />
             </div>
           </div>
@@ -127,7 +118,6 @@ export function CommentRow({
           <p className='relative text-sm wrap-break-word whitespace-pre-line'>
             {comment.body}
           </p>
-          {children && <div className='relative mt-2'>{children}</div>}
         </div>
       </CommentMenu>
     </Reveal>

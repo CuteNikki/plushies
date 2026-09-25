@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 import {
   HeadingSkeleton,
   ListSkeleton,
@@ -9,13 +11,15 @@ import { StorageSkeleton } from '@/components/storage-usage';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const tiles = ['Plushies', 'Photos', 'Likes', 'Comments', 'Changes in 7 days'];
+const reportTiles = ['Open reports', 'Closed reports'];
 
-// Admins see all four links, editors the first three. The texts are samples
+// Admins see all five links, editors the first four. The texts are samples
 // shaped like the real ones, so the cards wrap where the real ones do.
 const links = [
   { title: 'Plushies', text: 'Browse and edit every plushie' },
   { title: 'New Plushie', text: 'Add a new soft friend' },
   { title: 'Activity', text: 'See and undo recent changes' },
+  { title: 'Reports', text: 'Nothing reported right now' },
   { title: 'Users', text: '1 account, 1 admin and 0 editors' },
 ];
 
@@ -26,22 +30,27 @@ export default function DashboardLoading() {
         title='Good afternoon'
         subtitle='Everything for looking after the plushies.'
       />
-      <div className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
-        {tiles.map((tile) => (
-          <div
-            key={tile}
-            className='flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 last:col-span-2 xs:p-4 lg:last:col-span-1'
-          >
-            <TextSkeleton className='text-sm'>{tile}</TextSkeleton>
-            <TextSkeleton className='text-3xl font-semibold'>12</TextSkeleton>
-          </div>
-        ))}
+      <div className='flex flex-col gap-4'>
+        <div className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
+          {tiles.map((tile) => (
+            <TileSkeleton
+              key={tile}
+              label={tile}
+              className='last:col-span-2 lg:last:col-span-1'
+            />
+          ))}
+        </div>
+        <div className='grid grid-cols-2 gap-4'>
+          {reportTiles.map((tile) => (
+            <TileSkeleton key={tile} label={tile} />
+          ))}
+        </div>
       </div>
       <ul className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <li
             key={link.title}
-            className='flex items-center gap-4 rounded-xl p-4 ring-1 ring-foreground/10'
+            className='flex items-center gap-4 rounded-xl p-4 ring-1 ring-foreground/10 sm:odd:last:col-span-2'
           >
             <Skeleton className='size-10 shrink-0' />
             <div className='flex min-w-0 flex-1 flex-col'>
@@ -157,5 +166,25 @@ function Rows({
       </div>
       {aside}
     </ListSkeleton>
+  );
+}
+
+function TileSkeleton({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 xs:p-4',
+        className
+      )}
+    >
+      <TextSkeleton className='text-sm'>{label}</TextSkeleton>
+      <TextSkeleton className='text-3xl font-semibold'>12</TextSkeleton>
+    </div>
   );
 }

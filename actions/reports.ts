@@ -7,11 +7,11 @@ import { BAN_REASON_MAX, isBanDuration } from '@/lib/ban-options';
 import { applyBan, banExpiry, isBanned } from '@/lib/bans';
 import { commentViewer } from '@/lib/comments';
 import { db } from '@/lib/db';
-import { Prisma } from '@/lib/generated/prisma/client';
 import {
   ReportOutcome,
   Role,
   UserReportOutcome,
+  UserReportReason,
 } from '@/lib/generated/prisma/enums';
 import {
   canEditPlushies,
@@ -77,8 +77,9 @@ async function reporter(
 }
 
 /**
- * Reports someone else's comment, once. Enough reports from different people
- * in a short time hide it until an editor or admin looks at it.
+ * Reports someone else's comment. Again once an editor or admin has dealt
+ * with the last one. Enough reports from different people in a short time
+ * hide it until an editor or admin looks at it.
  */
 export async function reportComment(
   commentId: string,
@@ -92,7 +93,14 @@ export async function reportComment(
 
   const comment = await db.comment.findUnique({
     where: { id: commentId },
-    select: { authorId: true, deletedAt: true, hiddenAt: true },
+    select: {
+      body: true,
+      authorId: true,
+      deletedAt: true,
+      hiddenAt: true,
+      author: { select: { name: true } },
+      plushie: { select: { name: true, slug: true } },
+    },
   });
   if (!comment || comment.deletedAt) {
     return { ok: false, error: 'That comment no longer exists' };
@@ -100,25 +108,30 @@ export async function reportComment(
   if (comment.authorId === who.userId) {
     return { ok: false, error: 'You can’t report your own comment' };
   }
+  const open = await db.commentReport.count({
+    where: {
+      reportedCommentId: commentId,
+      reporterId: who.userId,
+      resolvedAt: null,
+    },
+  });
+  if (open) return { ok: false, error: 'You reported this comment already' };
 
-  try {
-    await db.commentReport.create({
-      data: {
-        commentId,
-        reporterId: who.userId,
-        reason: input.reason,
-        note: who.note,
-      },
-    });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      return { ok: false, error: 'You reported this comment already' };
-    }
-    throw error;
-  }
+  await db.commentReport.create({
+    data: {
+      commentId,
+      reporterId: who.userId,
+      reason: input.reason,
+      note: who.note,
+      // As it was, for the history, even once it's edited or deleted.
+      reportedCommentId: commentId,
+      commentBody: comment.body,
+      commentAuthorId: comment.authorId,
+      commentAuthorName: comment.author?.name ?? null,
+      plushieName: comment.plushie.name,
+      plushieSlug: comment.plushie.slug,
+    },
+  });
 
   // Reports closed by keeping it don't count again.
   let hidden = !!comment.hiddenAt;
@@ -162,7 +175,7 @@ export async function reportUser(
   }
 
   const [user, open] = await Promise.all([
-    db.user.count({ where: { id: userId } }),
+    db.user.findUnique({ where: { id: userId }, select: { name: true } }),
     db.userReport.count({
       where: { userId, reporterId: who.userId, resolvedAt: null },
     }),
@@ -176,6 +189,9 @@ export async function reportUser(
       reporterId: who.userId,
       reason: input.reason,
       note: who.note,
+      // Their name then, e.g. the one that was the problem.
+      reportedUserId: userId,
+      userName: user.name,
     },
   });
   revalidatePath('/dashboard', 'layout');
@@ -296,6 +312,11 @@ function findUser(userId: string) {
       _count: {
         select: { reportsAgainst: { where: { resolvedAt: null } } },
       },
+      // What they're open for, e.g. a name to reset.
+      reportsAgainst: {
+        where: { resolvedAt: null },
+        select: { reason: true },
+      },
     },
   });
 }
@@ -322,6 +343,15 @@ export async function resetReportedUser(
   const found = await reportedUser(actor, userId);
   if (!found.ok) return found;
   const { user } = found;
+  // Only what someone reported, e.g. not the name for harassment.
+  const reason =
+    what === 'name' ? UserReportReason.NAME : UserReportReason.PICTURE;
+  if (!user.reportsAgainst.some((report) => report.reason === reason)) {
+    return {
+      ok: false,
+      error: `No one reported their ${what}`,
+    };
+  }
 
   if (what === 'picture') {
     if (!user.image) return { ok: false, error: 'They have no picture' };

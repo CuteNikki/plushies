@@ -117,13 +117,15 @@ export async function getComments(
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     include: viewInclude,
   });
-  // Which of them the viewer reported already, so they can't again.
+  // Which of them the viewer has an open report on, so they can't report
+  // them again until it's dealt with.
   const reported = new Set(
     viewer.id
       ? (
           await db.commentReport.findMany({
             where: {
               reporterId: viewer.id,
+              resolvedAt: null,
               commentId: { in: [...page, ...replies].map((row) => row.id) },
             },
             select: { commentId: true },

@@ -21,7 +21,11 @@ import {
   RECENT_DAYS,
   type DashboardPlushie,
 } from '@/data/dashboard';
-import { countOpenReports, countOpenUserReports } from '@/data/reports';
+import {
+  countOpenReports,
+  countOpenUserReports,
+  countReports,
+} from '@/data/reports';
 import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
@@ -38,10 +42,13 @@ import { MissingBadges } from '@/components/missing-badges';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushieMenu } from '@/components/plushie-menu';
 import { PlushiePhoto } from '@/components/plushie-photo';
+import { PlushieThumb } from '@/components/plushie-thumb';
 import { RowLink, rowTint } from '@/components/row-link';
 import { StorageUsage } from '@/components/storage-usage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/user-avatar';
+import { UserContextMenu } from '@/components/user-context-menu';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
@@ -58,15 +65,17 @@ export default async function DashboardPage() {
   const admin = isAdmin(session.user.role);
   const viewer = { id: session.user.id, admin };
 
-  const [dashboard, reportedComments, reportedUsers] = await Promise.all([
-    getDashboard({ admin }),
-    countOpenReports(),
-    countOpenUserReports(),
-  ]);
+  const [dashboard, reportedComments, reportedUsers, reports] =
+    await Promise.all([
+      getDashboard({ admin }),
+      countOpenReports(),
+      countOpenUserReports(),
+      countReports(),
+    ]);
   const { stats, users } = dashboard;
 
   // Tiles with a page of their own link to it.
-  const tiles: { label: string; value: number; href?: string }[] = [
+  const tiles: Tile[] = [
     { label: 'Plushies', value: stats.plushies, href: '/dashboard/plushies' },
     { label: 'Photos', value: stats.photos, href: '/dashboard/photos' },
     { label: 'Likes', value: stats.likes },
@@ -75,6 +84,15 @@ export default async function DashboardPage() {
       label: `Changes in ${RECENT_DAYS} days`,
       value: stats.recentChanges,
       href: '/dashboard/activity',
+    },
+  ];
+  // Comments and accounts together, each to that view of the reports.
+  const reportTiles: Tile[] = [
+    { label: 'Open reports', value: reports.open, href: '/dashboard/reports' },
+    {
+      label: 'Closed reports',
+      value: reports.closed,
+      href: '/dashboard/reports?status=closed',
     },
   ];
 
@@ -135,44 +153,23 @@ export default async function DashboardPage() {
         </p>
       </Reveal>
 
-      {/* Five tiles: on two columns, the last one takes a whole row. */}
-      <RevealGroup as='dl' className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
-        {tiles.map((tile) => (
-          <RevealItem
-            key={tile.label}
-            className='group relative flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 transition-colors last:col-span-2 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:hover]:bg-muted/50 xs:p-4 lg:last:col-span-1'
-          >
-            <dt
-              className={cn(
-                'text-sm text-muted-foreground',
-                tile.href && 'pr-5'
-              )}
-            >
-              {tile.label}
-            </dt>
-            <dd className='text-3xl font-semibold'>
-              {tile.href ? (
-                // Stretched over the whole tile, so all of it is clickable.
-                <Link
-                  href={tile.href}
-                  aria-label={`${tile.label}: ${compact.format(tile.value)}`}
-                  className='outline-none after:absolute after:inset-0 after:rounded-xl'
-                >
-                  {compact.format(tile.value)}
-                </Link>
-              ) : (
-                compact.format(tile.value)
-              )}
-            </dd>
-            {tile.href && (
-              <ChevronRightIcon
-                className='absolute top-3 right-3 size-4 text-muted-foreground transition-transform group-has-[a:hover]:translate-x-0.5 xs:top-4 xs:right-4'
-                aria-hidden
-              />
-            )}
-          </RevealItem>
-        ))}
-      </RevealGroup>
+      <div className='flex flex-col gap-4'>
+        {/* Five tiles: on two columns, the last one takes a whole row. */}
+        <RevealGroup as='dl' className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
+          {tiles.map((tile) => (
+            <StatTile
+              key={tile.label}
+              tile={tile}
+              className='last:col-span-2 lg:last:col-span-1'
+            />
+          ))}
+        </RevealGroup>
+        <RevealGroup as='dl' className='grid grid-cols-2 gap-4'>
+          {reportTiles.map((tile) => (
+            <StatTile key={tile.label} tile={tile} />
+          ))}
+        </RevealGroup>
+      </div>
 
       <RevealGroup as='ul' className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {links.map((link) => (
@@ -258,6 +255,7 @@ export default async function DashboardPage() {
                     <RowMain
                       plushie={comment.plushie}
                       href={`/plushies/${comment.plushie.slug}#comment-${comment.id}`}
+                      thumb
                     >
                       {/* One line here; the whole comment is on the comments
                           page. */}
@@ -331,25 +329,35 @@ export default async function DashboardPage() {
             {users.newAccounts.length > 0 ? (
               <List>
                 {users.newAccounts.map((user) => (
-                  <li
-                    key={user.id}
-                    className={cn(row, rowTint, 'relative flex-wrap gap-y-1')}
-                  >
-                    <div className='min-w-0 flex-1'>
-                      <RowLink href={`/dashboard/users/${user.id}`}>
-                        {user.name}
-                      </RowLink>
-                      <p className='text-sm text-muted-foreground'>
-                        Joined <LocalTime iso={user.createdAt} />
-                      </p>
-                    </div>
-                    <div className='flex gap-1'>
-                      {user.accounts.map(({ providerId }) => (
-                        <Badge key={providerId} variant='secondary'>
-                          {providerLabels[providerId] ?? providerId}
-                        </Badge>
-                      ))}
-                    </div>
+                  <li key={user.id}>
+                    {/* Their account's actions on right-click and from ⋯,
+                        like on the users page. */}
+                    <UserContextMenu user={user} as='div' className='contents'>
+                      <div className={cn(row, rowTint, 'flex-wrap gap-y-1')}>
+                        {/* Their picture and name link to their page. */}
+                        <div className='relative flex min-w-0 flex-1 items-center gap-3'>
+                          <span className='flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-primary ring-1 ring-primary/20'>
+                            <UserAvatar user={user} />
+                          </span>
+                          <div className='min-w-0'>
+                            <RowLink href={`/dashboard/users/${user.id}`}>
+                              {user.name}
+                            </RowLink>
+                            <p className='text-sm text-muted-foreground'>
+                              Joined <LocalTime iso={user.createdAt} />
+                            </p>
+                          </div>
+                        </div>
+                        <div className='flex items-center gap-1'>
+                          {user.accounts.map(({ providerId }) => (
+                            <Badge key={providerId} variant='secondary'>
+                              {providerLabels[providerId] ?? providerId}
+                            </Badge>
+                          ))}
+                          <ItemMenuButton size='icon-sm' />
+                        </div>
+                      </div>
+                    </UserContextMenu>
                   </li>
                 ))}
               </List>
@@ -372,6 +380,44 @@ export default async function DashboardPage() {
         </Section>
       </div>
     </div>
+  );
+}
+
+type Tile = { label: string; value: number; href?: string };
+
+/** A number to keep an eye on, linking to its page if it has one. */
+function StatTile({ tile, className }: { tile: Tile; className?: string }) {
+  return (
+    <RevealItem
+      className={cn(
+        'group relative flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 transition-colors has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:hover]:bg-muted/50 xs:p-4',
+        className
+      )}
+    >
+      <dt className={cn('text-sm text-muted-foreground', tile.href && 'pr-5')}>
+        {tile.label}
+      </dt>
+      <dd className='text-3xl font-semibold'>
+        {tile.href ? (
+          // Stretched over the whole tile, so all of it is clickable.
+          <Link
+            href={tile.href}
+            aria-label={`${tile.label}: ${compact.format(tile.value)}`}
+            className='outline-none after:absolute after:inset-0 after:rounded-xl'
+          >
+            {compact.format(tile.value)}
+          </Link>
+        ) : (
+          compact.format(tile.value)
+        )}
+      </dd>
+      {tile.href && (
+        <ChevronRightIcon
+          className='absolute top-3 right-3 size-4 text-muted-foreground transition-transform group-has-[a:hover]:translate-x-0.5 xs:top-4 xs:right-4'
+          aria-hidden
+        />
+      )}
+    </RevealItem>
   );
 }
 
@@ -494,20 +540,34 @@ function PlushieRow({
 function RowMain({
   plushie,
   href,
+  thumb,
   children,
 }: {
   plushie: DashboardPlushie;
   href: string;
+  /**
+   * For rows about something else, e.g. a comment: the photo opens the
+   * plushie, with their actions on right-click.
+   */
+  thumb?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className='relative flex min-w-0 flex-1 items-center gap-3'>
-      <PlushiePhoto
-        plushie={plushie}
-        sizes='40px'
-        compact
-        className='size-10 shrink-0 rounded-lg'
-      />
+      {thumb ? (
+        <PlushieThumb
+          plushie={plushie}
+          sizes='40px'
+          className='size-10 rounded-lg'
+        />
+      ) : (
+        <PlushiePhoto
+          plushie={plushie}
+          sizes='40px'
+          compact
+          className='size-10 shrink-0 rounded-lg'
+        />
+      )}
       <div className='min-w-0 flex-1'>
         <RowLink href={href}>{plushie.name}</RowLink>
         <div className='text-sm text-muted-foreground'>{children}</div>

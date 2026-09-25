@@ -2,7 +2,7 @@
 
 import { useTransition } from 'react';
 
-import { EyeIcon, Loader2Icon } from 'lucide-react';
+import { EyeIcon, Loader2Icon, XIcon } from 'lucide-react';
 
 import { stopViewingAs } from '@/actions/users';
 import { authClient } from '@/lib/auth-client';
@@ -23,12 +23,11 @@ export function ViewingAsBanner() {
         <p className='flex items-center gap-2 text-pretty'>
           <EyeIcon className='size-4 shrink-0' aria-hidden />
           <span>
-            Viewing as <strong>{data.user.name}</strong>
-            {role && <> ({role})</>}. Changes are turned off.
+            Viewing as <strong>{role && <> {role}</>}</strong>. Nothing saved.
           </span>
         </p>
         <Button
-          size='sm'
+          size='icon-sm'
           variant='secondary'
           disabled={pending}
           onClick={() =>
@@ -39,8 +38,7 @@ export function ViewingAsBanner() {
             })
           }
         >
-          {pending && <Loader2Icon className='animate-spin' />}
-          Stop viewing
+          {pending ? <Loader2Icon className='animate-spin' /> : <XIcon />}
         </Button>
       </div>
     </div>

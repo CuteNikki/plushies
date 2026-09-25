@@ -132,6 +132,49 @@ export function TextLinesSkeleton() {
   );
 }
 
+/**
+ * The search box and dropdowns above a list, like ListControls. Both are
+ * as tall as the real ones.
+ */
+export function ListControlsSkeleton({
+  search = true,
+  selects = 0,
+}: {
+  search?: boolean;
+  selects?: number;
+}) {
+  return (
+    <div className='flex flex-wrap gap-2'>
+      {search && <Skeleton className='h-7 min-w-48 flex-1' />}
+      {Array.from({ length: selects }, (_, index) => (
+        <Skeleton key={index} className='h-7 w-36' />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Comments like CommentRow shows them: the plushie's photo and name, who
+ * wrote it and when, the text, and the Delete button.
+ */
+export function CommentRowsSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <ListSkeleton rows={rows} rowClassName='flex items-start gap-3 p-4'>
+      <Skeleton className='size-10 shrink-0 rounded-lg' />
+      <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex min-w-0 flex-col gap-1.5'>
+            <Skeleton className='my-0.5 h-5 w-24 max-w-full' />
+            <Skeleton className='my-0.5 h-4 w-36 max-w-full' />
+          </div>
+          <Skeleton className='h-6 w-18 shrink-0' />
+        </div>
+        <Skeleton className='my-0.5 h-4 w-full max-w-md' />
+      </div>
+    </ListSkeleton>
+  );
+}
+
 /** A section heading with a bordered box of `height` under it. */
 export function SectionSkeleton({
   title,

@@ -1,5 +1,6 @@
 import {
   HeadingSkeleton,
+  ListControlsSkeleton,
   ListSkeleton,
   LoadingPage,
   TextLinesSkeleton,
@@ -20,6 +21,8 @@ export default function PlushiesLoading() {
       </div>
       {/* The view tabs: All, Recently edited, Needs attention, Birthdays. */}
       <Skeleton className='h-9 w-104 max-w-full rounded-lg' />
+      {/* Search, and the order on the All tab. */}
+      <ListControlsSkeleton selects={1} />
       <ListSkeleton rows={3}>
         <Skeleton className='size-14 shrink-0 rounded-xl' />
         <TextLinesSkeleton />

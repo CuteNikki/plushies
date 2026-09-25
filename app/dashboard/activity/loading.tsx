@@ -1,5 +1,6 @@
 import {
   HeadingSkeleton,
+  ListControlsSkeleton,
   ListSkeleton,
   LoadingPage,
   TextLinesSkeleton,
@@ -13,14 +14,17 @@ export default function ActivityLoading() {
       <Skeleton className='h-6 w-24' />
       <HeadingSkeleton
         title='Activity'
-        subtitle='Changes to plushies and accounts from the last 90 days.'
+        subtitle='Changes to plushies and accounts, and deleted comments, from the last 90 days.'
       />
-      {/* All, Plushies and Users, for admins. */}
-      <div className='flex gap-1'>
+      {/* All, Plushies, Comments and, for admins, Users. */}
+      <div className='flex flex-wrap gap-1'>
         <Skeleton className='h-6 w-9' />
         <Skeleton className='h-6 w-16' />
+        <Skeleton className='h-6 w-20' />
         <Skeleton className='h-6 w-12' />
       </div>
+      {/* Search, and newest or oldest first. */}
+      <ListControlsSkeleton selects={1} />
       <ListSkeleton rows={4} rowClassName='flex items-start gap-3 p-4'>
         <Skeleton className='size-8 shrink-0' />
         <TextLinesSkeleton />

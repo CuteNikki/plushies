@@ -1,4 +1,5 @@
 import {
+  CommentRowsSkeleton,
   LoadingPage,
   SectionHeadingSkeleton,
   SectionSkeleton,
@@ -37,7 +38,10 @@ export default function UserLoading() {
           ))}
         </div>
       </div>
-      <SectionSkeleton title='Comments' height='h-32' />
+      <div className='flex flex-col gap-4'>
+        <SectionHeadingSkeleton title='Comments' description='3 comments.' />
+        <CommentRowsSkeleton rows={2} />
+      </div>
       <SectionSkeleton title='Activity' height='h-48' />
     </LoadingPage>
   );

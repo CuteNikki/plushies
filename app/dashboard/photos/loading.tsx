@@ -1,4 +1,8 @@
-import { HeadingSkeleton, LoadingPage } from '@/components/skeletons';
+import {
+  HeadingSkeleton,
+  ListControlsSkeleton,
+  LoadingPage,
+} from '@/components/skeletons';
 import { StorageSkeleton } from '@/components/storage-usage';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -9,6 +13,8 @@ export default function PhotosLoading() {
       <Skeleton className='h-6 w-24' />
       <HeadingSkeleton title='Photos' subtitle='12 photos on 4 plushies.' />
       <StorageSkeleton />
+      {/* Search, and the order. */}
+      <ListControlsSkeleton selects={1} />
       <div className='flex flex-wrap gap-4'>
         {[5, 1, 1, 1].map((photos, index) => (
           <div

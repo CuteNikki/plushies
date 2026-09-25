@@ -1,8 +1,8 @@
 import {
+  CommentRowsSkeleton,
   HeadingSkeleton,
-  ListSkeleton,
+  ListControlsSkeleton,
   LoadingPage,
-  TextLinesSkeleton,
 } from '@/components/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -13,13 +13,11 @@ export default function CommentsLoading() {
       <Skeleton className='h-6 w-24' />
       <HeadingSkeleton
         title='Comments'
-        subtitle='12 comments on the plushies’ pages, newest first.'
+        subtitle='95 comments on the plushies’ pages.'
       />
-      <ListSkeleton rows={4} rowClassName='flex items-start gap-3 p-4'>
-        <Skeleton className='size-10 shrink-0 rounded-lg' />
-        <TextLinesSkeleton />
-        <Skeleton className='h-7 w-18 shrink-0' />
-      </ListSkeleton>
+      {/* Search, the order, and which comments. */}
+      <ListControlsSkeleton selects={2} />
+      <CommentRowsSkeleton rows={4} />
     </LoadingPage>
   );
 }

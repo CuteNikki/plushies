@@ -1,5 +1,6 @@
 import {
   HeadingSkeleton,
+  ListControlsSkeleton,
   ListSkeleton,
   LoadingPage,
 } from '@/components/skeletons';
@@ -14,8 +15,10 @@ export default function UsersLoading() {
         title='Users'
         subtitle='Editors can add and change plushies. Admins can also manage users.'
       />
+      {/* Search, role and order. */}
+      <ListControlsSkeleton selects={2} />
       <ListSkeleton
-        rows={1}
+        rows={3}
         rowClassName='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
       >
         {/* Name, email, then badges and the join date. */}

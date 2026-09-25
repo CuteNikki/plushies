@@ -1,8 +1,9 @@
 import 'server-only';
 
-import { ActivitySubject } from '@/lib/activity';
+import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { upcomingBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
+import type { Prisma } from '@/lib/generated/prisma/client';
 import { Role } from '@/lib/permissions';
 
 /** How far ahead the dashboard looks for birthdays. */
@@ -24,6 +25,91 @@ export type DashboardPlushie = {
   thumbnail: { key: string; url: string } | null;
 };
 
+const plushieSelect = {
+  id: true,
+  slug: true,
+  name: true,
+  species: true,
+  birthday: true,
+  thumbnailKey: true,
+  thumbnailUrl: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: { select: { gallery: true } },
+} as const;
+
+type PlushieRow = Prisma.PlushieGetPayload<{ select: typeof plushieSelect }>;
+
+function toDashboardPlushie(row: PlushieRow): DashboardPlushie {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    thumbnail:
+      row.thumbnailKey && row.thumbnailUrl
+        ? { key: row.thumbnailKey, url: row.thumbnailUrl }
+        : null,
+  };
+}
+
+/** What the plushie's page still lacks. Empty once it's complete. */
+function missingFrom(row: PlushieRow) {
+  const missing: Missing[] = [];
+  if (!row.thumbnailKey || !row.thumbnailUrl) missing.push('thumbnail');
+  if (row._count.gallery === 0) missing.push('photos');
+  if (!row.birthday) missing.push('birthday');
+  if (!row.species) missing.push('species');
+  return missing;
+}
+
+/**
+ * Added and not changed since. The two times are set separately, so they
+ * can be a moment apart.
+ */
+function isNew(row: PlushieRow) {
+  return row.updatedAt.getTime() - row.createdAt.getTime() < 1000;
+}
+
+/**
+ * Every plushie for the dashboard's plushie list, with what its views show:
+ * photos and likes, when and by whom it was last changed, and what it lacks.
+ */
+export async function getPlushieList() {
+  const [rows, edits] = await Promise.all([
+    db.plushie.findMany({
+      select: {
+        ...plushieSelect,
+        _count: { select: { gallery: true, likes: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    // The newest change to each plushie. The activity log only goes back so
+    // far, so older changes have no name.
+    db.activity.findMany({
+      where: {
+        subject: ActivitySubject.PLUSHIE,
+        type: { in: [ActivityType.CREATED, ActivityType.UPDATED] },
+      },
+      orderBy: { createdAt: 'desc' },
+      distinct: ['subjectId'],
+      select: { subjectId: true, actorName: true },
+    }),
+  ]);
+  const editors = new Map(
+    edits.map((edit) => [edit.subjectId, edit.actorName])
+  );
+
+  return rows.map((row) => ({
+    ...toDashboardPlushie(row),
+    photos: row._count.gallery + (row.thumbnailKey ? 1 : 0),
+    likes: row._count.likes,
+    missing: missingFrom(row),
+    updatedAt: row.updatedAt.toISOString(),
+    isNew: isNew(row),
+    editedBy: editors.get(row.id) ?? null,
+  }));
+}
+
 /**
  * Everything on the dashboard overview. The queries run in parallel, so
  * together they cost about one round trip to the database.
@@ -42,18 +128,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
     newAccountCount,
   ] = await Promise.all([
     db.plushie.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        species: true,
-        birthday: true,
-        thumbnailKey: true,
-        thumbnailUrl: true,
-        createdAt: true,
-        updatedAt: true,
-        _count: { select: { gallery: true } },
-      },
+      select: plushieSelect,
       orderBy: { updatedAt: 'desc' },
     }),
     db.plushieLike.count(),
@@ -104,23 +179,11 @@ export async function getDashboard({ admin }: { admin: boolean }) {
       : Promise.resolve(0),
   ]);
 
-  const plushies = rows.map((row) => {
-    const plushie: DashboardPlushie = {
-      id: row.id,
-      slug: row.slug,
-      name: row.name,
-      thumbnail:
-        row.thumbnailKey && row.thumbnailUrl
-          ? { key: row.thumbnailKey, url: row.thumbnailUrl }
-          : null,
-    };
-    const missing: Missing[] = [];
-    if (!plushie.thumbnail) missing.push('thumbnail');
-    if (row._count.gallery === 0) missing.push('photos');
-    if (!row.birthday) missing.push('birthday');
-    if (!row.species) missing.push('species');
-    return { plushie, row, missing };
-  });
+  const plushies = rows.map((row) => ({
+    plushie: toDashboardPlushie(row),
+    row,
+    missing: missingFrom(row),
+  }));
 
   const incomplete = plushies
     .filter(({ missing }) => missing.length > 0)
@@ -155,9 +218,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
     recentlyEdited: plushies.slice(0, LIST_SIZE).map(({ plushie, row }) => ({
       ...plushie,
       updatedAt: row.updatedAt.toISOString(),
-      // Added and not changed since. The two times are set separately, so
-      // they can be a moment apart.
-      isNew: row.updatedAt.getTime() - row.createdAt.getTime() < 1000,
+      isNew: isNew(row),
     })),
     needsAttention: {
       plushies: incomplete

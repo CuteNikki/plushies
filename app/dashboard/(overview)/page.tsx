@@ -18,7 +18,6 @@ import {
   getDashboard,
   RECENT_DAYS,
   type DashboardPlushie,
-  type Missing,
 } from '@/data/dashboard';
 import { parseBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
@@ -29,6 +28,7 @@ import { cn, count, formatBytes } from '@/lib/utils';
 
 import { Greeting } from '@/components/greeting';
 import { LocalTime } from '@/components/local-time';
+import { MissingBadges } from '@/components/missing-badges';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { Badge } from '@/components/ui/badge';
@@ -36,13 +36,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata: Metadata = { title: 'Dashboard' };
-
-const missingLabels: Record<Missing, string> = {
-  thumbnail: 'No thumbnail',
-  photos: 'No gallery photos',
-  birthday: 'No birthday',
-  species: 'No species',
-};
 
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact' });
 
@@ -130,7 +123,9 @@ export default async function DashboardPage() {
         <Section
           title='Recently edited'
           description='Plushies that have been recently edited.'
-          action={<SeeAll href='/dashboard/plushies'>All plushies</SeeAll>}
+          action={
+            <SeeAll href='/dashboard/plushies?view=recent'>Show all</SeeAll>
+          }
         >
           {dashboard.recentlyEdited.length > 0 ? (
             <List>
@@ -148,14 +143,15 @@ export default async function DashboardPage() {
 
         <Section
           title='Needs attention'
-          description='Plushies whose page is still missing something.'
+          description={
+            dashboard.needsAttention.total > 0
+              ? `${count(dashboard.needsAttention.total, 'plushie')} whose page is still missing something.`
+              : 'Plushies whose page is still missing something.'
+          }
           action={
-            dashboard.needsAttention.total >
-              dashboard.needsAttention.plushies.length && (
-              <SeeAll href='/dashboard/plushies'>
-                {dashboard.needsAttention.total -
-                  dashboard.needsAttention.plushies.length}{' '}
-                more
+            dashboard.needsAttention.total > 0 && (
+              <SeeAll href='/dashboard/plushies?view=attention'>
+                Show all
               </SeeAll>
             )
           }
@@ -164,13 +160,7 @@ export default async function DashboardPage() {
             <List>
               {dashboard.needsAttention.plushies.map((plushie) => (
                 <PlushieRow key={plushie.id} plushie={plushie} edit>
-                  <span className='mt-1 flex flex-wrap gap-1'>
-                    {plushie.missing.map((missing) => (
-                      <Badge key={missing} variant='outline'>
-                        {missingLabels[missing]}
-                      </Badge>
-                    ))}
-                  </span>
+                  <MissingBadges missing={plushie.missing} />
                 </PlushieRow>
               ))}
             </List>

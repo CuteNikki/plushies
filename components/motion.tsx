@@ -149,6 +149,7 @@ const elements = {
   div: m.div,
   section: m.section,
   header: m.header,
+  nav: m.nav,
   article: m.article,
   ul: m.ul,
   dl: m.dl,

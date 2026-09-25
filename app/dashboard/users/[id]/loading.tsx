@@ -32,7 +32,7 @@ export default function UserLoading() {
       <SectionSkeleton title='Ban' height='h-40' />
       <div className='flex flex-col gap-4'>
         <SectionHeadingSkeleton title='Likes' description='3 plushies liked.' />
-        <div className='grid grid-cols-3 gap-3 sm:grid-cols-5 lg:grid-cols-8'>
+        <div className='grid grid-cols-3 gap-3 sm:grid-cols-6'>
           {Array.from({ length: 3 }, (_, index) => (
             <Skeleton key={index} className='aspect-square rounded-xl' />
           ))}

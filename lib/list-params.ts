@@ -39,3 +39,9 @@ export function withQuery(path: string, query: Record<string, string | null>) {
   }
   return params.size ? `${path}?${params}` : path;
 }
+
+/** ?page=, counted from 1; anything else is the first page. */
+export function pageNumber(value: string | string[] | undefined) {
+  const page = Number(value);
+  return Number.isInteger(page) && page > 1 ? page : 1;
+}

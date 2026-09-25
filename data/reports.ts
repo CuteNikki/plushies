@@ -468,3 +468,8 @@ export async function countReports() {
   const open = openComments + openUsers;
   return { open, closed: allComments + allUsers - open };
 }
+
+/** How many reports there are across these cards. */
+export function reportsIn(cases: { reports: unknown[] }[]) {
+  return cases.reduce((sum, item) => sum + item.reports.length, 0);
+}

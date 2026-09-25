@@ -48,8 +48,20 @@ export async function getUsers({
 }
 
 /**
- * One account for its page: sign-in methods, who banned them, the plushies
- * they like and their latest comments, most recent first.
+ * How many of each their page shows; the rest are on pages of their own,
+ * e.g. /dashboard/users/[id]/comments.
+ */
+export const USER_PAGE_SHOWN = {
+  likes: 6,
+  comments: 5,
+  activity: 10,
+  /** Of the reports about them, and of the ones they sent. */
+  reports: 3,
+};
+
+/**
+ * One account for its page: sign-in methods, who banned them, and the
+ * latest of the plushies they like and of their comments.
  */
 export async function getUser(id: string) {
   return db.user.findUnique({
@@ -61,12 +73,15 @@ export async function getUser(id: string) {
       comments: {
         where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
-        take: 20,
+        take: USER_PAGE_SHOWN.comments,
         select: commentRowSelect,
       },
-      _count: { select: { comments: { where: { deletedAt: null } } } },
+      _count: {
+        select: { comments: { where: { deletedAt: null } }, likes: true },
+      },
       likes: {
         orderBy: { createdAt: 'desc' },
+        take: USER_PAGE_SHOWN.likes,
         select: {
           createdAt: true,
           plushie: {
@@ -82,4 +97,44 @@ export async function getUser(id: string) {
       },
     },
   });
+}
+
+/** Just who they are, for the pages under theirs. */
+export function getUserName(id: string) {
+  return db.user.findUnique({
+    where: { id },
+    select: { id: true, name: true },
+  });
+}
+
+/** Plushies they like on their likes page, a page at a time. */
+export const LIKES_PAGE_SIZE = 48;
+
+/** The plushies they like, most recent first, a page at a time from 1. */
+export async function getUserLikes(userId: string, page: number) {
+  const [likes, total] = await Promise.all([
+    db.plushieLike.findMany({
+      where: { userId },
+      orderBy: [{ createdAt: 'desc' }, { plushieId: 'asc' }],
+      skip: (page - 1) * LIKES_PAGE_SIZE,
+      take: LIKES_PAGE_SIZE,
+      select: {
+        plushie: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            thumbnailKey: true,
+            thumbnailUrl: true,
+          },
+        },
+      },
+    }),
+    db.plushieLike.count({ where: { userId } }),
+  ]);
+  return {
+    plushies: likes.map(({ plushie }) => plushie),
+    total,
+    more: page * LIKES_PAGE_SIZE < total,
+  };
 }

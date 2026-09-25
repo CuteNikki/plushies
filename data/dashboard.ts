@@ -264,15 +264,19 @@ export async function getCommentList({
   q = null,
   sort = 'newest',
   kind = 'all',
+  authorId,
 }: {
   cursor?: string | null;
   q?: string | null;
   sort?: (typeof commentSorts)[number];
   kind?: (typeof commentKinds)[number];
+  /** Only theirs, e.g. on their page's list. */
+  authorId?: string;
 } = {}) {
   const contains = q && { contains: q, mode: 'insensitive' as const };
   const where: Prisma.CommentWhereInput = {
     deletedAt: null,
+    ...(authorId && { authorId }),
     ...(kind === 'top' && { parentId: null }),
     ...(kind === 'replies' && { parentId: { not: null } }),
     ...(kind === 'reported' && {

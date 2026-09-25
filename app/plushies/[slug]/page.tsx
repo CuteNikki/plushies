@@ -7,6 +7,7 @@ import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
 import { Comments } from '@/components/comments';
+import { DeletePlushieButton } from '@/components/delete-plushie-button';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
 import { LikeButton } from '@/components/like-button';
 import {
@@ -77,7 +78,12 @@ export default async function PlushiePage(
     <div className='flex flex-col gap-6'>
       <Reveal className='flex items-center justify-between gap-2'>
         <BackButton href='/'>All plushies</BackButton>
-        <EditPlushieButton id={plushie.id} />
+        <div className='flex flex-wrap gap-2'>
+          <EditPlushieButton id={plushie.id} />
+          <DeletePlushieButton
+            plushie={{ id: plushie.id, name: plushie.name }}
+          />
+        </div>
       </Reveal>
 
       {/* Photos come in from the left and details from the right, each column

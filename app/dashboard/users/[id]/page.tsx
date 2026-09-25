@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { HeartIcon, HistoryIcon, MessageCircleIcon } from 'lucide-react';
 
 import { getActivity } from '@/data/activity';
+import { toCommentRow } from '@/data/comment-rows';
 import { getUser } from '@/data/users';
 import { ACTIVITY_DAYS } from '@/lib/activity';
 import { isBanned } from '@/lib/bans';
@@ -15,6 +16,7 @@ import { count } from '@/lib/utils';
 import { ActivityEntry } from '@/components/activity-entry';
 import { BackButton } from '@/components/back-button';
 import { BanForm, UnbanButton } from '@/components/ban-controls';
+import { CommentRow } from '@/components/comment-row';
 import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
@@ -190,22 +192,12 @@ export default async function UserPage(
         {user.comments.length > 0 ? (
           <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
             {user.comments.map((comment) => (
-              <li key={comment.id} className='flex flex-col gap-1 p-4'>
-                <p className='text-xs text-muted-foreground'>
-                  On{' '}
-                  <Link
-                    href={`/plushies/${comment.plushie.slug}`}
-                    className='font-semibold text-foreground hover:underline'
-                  >
-                    {comment.plushie.name}
-                  </Link>{' '}
-                  <LocalTime iso={comment.createdAt.toISOString()} />
-                  {comment.editedAt && ' (edited)'}
-                </p>
-                <p className='text-sm wrap-break-word whitespace-pre-line'>
-                  {comment.body}
-                </p>
-              </li>
+              <CommentRow
+                key={comment.id}
+                comment={toCommentRow(comment)}
+                viewer={{ id: session.user.id, admin: true }}
+                showAuthor={false}
+              />
             ))}
           </ul>
         ) : (

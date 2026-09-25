@@ -26,6 +26,7 @@ import { providerLabels } from '@/lib/providers';
 import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
+import { CommentAuthor } from '@/components/comment-author';
 import { EmptyState } from '@/components/empty-state';
 import { Greeting } from '@/components/greeting';
 import { LocalTime } from '@/components/local-time';
@@ -58,7 +59,7 @@ export default async function DashboardPage() {
     { label: 'Plushies', value: stats.plushies, href: '/dashboard/plushies' },
     { label: 'Photos', value: stats.photos, href: '/dashboard/photos' },
     { label: 'Likes', value: stats.likes },
-    { label: 'Comments', value: stats.comments },
+    { label: 'Comments', value: stats.comments, href: '/dashboard/comments' },
     {
       label: `Changes in ${RECENT_DAYS} days`,
       value: stats.recentChanges,
@@ -212,31 +213,27 @@ export default async function DashboardPage() {
         <Section
           title='Recent comments'
           description={`${count(dashboard.comments.recentCount, 'comment')} in the last ${RECENT_DAYS} days.`}
+          action={<SeeAll href='/dashboard/comments'>Show all</SeeAll>}
         >
           {dashboard.comments.latest.length > 0 ? (
             <List>
               {dashboard.comments.latest.map((comment) => (
-                <li
+                <PlushieRow
                   key={comment.id}
-                  className={cn(
-                    row,
-                    'flex-col items-stretch justify-center gap-1'
-                  )}
+                  plushie={comment.plushie}
+                  aside={
+                    <span className='shrink-0 text-sm text-muted-foreground'>
+                      <LocalTime iso={comment.createdAt} />
+                    </span>
+                  }
                 >
-                  <p className='truncate text-sm text-muted-foreground'>
-                    <CommentAuthor author={comment.author} link={admin} /> on{' '}
-                    <Link
-                      href={`/plushies/${comment.plushie.slug}`}
-                      className='font-semibold text-foreground hover:underline'
-                    >
-                      {comment.plushie.name}
-                    </Link>{' '}
-                    <LocalTime iso={comment.createdAt} />
-                    {comment.editedAt && ' (edited)'}
+                  {/* One line here; the whole comment is on the comments page. */}
+                  <p className='truncate'>
+                    <CommentAuthor author={comment.author} link={admin} />
+                    {comment.replyTo ? ' replied: ' : ': '}
+                    <span className='text-foreground'>{comment.body}</span>
                   </p>
-                  {/* One line here; the whole comment is on the plushie's page. */}
-                  <p className='truncate text-sm'>{comment.body}</p>
-                </li>
+                </PlushieRow>
               ))}
             </List>
           ) : (
@@ -334,28 +331,6 @@ export default async function DashboardPage() {
         </Section>
       </div>
     </div>
-  );
-}
-
-/** The comment's author, linked to their user page for admins. */
-function CommentAuthor({
-  author,
-  link,
-}: {
-  author: { id: string; name: string } | null;
-  link: boolean;
-}) {
-  if (!author) return <>A deleted account</>;
-  if (!link) {
-    return <span className='font-semibold text-foreground'>{author.name}</span>;
-  }
-  return (
-    <Link
-      href={`/dashboard/users/${author.id}`}
-      className='font-semibold text-foreground hover:underline'
-    >
-      {author.name}
-    </Link>
   );
 }
 

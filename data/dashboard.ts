@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { commentRowSelect, toCommentRow } from '@/data/comment-rows';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { sortByNextBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
@@ -143,14 +144,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
       where: { deletedAt: null },
       orderBy: { createdAt: 'desc' },
       take: LIST_SIZE,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        editedAt: true,
-        author: { select: { id: true, name: true } },
-        plushie: { select: { slug: true, name: true } },
-      },
+      select: commentRowSelect,
     }),
     db.comment.count({ where: { deletedAt: null } }),
     db.comment.count({
@@ -226,11 +220,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
     },
     birthdays,
     comments: {
-      latest: comments.map((comment) => ({
-        ...comment,
-        createdAt: comment.createdAt.toISOString(),
-        editedAt: comment.editedAt?.toISOString() ?? null,
-      })),
+      latest: comments.map(toCommentRow),
       recentCount: recentCommentCount,
     },
     users: admin
@@ -245,5 +235,33 @@ export async function getDashboard({ admin }: { admin: boolean }) {
           newAccountCount,
         }
       : null,
+  };
+}
+
+/** How many comments the comments page shows at a time. */
+export const COMMENTS_PAGE_SIZE = 30;
+
+/**
+ * Comments for the dashboard's comments page, newest first, a page at a
+ * time: `cursor` is the last one of the page before. "[deleted]" ones are
+ * left out; only their replies still show.
+ */
+export async function getCommentList(cursor: string | null) {
+  const [rows, total] = await Promise.all([
+    db.comment.findMany({
+      where: { deletedAt: null },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: COMMENTS_PAGE_SIZE + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      select: commentRowSelect,
+    }),
+    db.comment.count({ where: { deletedAt: null } }),
+  ]);
+  const page = rows.slice(0, COMMENTS_PAGE_SIZE);
+
+  return {
+    comments: page.map(toCommentRow),
+    total,
+    next: rows.length > COMMENTS_PAGE_SIZE ? page.at(-1)!.id : null,
   };
 }

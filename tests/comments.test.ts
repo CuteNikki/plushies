@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { addComment, deleteComment, editComment } from '@/actions/comments';
+import { COMMENTS_PAGE_SIZE, getCommentList } from '@/data/dashboard';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { COMMENTS_PER_MINUTE } from '@/lib/comment-rules';
@@ -211,5 +212,56 @@ describe('deleting', () => {
     expect(await find(answered)).toMatchObject({ body: '', authorId: null });
     expect(await find(answer)).toMatchObject({ body: 'An answer' });
     expect(await db.comment.count()).toBe(2);
+  });
+});
+
+describe('the comments page', () => {
+  test('lists them newest first, a page at a time, without deleted ones', async () => {
+    const { user } = await createUser({ name: 'Ann' });
+    const start = Date.now() - 60 * 60 * 1000;
+    // Straight to the database: posting this many would hit the limit.
+    const ids: string[] = [];
+    for (let i = 0; i < COMMENTS_PAGE_SIZE + 5; i++) {
+      const comment = await db.comment.create({
+        data: {
+          plushieId,
+          authorId: user.id,
+          body: `Comment ${i}`,
+          createdAt: new Date(start + i * 1000),
+        },
+      });
+      ids.push(comment.id);
+    }
+    await db.comment.update({
+      where: { id: ids[0] },
+      data: { deletedAt: new Date(), body: '', authorId: null },
+    });
+
+    const first = await getCommentList(null);
+    expect(first.total).toBe(COMMENTS_PAGE_SIZE + 4);
+    expect(first.comments[0].body).toBe(`Comment ${COMMENTS_PAGE_SIZE + 4}`);
+    expect(first.comments).toHaveLength(COMMENTS_PAGE_SIZE);
+
+    const second = await getCommentList(first.next);
+    expect(second.comments.map((c) => c.body)).toEqual([
+      'Comment 4',
+      'Comment 3',
+      'Comment 2',
+      'Comment 1',
+    ]);
+    expect(second.next).toBeNull();
+  });
+
+  test('says whom replies answer', async () => {
+    const ann = await createUser({ name: 'Ann' });
+    const ben = await createUser({ name: 'Ben' });
+    const top = await post(ann.browser, 'Top');
+    await post(ben.browser, 'Reply', top);
+
+    const { comments } = await getCommentList(null);
+    expect(comments.map((c) => [c.body, c.replyTo, c.replies])).toEqual([
+      ['Reply', { author: { id: ann.user.id, name: 'Ann' }, body: 'Top' }, 0],
+      ['Top', null, 1],
+    ]);
   });
 });

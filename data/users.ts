@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { commentRowSelect } from '@/data/comment-rows';
 import { db } from '@/lib/db';
 
 /** Everyone, oldest account first, with their sign-in methods. */
@@ -28,13 +29,7 @@ export async function getUser(id: string) {
         where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take: 20,
-        select: {
-          id: true,
-          body: true,
-          createdAt: true,
-          editedAt: true,
-          plushie: { select: { slug: true, name: true } },
-        },
+        select: commentRowSelect,
       },
       _count: { select: { comments: { where: { deletedAt: null } } } },
       likes: {

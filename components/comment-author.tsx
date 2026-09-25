@@ -1,6 +1,11 @@
 import Link from 'next/link';
 
-/** The comment's author, linked to their user page for admins. */
+import { UserContextMenu } from '@/components/user-context-menu';
+
+/**
+ * The comment's author, linked to their user page for admins, with their
+ * account's actions on right-click.
+ */
 export function CommentAuthor({
   author,
   link,
@@ -13,11 +18,13 @@ export function CommentAuthor({
     return <span className='font-semibold text-foreground'>{author.name}</span>;
   }
   return (
-    <Link
-      href={`/dashboard/users/${author.id}`}
-      className='font-semibold text-foreground hover:underline'
-    >
-      {author.name}
-    </Link>
+    <UserContextMenu user={author}>
+      <Link
+        href={`/dashboard/users/${author.id}`}
+        className='font-semibold text-foreground hover:underline'
+      >
+        {author.name}
+      </Link>
+    </UserContextMenu>
   );
 }

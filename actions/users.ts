@@ -186,3 +186,31 @@ export async function unbanUser(userId: string): Promise<{ error?: string }> {
   revalidatePath('/dashboard/users', 'layout');
   return {};
 }
+
+/**
+ * What an account's menu needs to know, looked up when it opens so a name
+ * anywhere can have one. Only for admins, like the menu.
+ */
+export async function getUserMenuInfo(userId: string) {
+  const session = await getSession();
+  if (!isAdmin(session?.user.role)) {
+    throw new Error('Only admins can do that');
+  }
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      role: true,
+      banned: true,
+      banExpires: true,
+      twoFactorEnabled: true,
+    },
+  });
+  if (!user) return null;
+  return {
+    role: user.role,
+    banned: isBanned(user),
+    twoFactor: !!user.twoFactorEnabled,
+    /** Their own account, which they can't act on from here. */
+    self: userId === session.user.id,
+  };
+}

@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { EyeIcon, LinkIcon, PencilIcon, Trash2Icon } from 'lucide-react';
 
 import { deletePlushie } from '@/actions/plushies';
+import { authClient } from '@/lib/auth-client';
+import { canEditPlushies, isViewingAs } from '@/lib/permissions';
 
 import { useConfirm, type ConfirmOptions } from '@/components/confirm-dialog';
 import {
@@ -25,13 +27,45 @@ export function deletePlushieConfirm(name: string): ConfirmOptions {
   };
 }
 
-/** A plushie's row, with its actions on right-click and an ItemMenuButton. */
-export function PlushieMenu({
+/**
+ * A plushie's name or photo anywhere, e.g. in the activity, with its actions
+ * on right-click (and a long press) for editors and admins. Just the name or
+ * photo for everyone else.
+ */
+export function PlushieContextMenu({
   plushie,
+  as = 'span',
   className,
   children,
 }: {
   plushie: { id: string; slug: string; name: string };
+  /** div for a block, e.g. a card. */
+  as?: 'div' | 'span';
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const { data } = authClient.useSession();
+  if (!canEditPlushies(data?.user.role) || isViewingAs(data ?? null)) {
+    return <>{children}</>;
+  }
+  return (
+    <PlushieMenu plushie={plushie} as={as} tint={false} className={className}>
+      {children}
+    </PlushieMenu>
+  );
+}
+
+/** A plushie's row, with its actions on right-click and an ItemMenuButton. */
+export function PlushieMenu({
+  plushie,
+  as,
+  tint,
+  className,
+  children,
+}: {
+  plushie: { id: string; slug: string; name: string };
+  as?: 'div' | 'span';
+  tint?: boolean;
   className?: string;
   children?: React.ReactNode;
 }) {
@@ -44,6 +78,8 @@ export function PlushieMenu({
       <ItemMenu
         label={`Actions for ${plushie.name}`}
         disabled={pending}
+        as={as}
+        tint={tint}
         className={className}
         items={
           <>

@@ -59,6 +59,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
+import { UserContextMenu } from '@/components/user-context-menu';
 
 /**
  * Levels of replies shown under a comment: fewer on phones, where each level
@@ -866,13 +867,17 @@ function CommentBody({
       >
         <div className='flex shrink-0 flex-col items-center gap-1'>
           {account ? (
-            <Link
-              href={account}
-              aria-label={`${author.name}’s account`}
-              className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20 transition-shadow outline-none hover:ring-2 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-ring'
-            >
-              <UserAvatar user={author} />
-            </Link>
+            // Their account's actions on right-click, rather than the
+            // comment's.
+            <UserContextMenu user={author}>
+              <Link
+                href={account}
+                aria-label={`${author.name}’s account`}
+                className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20 transition-shadow outline-none hover:ring-2 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-ring'
+              >
+                <UserAvatar user={author} />
+              </Link>
+            </UserContextMenu>
           ) : (
             <span className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20'>
               <UserAvatar user={author} />
@@ -883,12 +888,14 @@ function CommentBody({
         <div className='flex min-w-0 flex-1 flex-col gap-1'>
           <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
             {account ? (
-              <Link
-                href={account}
-                className='font-heading font-semibold hover:underline'
-              >
-                {author.name}
-              </Link>
+              <UserContextMenu user={author}>
+                <Link
+                  href={account}
+                  className='font-heading font-semibold hover:underline'
+                >
+                  {author.name}
+                </Link>
+              </UserContextMenu>
             ) : (
               <span className='font-heading font-semibold'>{author.name}</span>
             )}
@@ -906,7 +913,7 @@ function CommentBody({
             {comment.hidden &&
               (viewer?.canModerate ? (
                 <Badge variant='destructive' asChild>
-                  <Link href='/dashboard/reports'>
+                  <Link href='/dashboard/reports?show=comments'>
                     <EyeOffIcon />
                     Hidden after reports
                   </Link>

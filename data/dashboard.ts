@@ -170,6 +170,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
           select: {
             id: true,
             name: true,
+            image: true,
             createdAt: true,
             accounts: { select: { providerId: true } },
           },

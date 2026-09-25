@@ -40,10 +40,12 @@ import type { RevertOption } from '@/lib/revert';
 import { cn } from '@/lib/utils';
 
 import { LocalTime } from '@/components/local-time';
+import { PlushieContextMenu } from '@/components/plushie-menu';
 import { PrivateText } from '@/components/private-text';
 import { RevertButton } from '@/components/revert-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { UserContextMenu } from '@/components/user-context-menu';
 
 const icons: Record<ActivityType, LucideIcon> = {
   CREATED: PlusIcon,
@@ -186,7 +188,10 @@ export function ActivityEntry({
   );
 }
 
-/** Someone's name, linked to their page when the viewer can open it. */
+/**
+ * Someone's name, linked to their page when the viewer can open it, with
+ * their account's actions on right-click.
+ */
 function Person({
   id,
   name,
@@ -198,12 +203,41 @@ function Person({
 }) {
   if (!id || !context.users.has(id)) return <strong>{name}</strong>;
   return (
-    <Link
-      href={`/dashboard/users/${id}`}
-      className='font-semibold hover:underline'
-    >
-      {name}
-    </Link>
+    <UserContextMenu user={{ id, name }}>
+      <Link
+        href={`/dashboard/users/${id}`}
+        className='font-semibold hover:underline'
+      >
+        {name}
+      </Link>
+    </UserContextMenu>
+  );
+}
+
+/**
+ * A plushie's name, linked to their page while they're still there, with
+ * their actions on right-click.
+ */
+function PlushieName({
+  id,
+  name,
+  context,
+}: {
+  id: string;
+  name: string;
+  context: ActivityContext;
+}) {
+  const slug = context.slugs.get(id);
+  if (!slug) return <strong>{name}</strong>;
+  return (
+    <PlushieContextMenu plushie={{ id, slug, name }}>
+      <Link
+        href={`/plushies/${slug}`}
+        className='font-semibold hover:underline'
+      >
+        {name}
+      </Link>
+    </PlushieContextMenu>
   );
 }
 
@@ -226,16 +260,12 @@ function sentence(entry: Activity, context: ActivityContext) {
         context={context}
       />
     );
-    const slug = context.slugs.get(comment.plushieId);
-    const plushie = slug ? (
-      <Link
-        href={`/plushies/${slug}`}
-        className='font-semibold hover:underline'
-      >
-        {comment.plushieName}
-      </Link>
-    ) : (
-      <strong>{comment.plushieName}</strong>
+    const plushie = (
+      <PlushieName
+        id={comment.plushieId}
+        name={comment.plushieName}
+        context={context}
+      />
     );
     const verb = entry.type === ActivityType.DELETED ? 'deleted' : 'restored';
     if (comment.deleted) {
@@ -256,16 +286,12 @@ function sentence(entry: Activity, context: ActivityContext) {
   }
 
   if (entry.subject === ActivitySubject.PLUSHIE) {
-    const slug = context.slugs.get(entry.subjectId);
-    const plushie = slug ? (
-      <Link
-        href={`/plushies/${slug}`}
-        className='font-semibold hover:underline'
-      >
-        {entry.subjectName}
-      </Link>
-    ) : (
-      <strong>{entry.subjectName}</strong>
+    const plushie = (
+      <PlushieName
+        id={entry.subjectId}
+        name={entry.subjectName}
+        context={context}
+      />
     );
     if (entry.revertOf) {
       const what = {

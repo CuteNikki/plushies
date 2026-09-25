@@ -29,6 +29,8 @@ type Menu = {
   /** What the menu is for, e.g. 'Actions for Mochi'. */
   label: string;
   disabled?: boolean;
+  /** When either way of opening it opens or closes, e.g. to load its items. */
+  onOpenChange?: (open: boolean) => void;
 };
 
 const MenuContext = createContext<Menu | null>(null);
@@ -41,22 +43,27 @@ const KindContext = createContext<'dropdown' | 'context'>('dropdown');
  * opens the menu on right-click, with an ItemMenuButton somewhere in it;
  * without, it's just the button. Build `items` from ItemMenuItem and
  * ItemMenuSeparator, and keep any dialogs they open outside of it: the menu
- * unmounts as it closes.
+ * unmounts as it closes. Inside another one, e.g. a name in a comment's row,
+ * right-clicking opens only the innermost.
  */
 export function ItemMenu({
   items,
   label,
   disabled,
+  onOpenChange,
   tint = true,
+  as: Element = 'div',
   className,
   children,
 }: Menu & {
   /** Off for rows that show their hover and open menu their own way. */
   tint?: boolean;
+  /** span for something inline, e.g. a name in a sentence. */
+  as?: 'div' | 'span';
   className?: string;
   children?: React.ReactNode;
 }) {
-  const menu = { items, label, disabled };
+  const menu = { items, label, disabled, onOpenChange };
   if (!children) {
     return (
       <MenuContext value={menu}>
@@ -67,9 +74,18 @@ export function ItemMenu({
   return (
     <MenuContext value={menu}>
       {/* Not modal, so the dialogs it opens get the focus as it closes. */}
-      <ContextMenu modal={false}>
-        <ContextMenuTrigger asChild disabled={disabled}>
-          <div
+      <ContextMenu modal={false} onOpenChange={onOpenChange}>
+        <ContextMenuTrigger
+          asChild
+          disabled={disabled}
+          // Handled here, so a menu around this one doesn't open as well:
+          // right-click, and a long press on touch screens.
+          onContextMenu={(event) => event.stopPropagation()}
+          onPointerDown={(event) => {
+            if (event.pointerType !== 'mouse') event.stopPropagation();
+          }}
+        >
+          <Element
             className={cn(
               // Also tinted while its menu is open, to show which row it's for.
               tint && [rowTint, 'data-[state=open]:bg-muted/50'],
@@ -77,7 +93,7 @@ export function ItemMenu({
             )}
           >
             {children}
-          </div>
+          </Element>
         </ContextMenuTrigger>
         {/* Focus stays where the item put it, e.g. in a reply box, rather
             than going back to the row. */}
@@ -92,7 +108,10 @@ export function ItemMenu({
   );
 }
 
-/** Opens the ItemMenu around it. */
+/**
+ * Opens the ItemMenu around it. Nothing without one, e.g. when the menu is
+ * only for some viewers.
+ */
 export function ItemMenuButton({
   size = 'icon',
   className,
@@ -102,10 +121,10 @@ export function ItemMenuButton({
   className?: string;
 }) {
   const menu = use(MenuContext);
-  if (!menu) throw new Error('ItemMenuButton must be inside an ItemMenu');
+  if (!menu) return null;
 
   return (
-    <DropdownMenu modal={false}>
+    <DropdownMenu modal={false} onOpenChange={menu.onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           variant='ghost'

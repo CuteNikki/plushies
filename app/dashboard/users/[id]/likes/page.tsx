@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation';
 
 import { HeartIcon } from 'lucide-react';
 
-import { getUserLikes, getUserName } from '@/data/users';
-import { pageNumber, withQuery } from '@/lib/list-params';
+import { getUserLikes, getUserName, LIKES_PAGE_SIZES } from '@/data/users';
+import { pageNumber, pageSize, plainQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 import { count } from '@/lib/utils';
 
@@ -22,16 +22,14 @@ export default async function UserLikesPage(
 ) {
   await requireAdmin();
   const { id } = await props.params;
-  const page = pageNumber((await props.searchParams).page);
-  const [user, { plushies, total, more }] = await Promise.all([
+  const searchParams = await props.searchParams;
+  const query = plainQuery(searchParams);
+  const page = pageNumber(searchParams.page);
+  const [user, { plushies, total }] = await Promise.all([
     getUserName(id),
-    getUserLikes(id, page),
+    getUserLikes(id, page, pageSize(searchParams.per, LIKES_PAGE_SIZES)),
   ]);
   if (!user) notFound();
-  const pageHref = (page: number) =>
-    withQuery(`/dashboard/users/${id}/likes`, {
-      page: page > 1 ? String(page) : null,
-    });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -52,10 +50,10 @@ export default async function UserLikesPage(
         </Reveal>
       )}
       <Pagination
-        newest={page > 1 ? pageHref(1) : null}
-        older={more ? pageHref(page + 1) : null}
-        newestLabel='Latest'
-        olderLabel='Earlier likes'
+        query={query}
+        page={page}
+        total={total}
+        sizes={LIKES_PAGE_SIZES}
       />
     </div>
   );

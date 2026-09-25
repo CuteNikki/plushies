@@ -2,6 +2,7 @@ import 'server-only';
 
 import { commentRowSelect } from '@/data/comment-rows';
 import { db } from '@/lib/db';
+import type { PageSizes } from '@/lib/list-params';
 import { Role } from '@/lib/permissions';
 
 export const userSorts = ['oldest', 'newest', 'name'] as const;
@@ -107,17 +108,20 @@ export function getUserName(id: string) {
   });
 }
 
-/** Plushies they like on their likes page, a page at a time. */
-export const LIKES_PAGE_SIZE = 48;
+/** How many plushies their likes page shows: rows of 2, 3 and 4 fill up. */
+export const LIKES_PAGE_SIZES: PageSizes = {
+  options: [24, 48, 96],
+  default: 48,
+};
 
 /** The plushies they like, most recent first, a page at a time from 1. */
-export async function getUserLikes(userId: string, page: number) {
+export async function getUserLikes(userId: string, page: number, take: number) {
   const [likes, total] = await Promise.all([
     db.plushieLike.findMany({
       where: { userId },
       orderBy: [{ createdAt: 'desc' }, { plushieId: 'asc' }],
-      skip: (page - 1) * LIKES_PAGE_SIZE,
-      take: LIKES_PAGE_SIZE,
+      skip: (page - 1) * take,
+      take,
       select: {
         plushie: {
           select: {
@@ -135,6 +139,5 @@ export async function getUserLikes(userId: string, page: number) {
   return {
     plushies: likes.map(({ plushie }) => plushie),
     total,
-    more: page * LIKES_PAGE_SIZE < total,
   };
 }

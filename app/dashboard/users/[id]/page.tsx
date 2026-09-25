@@ -191,7 +191,7 @@ export default async function UserPage(
       <Section
         title='Activity'
         description={`Changes to this account and changes they made, from the last ${ACTIVITY_DAYS} days.`}
-        more={activity.next && `${page}/activity`}
+        more={activity.total > USER_PAGE_SHOWN.activity && `${page}/activity`}
       >
         {activity.entries.length > 0 ? (
           <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>

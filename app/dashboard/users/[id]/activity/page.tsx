@@ -6,7 +6,7 @@ import { HistoryIcon } from 'lucide-react';
 import { getActivity } from '@/data/activity';
 import { getUserName } from '@/data/users';
 import { ACTIVITY_DAYS } from '@/lib/activity';
-import { withQuery } from '@/lib/list-params';
+import { pageNumber, pageSize, plainQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 
 import { ActivityEntry } from '@/components/activity-entry';
@@ -26,16 +26,19 @@ export default async function UserActivityPage(
 ) {
   await requireAdmin();
   const { id } = await props.params;
-  const { before } = await props.searchParams;
-  // The last entry of the page before.
-  const cursor = typeof before === 'string' ? before : null;
-  const [user, { entries, context, next }] = await Promise.all([
+  const searchParams = await props.searchParams;
+  const query = plainQuery(searchParams);
+  const page = pageNumber(searchParams.page);
+  const [user, { entries, context, total }] = await Promise.all([
     getUserName(id),
-    getActivity({ userId: id, admin: true, cursor }),
+    getActivity({
+      userId: id,
+      admin: true,
+      page,
+      take: pageSize(searchParams.per),
+    }),
   ]);
   if (!user) notFound();
-  const pageHref = (before: string | null) =>
-    withQuery(`/dashboard/users/${id}/activity`, { before });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -63,17 +66,13 @@ export default async function UserActivityPage(
       ) : (
         <Reveal>
           <EmptyState icon={HistoryIcon}>
-            {cursor
+            {page > 1
               ? 'No more changes.'
               : `Nothing in the last ${ACTIVITY_DAYS} days.`}
           </EmptyState>
         </Reveal>
       )}
-      <Pagination
-        newest={cursor ? pageHref(null) : null}
-        older={next ? pageHref(next) : null}
-        olderLabel='Older changes'
-      />
+      <Pagination query={query} page={page} total={total} />
     </div>
   );
 }

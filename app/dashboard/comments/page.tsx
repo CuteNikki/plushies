@@ -3,7 +3,13 @@ import type { Metadata } from 'next';
 import { MessageCircleIcon } from 'lucide-react';
 
 import { commentKinds, commentSorts, getCommentList } from '@/data/dashboard';
-import { oneOf, plainQuery, searchQuery, withQuery } from '@/lib/list-params';
+import {
+  oneOf,
+  pageNumber,
+  pageSize,
+  plainQuery,
+  searchQuery,
+} from '@/lib/list-params';
 import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
 import { count } from '@/lib/utils';
@@ -27,18 +33,15 @@ export default async function CommentsPage(
   const q = searchQuery(searchParams.q);
   const sort = oneOf(searchParams.sort, commentSorts);
   const kind = oneOf(searchParams.show, commentKinds);
-  // The last comment of the page before.
-  const cursor =
-    typeof searchParams.before === 'string' ? searchParams.before : null;
-  const { comments, total, next } = await getCommentList({
-    cursor,
+  const page = pageNumber(searchParams.page);
+  const { comments, total } = await getCommentList({
+    page,
+    take: pageSize(searchParams.per),
     q,
     sort,
     kind,
   });
   const filtered = !!q || kind !== 'all';
-  const pageHref = (before: string | null) =>
-    withQuery('/dashboard/comments', { ...query, before });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -105,19 +108,14 @@ export default async function CommentsPage(
           <EmptyState icon={MessageCircleIcon}>
             {filtered
               ? 'No comments match.'
-              : cursor
+              : page > 1
                 ? 'No more comments.'
                 : 'No comments yet.'}
           </EmptyState>
         </Reveal>
       )}
 
-      <Pagination
-        newest={cursor ? pageHref(null) : null}
-        older={next ? pageHref(next) : null}
-        newestLabel={sort === 'oldest' ? 'Oldest' : 'Newest'}
-        olderLabel={sort === 'oldest' ? 'Newer comments' : 'Older comments'}
-      />
+      <Pagination query={query} page={page} total={total} />
     </div>
   );
 }

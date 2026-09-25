@@ -5,7 +5,7 @@ import { MessageCircleIcon } from 'lucide-react';
 
 import { getCommentList } from '@/data/dashboard';
 import { getUserName } from '@/data/users';
-import { withQuery } from '@/lib/list-params';
+import { pageNumber, pageSize, plainQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 import { count } from '@/lib/utils';
 
@@ -23,16 +23,18 @@ export default async function UserCommentsPage(
 ) {
   const session = await requireAdmin();
   const { id } = await props.params;
-  const { before } = await props.searchParams;
-  // The last comment of the page before.
-  const cursor = typeof before === 'string' ? before : null;
-  const [user, { comments, total, next }] = await Promise.all([
+  const searchParams = await props.searchParams;
+  const query = plainQuery(searchParams);
+  const page = pageNumber(searchParams.page);
+  const [user, { comments, total }] = await Promise.all([
     getUserName(id),
-    getCommentList({ authorId: id, cursor }),
+    getCommentList({
+      authorId: id,
+      page,
+      take: pageSize(searchParams.per),
+    }),
   ]);
   if (!user) notFound();
-  const pageHref = (before: string | null) =>
-    withQuery(`/dashboard/users/${id}/comments`, { before });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -58,15 +60,11 @@ export default async function UserCommentsPage(
       ) : (
         <Reveal>
           <EmptyState icon={MessageCircleIcon}>
-            {cursor ? 'No more comments.' : 'No comments yet.'}
+            {page > 1 ? 'No more comments.' : 'No comments yet.'}
           </EmptyState>
         </Reveal>
       )}
-      <Pagination
-        newest={cursor ? pageHref(null) : null}
-        older={next ? pageHref(next) : null}
-        olderLabel='Older comments'
-      />
+      <Pagination query={query} page={page} total={total} />
     </div>
   );
 }

@@ -5,7 +5,14 @@ import { HistoryIcon } from 'lucide-react';
 
 import { activitySorts, getActivity } from '@/data/activity';
 import { ACTIVITY_DAYS, ActivitySubject } from '@/lib/activity';
-import { oneOf, plainQuery, searchQuery, withQuery } from '@/lib/list-params';
+import {
+  oneOf,
+  pageNumber,
+  pageSize,
+  plainQuery,
+  searchQuery,
+  withQuery,
+} from '@/lib/list-params';
 import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
 
@@ -46,8 +53,10 @@ export default async function ActivityPage(
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
   const searchParams = await props.searchParams;
-  const { show, before } = searchParams;
+  const { show } = searchParams;
   const query = plainQuery(searchParams);
+  const page = pageNumber(searchParams.page);
+  const take = pageSize(searchParams.per);
   const q = searchQuery(searchParams.q);
   const sort = oneOf(searchParams.sort, activitySorts);
   const shown = filters.filter((filter) => admin || !filter.adminOnly);
@@ -56,22 +65,19 @@ export default async function ActivityPage(
     filter.subjects ??
     (admin ? undefined : [ActivitySubject.PLUSHIE, ActivitySubject.COMMENT]);
 
-  // The last entry of the page before.
-  const cursor = typeof before === 'string' ? before : null;
-  const { entries, context, next } = await getActivity({
+  const { entries, context, total } = await getActivity({
     subjects,
     admin,
-    cursor,
+    page,
+    take,
     q,
     sort,
   });
-  // Paging keeps the search, order and tab; a tab starts at the first page.
-  const pageHref = (cursor: string | null) =>
-    withQuery('/dashboard/activity', { ...query, before: cursor });
+  // A tab keeps the search, order and page size, and starts at page 1.
   const tabHref = (show?: string) =>
     withQuery('/dashboard/activity', {
-      q: query.q ?? null,
-      sort: query.sort ?? null,
+      ...query,
+      page: null,
       show: show ?? null,
     });
 
@@ -152,19 +158,14 @@ export default async function ActivityPage(
           <EmptyState icon={HistoryIcon} className='p-8'>
             {q
               ? 'No changes match.'
-              : cursor
+              : page > 1
                 ? 'No more changes.'
                 : 'Nothing yet. Changes show up here as they happen.'}
           </EmptyState>
         </Reveal>
       )}
 
-      <Pagination
-        newest={cursor ? pageHref(null) : null}
-        older={next ? pageHref(next) : null}
-        newestLabel={sort === 'oldest' ? 'Oldest' : 'Newest'}
-        olderLabel={sort === 'oldest' ? 'Newer changes' : 'Older changes'}
-      />
+      <Pagination query={query} page={page} total={total} />
     </div>
   );
 }

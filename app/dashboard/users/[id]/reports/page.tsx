@@ -6,7 +6,13 @@ import { FlagIcon } from 'lucide-react';
 
 import { getReportsForUser, reportsIn } from '@/data/reports';
 import { getUserName } from '@/data/users';
-import { pageNumber, withQuery } from '@/lib/list-params';
+import {
+  CARD_PAGE_SIZES,
+  pageNumber,
+  pageSize,
+  plainQuery,
+  withQuery,
+} from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 import { cn } from '@/lib/utils';
 
@@ -17,9 +23,6 @@ import { ReportCaseCard } from '@/components/report-history';
 import { UserSubpageHeader } from '@/components/user-subpage';
 
 export const metadata: Metadata = { title: 'Reports' };
-
-/** Report cards on a page. */
-const PAGE_SIZE = 10;
 
 /**
  * Every report to do with someone, open or closed, newest first: about them
@@ -32,18 +35,22 @@ export default async function UserReportsPage(
   const { id } = await props.params;
   const searchParams = await props.searchParams;
   const sent = searchParams.show === 'sent';
+  const query = plainQuery(searchParams);
   const page = pageNumber(searchParams.page);
+  const take = pageSize(searchParams.per, CARD_PAGE_SIZES);
   const [user, reports] = await Promise.all([
     getUserName(id),
     getReportsForUser(id),
   ]);
   if (!user) notFound();
   const cases = sent ? reports.sent : reports.about;
-  const shown = cases.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const href = (next: { sent?: boolean; page?: number }) =>
+  const shown = cases.slice((page - 1) * take, page * take);
+  // A tab keeps the page size, and starts at page 1.
+  const href = (next: { sent: boolean }) =>
     withQuery(`/dashboard/users/${id}/reports`, {
-      show: (next.sent ?? sent) ? 'sent' : null,
-      page: next.page && next.page > 1 ? String(next.page) : null,
+      ...query,
+      page: null,
+      show: next.sent ? 'sent' : null,
     });
   const tabs = [
     {
@@ -107,12 +114,10 @@ export default async function UserReportsPage(
         </Reveal>
       )}
       <Pagination
-        newest={page > 1 ? href({ page: 1 }) : null}
-        older={
-          cases.length > page * PAGE_SIZE ? href({ page: page + 1 }) : null
-        }
-        newestLabel='Latest'
-        olderLabel='Earlier reports'
+        query={query}
+        page={page}
+        total={cases.length}
+        sizes={CARD_PAGE_SIZES}
       />
     </div>
   );

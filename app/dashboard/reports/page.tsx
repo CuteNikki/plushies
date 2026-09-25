@@ -12,7 +12,16 @@ import {
   type OpenUserReport,
 } from '@/data/reports';
 import { Role } from '@/lib/generated/prisma/enums';
-import { withQuery } from '@/lib/list-params';
+import {
+  CARD_PAGE_SIZES,
+  matchesSearch,
+  oneOf,
+  pageNumber,
+  pageSize,
+  plainQuery,
+  searchQuery,
+  withQuery,
+} from '@/lib/list-params';
 import { isAdmin, roleLabels } from '@/lib/permissions';
 import {
   REPORT_WINDOW_HOURS,
@@ -25,8 +34,10 @@ import { cn, count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ListControls } from '@/components/list-controls';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
+import { Pagination } from '@/components/pagination';
 import { ReportActions } from '@/components/report-actions';
 import {
   AccountSubject,
@@ -48,7 +59,13 @@ export default async function ReportsPage(
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
   const viewer = { id: session.user.id, admin };
-  const { show, status } = await props.searchParams;
+  const searchParams = await props.searchParams;
+  const { show, status } = searchParams;
+  const query = plainQuery(searchParams);
+  const q = searchQuery(searchParams.q);
+  const sort = oneOf(searchParams.sort, reportSorts);
+  const page = pageNumber(searchParams.page);
+  const take = pageSize(searchParams.per, CARD_PAGE_SIZES);
   // Both kinds unless one is picked.
   const kind: Kind = show === 'comments' || show === 'users' ? show : 'all';
   const closed = status === 'closed';
@@ -60,9 +77,12 @@ export default async function ReportsPage(
     closed && kind !== 'comments' ? getClosedUserReports() : null,
   ]);
 
+  // A tab keeps the search, order and page size, and starts at page 1.
   const href = (next: { kind?: Kind; closed?: boolean }) => {
     const nextKind = next.kind ?? kind;
     return withQuery('/dashboard/reports', {
+      ...query,
+      page: null,
       show: nextKind === 'all' ? null : nextKind,
       status: (next.closed ?? closed) ? 'closed' : null,
     });
@@ -89,12 +109,27 @@ export default async function ReportsPage(
   const commentRows: Row[] = closedComments
     ? closedComments.map((item) => ({
         at: item.resolvedAt,
+        reports: item.reports.length,
+        text: [
+          item.comment.body,
+          item.comment.author?.name,
+          item.comment.plushie.name,
+          item.resolvedBy?.name,
+          ...reportTexts(item.reports, reportReasons),
+        ],
         node: (
           <ClosedReportItem key={`c:${item.key}`} item={item} admin={admin} />
         ),
       }))
     : comments.map((item) => ({
         at: item.reports[0].createdAt,
+        reports: item.reports.length,
+        text: [
+          item.comment.body,
+          item.author?.name,
+          item.comment.plushie.name,
+          ...reportTexts(item.reports, reportReasons),
+        ],
         node: (
           <ReportCard
             key={`c:${item.comment.id}`}
@@ -162,6 +197,13 @@ export default async function ReportsPage(
   const userRows: Row[] = closedUsers
     ? closedUsers.map((item) => ({
         at: item.resolvedAt,
+        reports: item.reports.length,
+        text: [
+          item.user.reportedName,
+          item.user.name,
+          item.resolvedBy?.name,
+          ...reportTexts(item.reports, userReportReasons),
+        ],
         node: (
           <ClosedUserReportItem
             key={`u:${item.key}`}
@@ -172,6 +214,8 @@ export default async function ReportsPage(
       }))
     : users.map(({ user, reports }) => ({
         at: reports[0].createdAt,
+        reports: reports.length,
+        text: [user.name, ...reportTexts(reports, userReportReasons)],
         node: (
           <ReportCard
             key={`u:${user.id}`}
@@ -218,15 +262,30 @@ export default async function ReportsPage(
           />
         ),
       }));
+  const newest = (a: Row, b: Row) => b.at.localeCompare(a.at);
   const rows = [
     ...(kind !== 'users' ? commentRows : []),
     ...(kind !== 'comments' ? userRows : []),
-  ].sort((a, b) => b.at.localeCompare(a.at));
+  ]
+    .filter((row) => matchesSearch(q, row.text))
+    .sort(
+      {
+        newest,
+        oldest: (a: Row, b: Row) => newest(b, a),
+        most: (a: Row, b: Row) => b.reports - a.reports || newest(a, b),
+      }[sort]
+    );
+  const shown = rows.slice((page - 1) * take, page * take);
   const what = { all: '', comments: ' comment', users: ' account' }[kind];
-  const empty = closed
-    ? `No closed${what} reports yet.`
-    : { all: 'Nothing', comments: 'No comments', users: 'No accounts' }[kind] +
-      ' reported right now.';
+  const empty = q
+    ? 'No reports match.'
+    : page > 1
+      ? 'No more reports.'
+      : closed
+        ? `No closed${what} reports yet.`
+        : { all: 'Nothing', comments: 'No comments', users: 'No accounts' }[
+            kind
+          ] + ' reported right now.';
 
   return (
     <div className='flex flex-col gap-6'>
@@ -239,7 +298,7 @@ export default async function ReportsPage(
         </h1>
         <p className='text-pretty text-muted-foreground'>
           {closed
-            ? 'What was done about reports, and by whom, the latest first.'
+            ? 'What was done about reports, and by whom.'
             : kind === 'users'
               ? 'Accounts people reported, e.g. for their name or picture.'
               : `${kind === 'all' ? 'Comments and accounts' : 'Comments'} people reported. ${count(REPORTS_TO_HIDE, 'report')} in ${REPORT_WINDOW_HOURS} hours hide a comment until it’s kept or deleted.`}
@@ -253,10 +312,31 @@ export default async function ReportsPage(
         <Segments label='Status' items={statuses} />
       </Reveal>
 
-      {rows.length > 0 ? (
+      <Reveal>
+        <ListControls
+          query={query}
+          search={{
+            label: 'Search reports',
+            placeholder: 'Search comments, names, plushies or notes',
+          }}
+          selects={[
+            {
+              param: 'sort',
+              label: 'Order',
+              options: [
+                { value: 'newest', label: 'Latest first' },
+                { value: 'oldest', label: 'Oldest first' },
+                { value: 'most', label: 'Most reports' },
+              ],
+            },
+          ]}
+        />
+      </Reveal>
+
+      {shown.length > 0 ? (
         // A card per reported comment or account.
         <Reveal as='ul' className='flex flex-col gap-4'>
-          {rows.map((row) => row.node)}
+          {shown.map((row) => row.node)}
         </Reveal>
       ) : (
         <Reveal>
@@ -265,14 +345,48 @@ export default async function ReportsPage(
           </EmptyState>
         </Reveal>
       )}
+
+      <Pagination
+        query={query}
+        page={page}
+        total={rows.length}
+        sizes={CARD_PAGE_SIZES}
+      />
     </div>
   );
 }
 
 type Kind = 'all' | 'comments' | 'users';
 
-/** A row in the list, and when it happened, to sort by. */
-type Row = { at: string; node: React.ReactNode };
+/** Ordered by when it happened, or by how many reports there are. */
+const reportSorts = ['newest', 'oldest', 'most'] as const;
+
+/**
+ * A card in the list, when it happened and how many reports it has, to sort
+ * by, and what a search looks through.
+ */
+type Row = {
+  at: string;
+  reports: number;
+  text: (string | null | undefined)[];
+  node: React.ReactNode;
+};
+
+/** What a search finds in reports: who sent them, their notes and reasons. */
+function reportTexts<Reason extends string>(
+  reports: {
+    reason: Reason;
+    note: string | null;
+    reporter: { name: string } | null;
+  }[],
+  reasons: Record<Reason, { label: string }>
+) {
+  return reports.flatMap((report) => [
+    report.reporter?.name,
+    report.note,
+    reasons[report.reason].label,
+  ]);
+}
 
 /**
  * Whether they can ban or reset someone from here: editors only regular

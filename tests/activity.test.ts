@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
-import { ACTIVITY_PAGE_SIZE, getActivity } from '@/data/activity';
+import { getActivity } from '@/data/activity';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { db } from '@/lib/db';
+
+const ACTIVITY_PAGE_SIZE = 10;
 
 /** Log entries about plushies, `count` of them, all at the same moment. */
 async function entries(
@@ -21,20 +23,19 @@ async function entries(
   });
 }
 
-/** Every entry, following `next` from page to page. */
+/** Every entry, page by page until the total is covered. */
 async function allPages(options: { subjects?: ActivitySubject[] } = {}) {
   const pages: string[][] = [];
-  let cursor: string | null = null;
-  do {
-    const page: Awaited<ReturnType<typeof getActivity>> = await getActivity({
+  for (let page = 1; ; page++) {
+    const { entries, total } = await getActivity({
       ...options,
       admin: true,
-      cursor,
+      page,
+      take: ACTIVITY_PAGE_SIZE,
     });
-    pages.push(page.entries.map(({ entry }) => entry.id));
-    cursor = page.next;
-  } while (cursor);
-  return pages;
+    pages.push(entries.map(({ entry }) => entry.id));
+    if (page * ACTIVITY_PAGE_SIZE >= total) return pages;
+  }
 }
 
 describe('the activity page', () => {
@@ -74,7 +75,7 @@ describe('the activity page', () => {
     await entries(3);
     const page = await getActivity({ admin: true });
     expect(page.entries).toHaveLength(3);
-    expect(page.next).toBeNull();
+    expect(page.total).toBe(3);
   });
 
   test('searches what it is about and who did it, oldest first if asked', async () => {

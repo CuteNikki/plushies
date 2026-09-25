@@ -1,5 +1,6 @@
 import {
   HeadingSkeleton,
+  ListControlsSkeleton,
   LoadingPage,
   ReportCardSkeleton,
 } from '@/components/skeletons';
@@ -19,6 +20,8 @@ export default function ReportsLoading() {
         <Skeleton className='h-9 w-60 rounded-lg' />
         <Skeleton className='h-9 w-36 rounded-lg' />
       </div>
+      {/* Search, and the order. */}
+      <ListControlsSkeleton selects={1} />
       <div className='flex flex-col gap-4'>
         <ReportCardSkeleton />
         <ReportCardSkeleton />

@@ -48,7 +48,7 @@ export function ListControls({
 
   function go(changes: Record<string, string | null>) {
     // A new search or order starts at the first page.
-    const next = { ...query, before: null, ...changes };
+    const next = { ...query, page: null, ...changes };
     startTransition(() =>
       router.replace(withQuery(pathname, next), { scroll: false })
     );

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 
 import { addComment, deleteComment, editComment } from '@/actions/comments';
-import { COMMENTS_PAGE_SIZE, getCommentList } from '@/data/dashboard';
+import { getCommentList } from '@/data/dashboard';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { COMMENTS_PER_MINUTE } from '@/lib/comment-rules';
@@ -15,6 +15,8 @@ import {
   linkDiscord,
   type Browser,
 } from './helpers';
+
+const COMMENTS_PAGE_SIZE = 10;
 
 let plushieId: string;
 
@@ -237,19 +239,19 @@ describe('the comments page', () => {
       data: { deletedAt: new Date(), body: '', authorId: null },
     });
 
-    const first = await getCommentList();
+    const first = await getCommentList({ take: COMMENTS_PAGE_SIZE });
     expect(first.total).toBe(COMMENTS_PAGE_SIZE + 4);
     expect(first.comments[0].body).toBe(`Comment ${COMMENTS_PAGE_SIZE + 4}`);
     expect(first.comments).toHaveLength(COMMENTS_PAGE_SIZE);
 
-    const second = await getCommentList({ cursor: first.next });
+    const second = await getCommentList({ take: COMMENTS_PAGE_SIZE, page: 2 });
     expect(second.comments.map((c) => c.body)).toEqual([
       'Comment 4',
       'Comment 3',
       'Comment 2',
       'Comment 1',
     ]);
-    expect(second.next).toBeNull();
+    expect(second.total).toBe(COMMENTS_PAGE_SIZE + 4);
   });
 
   test('says whom replies answer', async () => {

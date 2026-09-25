@@ -5,6 +5,7 @@ import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { sortByNextBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
+import { PAGE_SIZES } from '@/lib/list-params';
 import { Role } from '@/lib/permissions';
 
 /** How far back the dashboard counts changes and new accounts. */
@@ -248,25 +249,26 @@ export async function getDashboard({ admin }: { admin: boolean }) {
   };
 }
 
-/** How many comments the comments page shows at a time. */
-export const COMMENTS_PAGE_SIZE = 30;
-
 export const commentSorts = ['newest', 'oldest'] as const;
 export const commentKinds = ['all', 'top', 'replies', 'reported'] as const;
 
 /**
- * Comments for the dashboard's comments page, a page at a time: `cursor` is
- * the last one of the page before. "[deleted]" ones are left out; only their
+ * Comments for the dashboard's comments page, a page at a time from 1, and
+ * how many match across every page. "[deleted]" ones are left out; only their
  * replies still show. `q` searches the text, the author and the plushie.
  */
 export async function getCommentList({
-  cursor = null,
+  page = 1,
+  take = PAGE_SIZES.default,
   q = null,
   sort = 'newest',
   kind = 'all',
   authorId,
 }: {
-  cursor?: string | null;
+  /** Counted from 1. */
+  page?: number;
+  /** How many on a page. */
+  take?: number;
   q?: string | null;
   sort?: (typeof commentSorts)[number];
   kind?: (typeof commentKinds)[number];
@@ -295,17 +297,12 @@ export async function getCommentList({
     db.comment.findMany({
       where,
       orderBy: [{ createdAt: direction }, { id: direction }],
-      take: COMMENTS_PAGE_SIZE + 1,
-      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      skip: (page - 1) * take,
+      take,
       select: commentRowSelect,
     }),
     db.comment.count({ where }),
   ]);
-  const page = rows.slice(0, COMMENTS_PAGE_SIZE);
 
-  return {
-    comments: page.map(toCommentRow),
-    total,
-    next: rows.length > COMMENTS_PAGE_SIZE ? page.at(-1)!.id : null,
-  };
+  return { comments: rows.map(toCommentRow), total };
 }

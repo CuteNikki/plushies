@@ -4,11 +4,16 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import {
+  HeartIcon,
+  HistoryIcon,
+  ImageIcon,
   LayoutDashboardIcon,
   LogOutIcon,
-  PencilIcon,
+  MessageCircleIcon,
+  PlusIcon,
   SettingsIcon,
   UsersIcon,
+  type LucideIcon,
 } from 'lucide-react';
 
 import { authClient } from '@/lib/auth-client';
@@ -23,12 +28,34 @@ import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserAvatar } from '@/components/user-avatar';
+
+/** The dashboard's pages, for editors. Users is only for admins. */
+const dashboardLinks: {
+  href: string;
+  icon: LucideIcon;
+  label: string;
+  adminOnly?: boolean;
+}[] = [
+  { href: '/dashboard', icon: LayoutDashboardIcon, label: 'Dashboard' },
+  { href: '/dashboard/plushies', icon: HeartIcon, label: 'Plushies' },
+  { href: '/dashboard/plushies/new', icon: PlusIcon, label: 'New Plushie' },
+  { href: '/dashboard/photos', icon: ImageIcon, label: 'Photos' },
+  { href: '/dashboard/comments', icon: MessageCircleIcon, label: 'Comments' },
+  { href: '/dashboard/activity', icon: HistoryIcon, label: 'Activity' },
+  {
+    href: '/dashboard/users',
+    icon: UsersIcon,
+    label: 'Users',
+    adminOnly: true,
+  },
+];
 
 // A client component so the public pages can stay statically rendered.
 export function UserMenu() {
@@ -71,28 +98,21 @@ export function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {canEditPlushies(user.role) && (
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard'>
-              <LayoutDashboardIcon />
-              Dashboard
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {canEditPlushies(user.role) && (
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard/plushies'>
-              <PencilIcon />
-              Plushies
-            </Link>
-          </DropdownMenuItem>
-        )}
-        {isAdmin(user.role) && (
-          <DropdownMenuItem asChild>
-            <Link href='/dashboard/users'>
-              <UsersIcon />
-              Users
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuGroup>
+              {dashboardLinks
+                .filter((link) => !link.adminOnly || isAdmin(user.role))
+                .map(({ href, icon: Icon, label }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>
+                      <Icon />
+                      {label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+          </>
         )}
         <DropdownMenuItem asChild>
           <Link href='/account'>

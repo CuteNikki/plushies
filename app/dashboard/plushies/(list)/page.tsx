@@ -43,7 +43,14 @@ const views = {
 type View = keyof typeof views;
 
 /** Orders for the All tab; the others have their own. */
-const sorts = ['oldest', 'newest', 'name', 'likes', 'photos'] as const;
+const sorts = [
+  'oldest',
+  'newest',
+  'name',
+  'likes',
+  'comments',
+  'photos',
+] as const;
 
 export default async function PlushiesPage(
   props: PageProps<'/dashboard/plushies'>
@@ -70,6 +77,7 @@ export default async function PlushiesPage(
     newest: all.toReversed(),
     name: all.toSorted((a, b) => a.name.localeCompare(b.name)),
     likes: all.toSorted((a, b) => b.likes - a.likes),
+    comments: all.toSorted((a, b) => b.comments - a.comments),
     photos: all.toSorted((a, b) => b.photos - a.photos),
   }[sort];
   const incomplete = all
@@ -167,6 +175,7 @@ export default async function PlushiesPage(
                       { value: 'newest', label: 'Newest first' },
                       { value: 'name', label: 'Name A–Z' },
                       { value: 'likes', label: 'Most liked' },
+                      { value: 'comments', label: 'Most comments' },
                       { value: 'photos', label: 'Most photos' },
                     ],
                   },
@@ -221,7 +230,8 @@ export default async function PlushiesPage(
                 ) : (
                   <p className='text-sm text-muted-foreground'>
                     {count(plushie.photos, 'photo')} ·{' '}
-                    {count(plushie.likes, 'like')}
+                    {count(plushie.likes, 'like')} ·{' '}
+                    {count(plushie.comments, 'comment')}
                   </p>
                 )}
               </div>

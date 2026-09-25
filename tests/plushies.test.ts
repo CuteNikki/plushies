@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { deletePlushie, discardUploads } from '@/actions/plushies';
+import { getPlushieList } from '@/data/dashboard';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { db } from '@/lib/db';
 import { Role } from '@/lib/permissions';
@@ -165,5 +166,29 @@ describe('photos', () => {
 
     expect(await plushieBySlug('mochi')).toBeNull();
     expect(uploads.has('photo')).toBe(true);
+  });
+});
+
+describe('the plushie list', () => {
+  test('counts comments, but not "[deleted]" ones', async () => {
+    const { user } = await createUser({ name: 'Ann' });
+    const mochi = await createPlushie('Mochi');
+    await createPlushie('Pickle');
+    for (const deletedAt of [null, null, new Date()]) {
+      await db.comment.create({
+        data: {
+          plushieId: mochi.id,
+          authorId: deletedAt ? null : user.id,
+          body: deletedAt ? '' : 'Hi',
+          deletedAt,
+        },
+      });
+    }
+
+    const counts = (await getPlushieList()).map((p) => [p.name, p.comments]);
+    expect(counts).toEqual([
+      ['Mochi', 2],
+      ['Pickle', 0],
+    ]);
   });
 });

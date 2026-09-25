@@ -77,7 +77,14 @@ export async function getPlushieList() {
     db.plushie.findMany({
       select: {
         ...plushieSelect,
-        _count: { select: { gallery: true, likes: true } },
+        _count: {
+          select: {
+            gallery: true,
+            likes: true,
+            // Not "[deleted]" ones, like everywhere else they're counted.
+            comments: { where: { deletedAt: null } },
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
     }),
@@ -101,6 +108,7 @@ export async function getPlushieList() {
     ...toDashboardPlushie(row),
     photos: row._count.gallery + (row.thumbnailKey ? 1 : 0),
     likes: row._count.likes,
+    comments: row._count.comments,
     missing: missingFrom(row),
     species: row.species,
     birthday: row.birthday,

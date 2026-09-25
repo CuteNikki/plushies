@@ -21,7 +21,9 @@ import {
   type Removal,
 } from '@/lib/comments';
 import { db } from '@/lib/db';
+import { ReportOutcome } from '@/lib/generated/prisma/enums';
 import { VIEWING_AS_MESSAGE } from '@/lib/permissions';
+import { closeReports } from '@/lib/reports';
 import { getSession } from '@/lib/session';
 
 type Result<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -29,7 +31,6 @@ type Result<T> = ({ ok: true } & T) | { ok: false; error: string };
 const blockedMessages = {
   'signed-out': 'Sign in to comment',
   unverified: 'Verify your email address to comment',
-  'viewing-as': VIEWING_AS_MESSAGE,
 };
 
 /** Who is writing, if they may write comments at all. */
@@ -38,6 +39,7 @@ async function writer(): Promise<
 > {
   const session = await getSession();
   const viewer = await commentViewer(session);
+  if (viewer.viewingAs) return { ok: false, error: VIEWING_AS_MESSAGE };
   if (!session || viewer.blocked) {
     return {
       ok: false,
@@ -137,7 +139,7 @@ export async function deleteComment(
 ): Promise<Result<{ removal: Removal }>> {
   const session = await getSession();
   const viewer = await commentViewer(session);
-  if (!session || viewer.blocked === 'viewing-as') {
+  if (!session || viewer.viewingAs) {
     return {
       ok: false,
       error: session ? VIEWING_AS_MESSAGE : 'Sign in to delete comments',
@@ -176,14 +178,21 @@ export async function deleteComment(
       },
     });
 
+  // Anything reported about it is dealt with now. A comment that's gone
+  // takes its reports with it; one left as "[deleted]" keeps them, closed.
+  const closed = () =>
+    closeReports([comment.id], ReportOutcome.DELETED, session.user.id);
+
   if (options.withReplies) {
     const { removal, replies } = await removeBranch(comment);
     // Their own comment on its own is like anyone deleting theirs.
     if (!own || replies.length > 0) await log(replies);
+    await closed();
     return { ok: true, removal };
   }
 
   const removal = await removeComment(db, comment);
   if (!own) await log();
+  await closed();
   return { ok: true, removal };
 }

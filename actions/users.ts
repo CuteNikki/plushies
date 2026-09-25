@@ -6,7 +6,7 @@ import { headers } from 'next/headers';
 import { ActivitySubject, ActivityType, logActivity } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { BAN_REASON_MAX, isBanDuration } from '@/lib/ban-options';
-import { applyBan, isBanned, liftBan } from '@/lib/bans';
+import { applyBan, banExpiry, isBanned, liftBan } from '@/lib/bans';
 import { db } from '@/lib/db';
 import { isAdmin, isRole, Role } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
@@ -170,11 +170,7 @@ export async function banUser(
   if (!user) return { error: 'This account no longer exists' };
   if (user.role === Role.ADMIN) return { error: "Admins can't be banned" };
 
-  const expires =
-    input.duration === 'permanent'
-      ? null
-      : new Date(Date.now() + Number(input.duration) * 24 * 60 * 60 * 1000);
-  await applyBan(user, { reason, expires }, actor);
+  await applyBan(user, { reason, expires: banExpiry(input.duration) }, actor);
   revalidatePath('/dashboard/users', 'layout');
   return {};
 }

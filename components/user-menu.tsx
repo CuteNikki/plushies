@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import {
+  FlagIcon,
   HeartIcon,
   HistoryIcon,
   ImageIcon,
@@ -48,6 +49,7 @@ const dashboardLinks: {
   { href: '/dashboard/plushies/new', icon: PlusIcon, label: 'New Plushie' },
   { href: '/dashboard/photos', icon: ImageIcon, label: 'Photos' },
   { href: '/dashboard/comments', icon: MessageCircleIcon, label: 'Comments' },
+  { href: '/dashboard/reports', icon: FlagIcon, label: 'Reports' },
   { href: '/dashboard/activity', icon: HistoryIcon, label: 'Activity' },
   {
     href: '/dashboard/users',

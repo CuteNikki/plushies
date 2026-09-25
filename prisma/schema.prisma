@@ -53,28 +53,33 @@ model PlushieImage {
 /// A comment on a plushie's page. Replies nest under the comment they
 /// answer, as deep as people go.
 model Comment {
-  id             String    @id @default(cuid())
+  id             String          @id @default(cuid())
   plushieId      String
-  plushie        Plushie   @relation(fields: [plushieId], references: [id], onDelete: Cascade)
+  plushie        Plushie         @relation(fields: [plushieId], references: [id], onDelete: Cascade)
   /// Null only on a deleted comment kept for its replies.
   authorId       String?
-  author         User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  author         User?           @relation(fields: [authorId], references: [id], onDelete: SetNull)
   /// The top-level comment the thread started with; null for top-level ones.
   /// Lets a page load whole threads at once.
   threadId       String?
-  thread         Comment?  @relation("Thread", fields: [threadId], references: [id], onDelete: Cascade)
-  threadComments Comment[] @relation("Thread")
+  thread         Comment?        @relation("Thread", fields: [threadId], references: [id], onDelete: Cascade)
+  threadComments Comment[]       @relation("Thread")
   /// The comment this answers; null for top-level ones.
   parentId       String?
-  parent         Comment?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies        Comment[] @relation("Replies")
+  parent         Comment?        @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[]       @relation("Replies")
   /// Plain text. Empty on a deleted comment kept for its replies.
   body           String
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime        @default(now())
   editedAt       DateTime?
   /// Set on a comment that was deleted while it had replies. It shows as
   /// "[deleted]" and goes once its last reply does.
   deletedAt      DateTime?
+  /// Set once enough people report it in a short time (see comment-rules).
+  /// Only its author and editors or admins see it until one of them keeps
+  /// it, which clears this, or deletes it.
+  hiddenAt       DateTime?
+  reports        CommentReport[]
 
   @@index([plushieId, threadId, createdAt])
   @@index([threadId, createdAt])
@@ -109,33 +114,36 @@ enum Role {
 }
 
 model User {
-  id               String        @id
+  id               String          @id
   name             String
-  email            String        @unique
-  emailVerified    Boolean       @default(false)
+  email            String          @unique
+  emailVerified    Boolean         @default(false)
   image            String?
-  role             Role          @default(USER)
+  role             Role            @default(USER)
   /// Whether signing in with a password asks for a second step.
-  twoFactorEnabled Boolean?      @default(false)
-  banned           Boolean?      @default(false)
+  twoFactorEnabled Boolean?        @default(false)
+  banned           Boolean?        @default(false)
   banReason        String?
   /// When the ban ends by itself. Null bans for good.
   banExpires       DateTime?
   /// The admin who banned them, and when. Better Auth doesn't know these,
   /// and leaves them behind when a ban expires, so check banned first.
   bannedById       String?
-  bannedBy         User?         @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
+  bannedBy         User?           @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
   bannedAt         DateTime?
   /// Accounts this admin banned.
-  usersBanned      User[]        @relation("BannedBy")
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  usersBanned      User[]          @relation("BannedBy")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   sessions         Session[]
   accounts         Account[]
   twoFactors       TwoFactor[]
   passkeys         Passkey[]
   likes            PlushieLike[]
   comments         Comment[]
+  /// Comments this account reported, and reports it dealt with.
+  reportsMade      CommentReport[] @relation("ReportedBy")
+  reportsResolved  CommentReport[] @relation("ResolvedBy")
 
   @@map("user")
 }
@@ -285,4 +293,42 @@ model Activity {
   @@index([createdAt])
   @@index([subject, createdAt])
   @@map("activity")
+}
+
+/// Why someone reported a comment.
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE
+  OTHER
+}
+
+/// What an editor or admin decided about a reported comment.
+enum ReportOutcome {
+  KEPT
+  DELETED
+}
+
+/// Someone flagging a comment for editors and admins to look at. Each
+/// account can report a comment once. Open until the comment is kept or
+/// deleted, which closes every open report on it.
+model CommentReport {
+  id           String         @id @default(cuid())
+  commentId    String
+  comment      Comment        @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  /// Null once their account is deleted; the report still counts.
+  reporterId   String?
+  reporter     User?          @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: SetNull)
+  reason       ReportReason
+  /// What they added, if anything.
+  note         String?
+  createdAt    DateTime       @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   User?          @relation("ResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  outcome      ReportOutcome?
+
+  @@unique([commentId, reporterId])
+  @@index([resolvedAt, createdAt])
+  @@map("comment_report")
 }

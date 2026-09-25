@@ -34,6 +34,12 @@ import { Textarea } from '@/components/ui/textarea';
 
 type BanUser = { id: string; name: string };
 
+/** Bans them; banUser unless given another way, e.g. from a report. */
+export type BanAction = (input: {
+  reason: string;
+  duration: BanDuration;
+}) => Promise<{ error?: string }>;
+
 /**
  * Bans someone. They see the reason, if one is given, when they try to sign
  * in. Asks first unless `confirmed`, e.g. inside a dialog that already did.
@@ -41,10 +47,12 @@ type BanUser = { id: string; name: string };
 export function BanForm({
   user,
   confirmed,
+  banAction = (input) => banUser(user.id, input),
   onDoneAction,
 }: {
   user: BanUser;
   confirmed?: boolean;
+  banAction?: BanAction;
   /** Called once they're banned. */
   onDoneAction?: () => void;
 }) {
@@ -72,7 +80,7 @@ export function BanForm({
       return;
     }
     startTransition(async () => {
-      const { error } = await banUser(user.id, { reason, duration });
+      const { error } = await banAction({ reason, duration });
       if (error) return void toast.error(error);
       toast.success(`${user.name} is banned`);
       onDoneAction?.();
@@ -132,10 +140,12 @@ export function BanForm({
 export function BanDialog({
   user,
   open,
+  banAction,
   onOpenChangeAction,
 }: {
   user: BanUser;
   open: boolean;
+  banAction?: BanAction;
   onOpenChangeAction: (open: boolean) => void;
 }) {
   return (
@@ -151,6 +161,7 @@ export function BanDialog({
         <BanForm
           user={user}
           confirmed
+          banAction={banAction}
           onDoneAction={() => onOpenChangeAction(false)}
         />
       </DialogContent>

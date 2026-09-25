@@ -18,15 +18,26 @@ const viewInclude = {
 
 type CommentRow = Prisma.CommentGetPayload<{ include: typeof viewInclude }>;
 
-/** One comment for the page, without its replies. */
-export function toView(row: CommentRow): CommentView {
+/**
+ * One comment for the page, without its replies. A hidden one keeps its text
+ * and author only for `seeHidden`, e.g. its author and editors or admins.
+ */
+export function toView(
+  row: CommentRow,
+  seeHidden: (row: CommentRow) => boolean = () => true,
+  reported = false
+): CommentView {
+  const hidden = !!row.hiddenAt && !row.deletedAt;
+  const blank = !!row.deletedAt || (hidden && !seeHidden(row));
   return {
     id: row.id,
-    body: row.deletedAt ? '' : row.body,
-    author: row.deletedAt ? null : row.author,
+    body: blank ? '' : row.body,
+    author: blank ? null : row.author,
     createdAt: row.createdAt.toISOString(),
     editedAt: row.editedAt?.toISOString() ?? null,
     deleted: !!row.deletedAt,
+    hidden,
+    reported,
     replies: [],
   };
 }
@@ -59,20 +70,17 @@ export async function commentViewer(
     return {
       id: null,
       blocked: 'signed-out',
+      viewingAs: false,
       canModerate: false,
       canPurge: false,
     };
   }
-  const viewingAs = isViewingAs(session);
   return {
     id: session.user.id,
-    blocked: viewingAs
-      ? 'viewing-as'
-      : (await isVerified(session.user))
-        ? null
-        : 'unverified',
-    canModerate: !viewingAs && canEditPlushies(session.user.role),
-    canPurge: !viewingAs && isAdmin(session.user.role),
+    blocked: (await isVerified(session.user)) ? null : 'unverified',
+    viewingAs: isViewingAs(session),
+    canModerate: canEditPlushies(session.user.role),
+    canPurge: isAdmin(session.user.role),
   };
 }
 
@@ -109,17 +117,35 @@ export async function getComments(
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     include: viewInclude,
   });
+  // Which of them the viewer reported already, so they can't again.
+  const reported = new Set(
+    viewer.id
+      ? (
+          await db.commentReport.findMany({
+            where: {
+              reporterId: viewer.id,
+              commentId: { in: [...page, ...replies].map((row) => row.id) },
+            },
+            select: { commentId: true },
+          })
+        ).map((report) => report.commentId)
+      : []
+  );
+  const seeHidden = (row: CommentRow) =>
+    viewer.canModerate || (!!viewer.id && row.authorId === viewer.id);
+  const view = (row: CommentRow) =>
+    toView(row, seeHidden, reported.has(row.id));
   // Oldest first, so every parent is placed before its replies.
   const views = new Map<string, CommentView>();
   const threads = page.map((row) => {
-    const view = toView(row);
-    views.set(row.id, view);
-    return view;
+    const thread = view(row);
+    views.set(row.id, thread);
+    return thread;
   });
   for (const row of replies) {
-    const view = toView(row);
-    views.set(row.id, view);
-    views.get(row.parentId!)?.replies.push(view);
+    const reply = view(row);
+    views.set(row.id, reply);
+    views.get(row.parentId!)?.replies.push(reply);
   }
 
   return {

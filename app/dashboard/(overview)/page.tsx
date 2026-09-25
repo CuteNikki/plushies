@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   CakeIcon,
   ChevronRightIcon,
+  FlagIcon,
   HeartIcon,
   HistoryIcon,
   MessageCircleIcon,
@@ -20,6 +21,7 @@ import {
   RECENT_DAYS,
   type DashboardPlushie,
 } from '@/data/dashboard';
+import { countOpenReports } from '@/data/reports';
 import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
@@ -56,7 +58,10 @@ export default async function DashboardPage() {
   const admin = isAdmin(session.user.role);
   const viewer = { id: session.user.id, admin };
 
-  const dashboard = await getDashboard({ admin });
+  const [dashboard, openReports] = await Promise.all([
+    getDashboard({ admin }),
+    countOpenReports(),
+  ]);
   const { stats, users } = dashboard;
 
   // Tiles with a page of their own link to it.
@@ -90,6 +95,15 @@ export default async function DashboardPage() {
       icon: HistoryIcon,
       title: 'Activity',
       text: 'See and undo recent changes',
+    },
+    {
+      href: '/dashboard/reports',
+      icon: FlagIcon,
+      title: 'Reports',
+      text:
+        openReports > 0
+          ? `${count(openReports, 'reported comment')} to look at`
+          : 'Nothing reported right now',
     },
     ...(users
       ? [
@@ -155,7 +169,12 @@ export default async function DashboardPage() {
 
       <RevealGroup as='ul' className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {links.map((link) => (
-          <RevealItem as='li' key={link.href}>
+          // An odd one out at the end takes the whole row.
+          <RevealItem
+            as='li'
+            key={link.href}
+            className='sm:odd:last:col-span-2'
+          >
             <DashboardLink {...link} />
           </RevealItem>
         ))}

@@ -61,15 +61,31 @@ export type CommentView = {
   editedAt: string | null;
   /** Deleted while it had replies, so it stays as "[deleted]". */
   deleted: boolean;
+  /**
+   * Hidden after being reported, until an editor or admin looks at it. Only
+   * they and its author get its text and author; others see it's hidden.
+   */
+  hidden: boolean;
+  /** Reported by the viewer, who can't report it again. */
+  reported: boolean;
   /** The comments answering this one, oldest first, with theirs. */
   replies: CommentView[];
 };
 
-/** What the signed-in viewer can do, and why not if they can't. */
+/**
+ * What the signed-in viewer can do, and why not if they can't. For an admin
+ * viewing the site as someone, it's what that person can do, so the page
+ * looks the way it does for them; `viewingAs` turns all of it off.
+ */
 export type CommentViewer = {
   id: string | null;
   /** Why they can't comment, or null if they can. */
-  blocked: 'signed-out' | 'unverified' | 'viewing-as' | null;
+  blocked: 'signed-out' | 'unverified' | null;
+  /**
+   * An admin viewing the site as them: everything shows, but nothing can be
+   * written, changed or reported.
+   */
+  viewingAs: boolean;
   /** Editors and admins can delete anyone's comments. */
   canModerate: boolean;
   /**

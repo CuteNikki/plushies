@@ -7,6 +7,7 @@ import {
   type Actor,
   type BanSnapshot,
 } from '@/lib/activity';
+import type { BanDuration } from '@/lib/ban-options';
 import { db } from '@/lib/db';
 
 /**
@@ -18,6 +19,13 @@ export function isBanned(
   now = new Date()
 ) {
   return !!user.banned && (!user.banExpires || user.banExpires > now);
+}
+
+/** When a ban of `duration` given now ends; null for one until it's lifted. */
+export function banExpiry(duration: BanDuration) {
+  return duration === 'permanent'
+    ? null
+    : new Date(Date.now() + Number(duration) * 24 * 60 * 60 * 1000);
 }
 
 export function banSnapshot(user: {

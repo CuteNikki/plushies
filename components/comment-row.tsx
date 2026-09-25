@@ -1,4 +1,9 @@
+import Link from 'next/link';
+
+import { EyeOffIcon, FlagIcon } from 'lucide-react';
+
 import type { CommentRowData } from '@/data/comment-rows';
+import { count } from '@/lib/utils';
 
 import { CommentAuthor } from '@/components/comment-author';
 import { CommentMenu } from '@/components/comment-menu';
@@ -8,20 +13,26 @@ import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { RowLink } from '@/components/row-link';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * A comment in the dashboard: which plushie it's on, who wrote it and when,
- * what it answers, and a way to delete it. Without `showAuthor` on pages
- * where they're all by the same person.
+ * what it answers, whether it's reported or hidden, and a way to delete it.
+ * Without `showAuthor` on pages where they're all by the same person. On the
+ * reports page, `children` go under it, and deleting is among them instead.
  */
 export function CommentRow({
   comment,
   viewer,
   showAuthor = true,
+  reportsPage = false,
+  children,
 }: {
   comment: CommentRowData;
   viewer: { id: string; admin: boolean };
   showAuthor?: boolean;
+  reportsPage?: boolean;
+  children?: React.ReactNode;
 }) {
   return (
     <Reveal as='li' direction='none'>
@@ -46,32 +57,54 @@ export function CommentRow({
               >
                 {comment.plushie.name}
               </RowLink>
-              <p className='text-sm text-muted-foreground'>
-                {showAuthor && (
-                  <>
-                    <span className='relative'>
-                      <CommentAuthor
-                        author={comment.author}
-                        link={viewer.admin}
-                      />
-                    </span>
-                    {' · '}
-                  </>
+              <div className='flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-muted-foreground'>
+                <p>
+                  {showAuthor && (
+                    <>
+                      <span className='relative'>
+                        <CommentAuthor
+                          author={comment.author}
+                          link={viewer.admin}
+                        />
+                      </span>
+                      {' · '}
+                    </>
+                  )}
+                  <LocalTime iso={comment.createdAt} />
+                  {comment.editedAt && ' · edited'}
+                </p>
+                {comment.hidden && (
+                  <Badge
+                    variant='destructive'
+                    title='Hidden until it’s reviewed'
+                  >
+                    <EyeOffIcon />
+                    Hidden
+                  </Badge>
                 )}
-                <LocalTime iso={comment.createdAt} />
-                {comment.editedAt && ' · edited'}
-              </p>
+                {/* The reports page lists them; elsewhere this goes there. */}
+                {comment.openReports > 0 && !reportsPage && (
+                  <Badge variant='outline' className='relative' asChild>
+                    <Link href='/dashboard/reports'>
+                      <FlagIcon />
+                      {count(comment.openReports, 'report')}
+                    </Link>
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className='relative flex shrink-0 gap-1'>
-              <DeleteCommentButton
-                comment={{
-                  id: comment.id,
-                  authorName: comment.author?.name ?? null,
-                  replies: comment.replies,
-                }}
-                own={comment.author?.id === viewer.id}
-                canPurge={viewer.admin}
-              />
+              {!reportsPage && (
+                <DeleteCommentButton
+                  comment={{
+                    id: comment.id,
+                    authorName: comment.author?.name ?? null,
+                    replies: comment.replies,
+                  }}
+                  own={comment.author?.id === viewer.id}
+                  canPurge={viewer.admin}
+                />
+              )}
               <ItemMenuButton size='icon-sm' />
             </div>
           </div>
@@ -94,6 +127,7 @@ export function CommentRow({
           <p className='relative text-sm wrap-break-word whitespace-pre-line'>
             {comment.body}
           </p>
+          {children && <div className='relative mt-2'>{children}</div>}
         </div>
       </CommentMenu>
     </Reveal>

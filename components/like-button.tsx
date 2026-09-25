@@ -7,6 +7,7 @@ import { HeartIcon } from 'lucide-react';
 
 import { toggleLike, type LikeState } from '@/actions/likes';
 import { authClient } from '@/lib/auth-client';
+import { isViewingAs, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,8 @@ export function LikeButton({
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const userId = session?.user.id;
+  // Shows their like, but can't change it.
+  const viewingAs = isViewingAs(session ?? null);
   const [state, setState] = useState<LikeState>({ liked: false, count });
   const [pending, startTransition] = useTransition();
 
@@ -64,10 +67,12 @@ export function LikeButton({
     <Button
       variant='outline'
       onClick={toggle}
-      disabled={pending}
+      disabled={pending || viewingAs}
       aria-pressed={state.liked}
       aria-label={`${state.liked ? 'Unlike' : 'Like'} (${label})`}
-      title={userId ? undefined : 'Sign in to like'}
+      title={
+        viewingAs ? VIEWING_AS_MESSAGE : userId ? undefined : 'Sign in to like'
+      }
       className='shrink-0 gap-1.5 rounded-full'
     >
       <HeartIcon

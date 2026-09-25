@@ -251,7 +251,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
 export const COMMENTS_PAGE_SIZE = 30;
 
 export const commentSorts = ['newest', 'oldest'] as const;
-export const commentKinds = ['all', 'top', 'replies'] as const;
+export const commentKinds = ['all', 'top', 'replies', 'reported'] as const;
 
 /**
  * Comments for the dashboard's comments page, a page at a time: `cursor` is
@@ -274,6 +274,9 @@ export async function getCommentList({
     deletedAt: null,
     ...(kind === 'top' && { parentId: null }),
     ...(kind === 'replies' && { parentId: { not: null } }),
+    ...(kind === 'reported' && {
+      reports: { some: { resolvedAt: null } },
+    }),
     ...(contains && {
       OR: [
         { body: contains },

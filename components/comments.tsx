@@ -17,6 +17,8 @@ import {
   ArrowLeftIcon,
   ChevronRightIcon,
   CopyIcon,
+  EyeOffIcon,
+  FlagIcon,
   LinkIcon,
   Loader2Icon,
   MessageCircleIcon,
@@ -44,10 +46,12 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import {
   ItemMenu,
+  ItemMenuButton,
   ItemMenuItem,
   ItemMenuSeparator,
 } from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
+import { ReportDialog } from '@/components/report-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -178,6 +182,7 @@ export function Comments({
   const [focus, setFocus] = useState<{ id: string; path: string[] } | null>(
     null
   );
+  const [reporting, setReporting] = useState<CommentView | null>(null);
   const [ask, confirmDialog] = useConfirm();
 
   useEffect(() => {
@@ -285,6 +290,27 @@ export function Comments({
   }
 
   /**
+   * Marks a comment they reported. If that hid it, it's hidden from them
+   * too: reporting is for comments that aren't theirs, and editors and
+   * admins delete rather than report.
+   */
+  function reported(id: string, hidden: boolean) {
+    setPage(
+      (before) =>
+        before && {
+          ...before,
+          threads: mapTree(before.threads, (item) =>
+            item.id !== id
+              ? item
+              : hidden
+                ? { ...item, reported: true, hidden, body: '', author: null }
+                : { ...item, reported: true }
+          ),
+        }
+    );
+  }
+
+  /**
    * Deletes a comment, after asking. Admins can tick "Erase completely" to
    * delete every reply under it too, so nothing of it stays on the page; for
    * a comment that's deleted already, that's the only way.
@@ -349,6 +375,7 @@ export function Comments({
     added,
     edited,
     remove,
+    report: setReporting,
   };
 
   return (
@@ -369,6 +396,7 @@ export function Comments({
           <CommentForm
             label='Write a comment'
             submit='Comment'
+            disabled={viewer.viewingAs}
             onSubmit={async (body) => {
               const result = await addComment(plushieId, { body });
               if (!result.ok) return result.error;
@@ -413,6 +441,16 @@ export function Comments({
         </Button>
       )}
       {confirmDialog}
+      <ReportDialog
+        comment={
+          reporting && {
+            id: reporting.id,
+            authorName: reporting.author?.name ?? 'Someone',
+          }
+        }
+        onReportedAction={reported}
+        onCloseAction={() => setReporting(null)}
+      />
     </section>
   );
 }
@@ -443,6 +481,8 @@ type Actions = {
   added: (comment: CommentView, parentId: string | null) => void;
   edited: (comment: CommentView) => void;
   remove: (comment: CommentView, own: boolean) => Promise<void>;
+  /** Opens the report form for it. */
+  report: (comment: CommentView) => void;
 };
 
 /** A comment, with its replies nested under it, and theirs under them. */
@@ -519,6 +559,8 @@ function Comment({
               variant='ghost'
               size='sm'
               className='text-destructive hover:text-destructive'
+              disabled={actions.viewer.viewingAs}
+              title={actions.viewer.viewingAs ? VIEWING_AS_MESSAGE : undefined}
               onClick={() => actions.remove(first, false)}
             >
               <Trash2Icon />
@@ -526,6 +568,12 @@ function Comment({
             </Button>
           )}
         </div>
+      ) : !comment.author ? (
+        // Hidden after reports, from everyone but its author and editors or
+        // admins. Its replies still show.
+        <p className='text-sm text-muted-foreground'>
+          Hidden while it’s reviewed
+        </p>
       ) : (
         <CommentBody
           comment={comment}
@@ -699,8 +747,12 @@ function CommentBody({
   const canWrite = viewer && !viewer.blocked;
   const isEditing = actions.editing === comment.id;
   const linked = useContext(FocusContext)?.id === comment.id;
-  const canDelete =
-    (own || viewer?.canModerate) && viewer?.blocked !== 'viewing-as';
+  const canDelete = own || viewer?.canModerate;
+  // Editors and admins can delete it instead.
+  const canReport = canWrite && !own && !viewer.canModerate;
+  // Viewing as someone: what they could do shows, but can't be used.
+  const readOnly = !!viewer?.viewingAs;
+  const off = readOnly ? VIEWING_AS_MESSAGE : undefined;
 
   async function copy(text: string, done: string) {
     try {
@@ -724,6 +776,7 @@ function CommentBody({
           {canWrite && (
             <ItemMenuItem
               icon={ReplyIcon}
+              disabled={readOnly}
               onSelect={() => actions.setReplyingTo(comment.id)}
             >
               Reply
@@ -732,6 +785,7 @@ function CommentBody({
           {own && canWrite && (
             <ItemMenuItem
               icon={PencilIcon}
+              disabled={readOnly}
               onSelect={() => actions.setEditing(comment.id)}
             >
               Edit
@@ -754,12 +808,25 @@ function CommentBody({
           >
             Copy link
           </ItemMenuItem>
+          {canReport && (
+            <>
+              <ItemMenuSeparator />
+              <ItemMenuItem
+                icon={FlagIcon}
+                disabled={readOnly || comment.reported}
+                onSelect={() => actions.report(comment)}
+              >
+                {comment.reported ? 'Reported' : 'Report'}
+              </ItemMenuItem>
+            </>
+          )}
           {canDelete && (
             <>
               <ItemMenuSeparator />
               <ItemMenuItem
                 icon={Trash2Icon}
                 variant='destructive'
+                disabled={readOnly}
                 onSelect={() => actions.remove(comment, own)}
               >
                 Delete
@@ -794,6 +861,21 @@ function CommentBody({
             {comment.editedAt && (
               <span className='text-xs text-muted-foreground'>(edited)</span>
             )}
+            {/* Only its author and editors or admins still see it. */}
+            {comment.hidden &&
+              (viewer?.canModerate ? (
+                <Badge variant='destructive' asChild>
+                  <Link href='/dashboard/reports'>
+                    <EyeOffIcon />
+                    Hidden after reports
+                  </Link>
+                </Badge>
+              ) : (
+                <Badge variant='destructive'>
+                  <EyeOffIcon />
+                  Hidden from others while it’s reviewed
+                </Badge>
+              ))}
           </div>
           {isEditing ? (
             <CommentForm
@@ -814,12 +896,14 @@ function CommentBody({
               {comment.body}
             </p>
           )}
-          {!isEditing && (canWrite || own || viewer?.canModerate) && (
-            <div className='-ml-2 flex flex-wrap gap-1'>
+          {!isEditing && (
+            <div className='-ml-2 flex flex-wrap items-center gap-1'>
               {canWrite && (
                 <Button
                   variant='ghost'
                   size='sm'
+                  disabled={readOnly}
+                  title={off}
                   onClick={() => actions.setReplyingTo(comment.id)}
                 >
                   <ReplyIcon />
@@ -830,6 +914,8 @@ function CommentBody({
                 <Button
                   variant='ghost'
                   size='sm'
+                  disabled={readOnly}
+                  title={off}
                   onClick={() => actions.setEditing(comment.id)}
                 >
                   <PencilIcon />
@@ -841,12 +927,20 @@ function CommentBody({
                   variant='ghost'
                   size='sm'
                   className='text-destructive hover:text-destructive'
+                  disabled={readOnly}
+                  title={off}
                   onClick={() => actions.remove(comment, own)}
                 >
                   <Trash2Icon />
                   Delete
                 </Button>
               )}
+              {/* The same menu as right-click, e.g. for phones, and the
+                  only way to report. */}
+              <ItemMenuButton
+                size='icon-sm'
+                className='text-muted-foreground'
+              />
             </div>
           )}
         </div>
@@ -892,8 +986,6 @@ function Composer({
           to leave a comment.
         </Notice>
       );
-    case 'viewing-as':
-      return <Notice>{VIEWING_AS_MESSAGE}</Notice>;
   }
 }
 
@@ -906,6 +998,7 @@ function CommentForm({
   submit,
   initial = '',
   autoFocus,
+  disabled,
   onSubmit,
   onCancel,
 }: {
@@ -913,6 +1006,8 @@ function CommentForm({
   submit: string;
   initial?: string;
   autoFocus?: boolean;
+  /** Shown as it would be, but turned off, e.g. while viewing as someone. */
+  disabled?: boolean;
   onSubmit: (body: string) => Promise<string | void>;
   onCancel?: () => void;
 }) {
@@ -959,7 +1054,8 @@ function CommentForm({
           }
         }}
         maxLength={COMMENT_MAX}
-        placeholder={label}
+        placeholder={disabled ? VIEWING_AS_MESSAGE : label}
+        disabled={disabled}
         autoFocus={autoFocus}
         aria-invalid={!!error || undefined}
         className='min-h-20'
@@ -982,7 +1078,7 @@ function CommentForm({
               Cancel
             </Button>
           )}
-          <Button type='submit' disabled={pending || !body.trim()}>
+          <Button type='submit' disabled={disabled || pending || !body.trim()}>
             {pending && <Loader2Icon className='animate-spin' />}
             {submit}
           </Button>

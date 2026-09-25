@@ -79,6 +79,7 @@ export default async function CommentsPage(
                 { value: 'all', label: 'All comments' },
                 { value: 'top', label: 'Not replies' },
                 { value: 'replies', label: 'Only replies' },
+                { value: 'reported', label: 'Reported' },
               ],
             },
           ]}

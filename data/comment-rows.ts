@@ -8,6 +8,7 @@ export const commentRowSelect = {
   body: true,
   createdAt: true,
   editedAt: true,
+  hiddenAt: true,
   author: { select: { id: true, name: true } },
   plushie: {
     select: {
@@ -25,14 +26,22 @@ export const commentRowSelect = {
       author: { select: { id: true, name: true } },
     },
   },
-  _count: { select: { replies: true } },
+  _count: {
+    select: { replies: true, reports: { where: { resolvedAt: null } } },
+  },
 } satisfies Prisma.CommentSelect;
 
 type Row = Prisma.CommentGetPayload<{ select: typeof commentRowSelect }>;
 
 export type CommentRowData = ReturnType<typeof toCommentRow>;
 
-export function toCommentRow({ parent, _count, plushie, ...comment }: Row) {
+export function toCommentRow({
+  parent,
+  _count,
+  plushie,
+  hiddenAt,
+  ...comment
+}: Row) {
   return {
     ...comment,
     plushie: {
@@ -56,5 +65,9 @@ export function toCommentRow({ parent, _count, plushie, ...comment }: Row) {
         : { author: parent.author, body: parent.body }
       : null,
     replies: _count.replies,
+    /** Reports no one has dealt with yet. */
+    openReports: _count.reports,
+    /** Hidden after reports, until someone keeps or deletes it. */
+    hidden: !!hiddenAt,
   };
 }

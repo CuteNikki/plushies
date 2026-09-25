@@ -5,6 +5,7 @@ import { brand, site } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
 import { MotionProvider } from '@/components/motion';
+import { ScrollToTop } from '@/components/scroll-to-top';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -69,6 +70,7 @@ export default function RootLayout({
       <body className='flex min-h-svh flex-col'>
         <ThemeProvider>
           <MotionProvider>
+            <ScrollToTop />
             <SiteHeader />
             {/* Pages can fill the space between header and footer by marking
                 their root with data-fill, e.g. to center their content. */}

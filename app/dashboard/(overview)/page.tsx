@@ -57,6 +57,7 @@ export default async function DashboardPage() {
     { label: 'Plushies', value: stats.plushies },
     { label: 'Photos', value: stats.photos },
     { label: 'Likes', value: stats.likes },
+    { label: 'Comments', value: stats.comments },
     { label: `Changes in ${RECENT_DAYS} days`, value: stats.recentChanges },
   ];
 
@@ -102,11 +103,12 @@ export default async function DashboardPage() {
         </p>
       </Reveal>
 
-      <RevealGroup as='dl' className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
+      {/* Five tiles: on two columns, the last one takes a whole row. */}
+      <RevealGroup as='dl' className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
         {tiles.map((tile) => (
           <RevealItem
             key={tile.label}
-            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10'
+            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 last:col-span-2 lg:last:col-span-1'
           >
             <dt className='text-sm text-muted-foreground'>{tile.label}</dt>
             <dd className='text-3xl font-semibold'>
@@ -178,6 +180,36 @@ export default async function DashboardPage() {
         </Section>
 
         <Section
+          title='Recent comments'
+          description={`${count(dashboard.comments.recentCount, 'comment')} in the last ${RECENT_DAYS} days.`}
+        >
+          {dashboard.comments.latest.length > 0 ? (
+            <List>
+              {dashboard.comments.latest.map((comment) => (
+                <li key={comment.id} className='flex flex-col gap-1 p-3'>
+                  <p className='text-sm text-muted-foreground'>
+                    <CommentAuthor author={comment.author} link={admin} /> on{' '}
+                    <Link
+                      href={`/plushies/${comment.plushie.slug}`}
+                      className='font-semibold text-foreground hover:underline'
+                    >
+                      {comment.plushie.name}
+                    </Link>{' '}
+                    <LocalTime iso={comment.createdAt} />
+                    {comment.editedAt && ' (edited)'}
+                  </p>
+                  <p className='line-clamp-3 text-sm wrap-break-word whitespace-pre-line'>
+                    {comment.body}
+                  </p>
+                </li>
+              ))}
+            </List>
+          ) : (
+            <Empty>No comments yet.</Empty>
+          )}
+        </Section>
+
+        <Section
           title='Upcoming birthdays'
           description={`In the next ${BIRTHDAY_DAYS} days.`}
         >
@@ -226,9 +258,12 @@ export default async function DashboardPage() {
                     className='flex flex-wrap items-center gap-x-3 gap-y-1 p-3'
                   >
                     <div className='min-w-0 flex-1'>
-                      <p className='truncate font-heading font-semibold'>
+                      <Link
+                        href={`/dashboard/users/${user.id}`}
+                        className='block truncate font-heading font-semibold hover:underline'
+                      >
                         {user.name}
-                      </p>
+                      </Link>
                       <p className='text-sm text-muted-foreground'>
                         Joined <LocalTime iso={user.createdAt} />
                       </p>
@@ -256,6 +291,28 @@ export default async function DashboardPage() {
         </Section>
       </div>
     </div>
+  );
+}
+
+/** The comment's author, linked to their user page for admins. */
+function CommentAuthor({
+  author,
+  link,
+}: {
+  author: { id: string; name: string } | null;
+  link: boolean;
+}) {
+  if (!author) return <>A deleted account</>;
+  if (!link) {
+    return <span className='font-semibold text-foreground'>{author.name}</span>;
+  }
+  return (
+    <Link
+      href={`/dashboard/users/${author.id}`}
+      className='font-semibold text-foreground hover:underline'
+    >
+      {author.name}
+    </Link>
   );
 }
 

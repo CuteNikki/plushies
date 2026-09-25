@@ -8,7 +8,7 @@ import {
 } from '@/components/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const tiles = ['Plushies', 'Photos', 'Likes', 'Changes in 7 days'];
+const tiles = ['Plushies', 'Photos', 'Likes', 'Comments', 'Changes in 7 days'];
 
 // Admins see all four links, editors the first three. The texts are samples
 // shaped like the real ones, so the cards wrap where the real ones do.
@@ -26,11 +26,11 @@ export default function DashboardLoading() {
         title='Good afternoon'
         subtitle='Everything for looking after the plushies.'
       />
-      <div className='grid grid-cols-2 gap-4 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 gap-4 lg:grid-cols-5'>
         {tiles.map((tile) => (
           <div
             key={tile}
-            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10'
+            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 last:col-span-2 lg:last:col-span-1'
           >
             <TextSkeleton className='text-sm'>{tile}</TextSkeleton>
             <TextSkeleton className='text-3xl font-semibold'>12</TextSkeleton>

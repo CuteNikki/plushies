@@ -30,51 +30,79 @@ export type DashboardPlushie = {
  */
 export async function getDashboard({ admin }: { admin: boolean }) {
   const since = new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000);
-  const [rows, likes, recentChanges, roles, newAccounts, newAccountCount] =
-    await Promise.all([
-      db.plushie.findMany({
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          species: true,
-          birthday: true,
-          thumbnailKey: true,
-          thumbnailUrl: true,
-          createdAt: true,
-          updatedAt: true,
-          _count: { select: { gallery: true } },
-        },
-        orderBy: { updatedAt: 'desc' },
-      }),
-      db.plushieLike.count(),
-      // Editors don't see account changes on the activity page.
-      db.activity.count({
-        where: {
-          createdAt: { gte: since },
-          subject: admin ? undefined : { not: ActivitySubject.USER },
-        },
-      }),
-      admin
-        ? db.user.groupBy({ by: ['role'], _count: true })
-        : Promise.resolve([]),
-      admin
-        ? db.user.findMany({
-            where: { createdAt: { gte: since } },
-            orderBy: { createdAt: 'desc' },
-            take: LIST_SIZE,
-            select: {
-              id: true,
-              name: true,
-              createdAt: true,
-              accounts: { select: { providerId: true } },
-            },
-          })
-        : Promise.resolve([]),
-      admin
-        ? db.user.count({ where: { createdAt: { gte: since } } })
-        : Promise.resolve(0),
-    ]);
+  const [
+    rows,
+    likes,
+    recentChanges,
+    comments,
+    commentCount,
+    recentCommentCount,
+    roles,
+    newAccounts,
+    newAccountCount,
+  ] = await Promise.all([
+    db.plushie.findMany({
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        species: true,
+        birthday: true,
+        thumbnailKey: true,
+        thumbnailUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: { select: { gallery: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
+    db.plushieLike.count(),
+    // Editors don't see account changes on the activity page.
+    db.activity.count({
+      where: {
+        createdAt: { gte: since },
+        subject: admin ? undefined : { not: ActivitySubject.USER },
+      },
+    }),
+    // Replies too, so editors see every new comment. Deleted ones are gone
+    // already, or kept empty only for their replies.
+    db.comment.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: LIST_SIZE,
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        editedAt: true,
+        author: { select: { id: true, name: true } },
+        plushie: { select: { slug: true, name: true } },
+      },
+    }),
+    db.comment.count({ where: { deletedAt: null } }),
+    db.comment.count({
+      where: { deletedAt: null, createdAt: { gte: since } },
+    }),
+    admin
+      ? db.user.groupBy({ by: ['role'], _count: true })
+      : Promise.resolve([]),
+    admin
+      ? db.user.findMany({
+          where: { createdAt: { gte: since } },
+          orderBy: { createdAt: 'desc' },
+          take: LIST_SIZE,
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+            accounts: { select: { providerId: true } },
+          },
+        })
+      : Promise.resolve([]),
+    admin
+      ? db.user.count({ where: { createdAt: { gte: since } } })
+      : Promise.resolve(0),
+  ]);
 
   const plushies = rows.map((row) => {
     const plushie: DashboardPlushie = {
@@ -121,6 +149,7 @@ export async function getDashboard({ admin }: { admin: boolean }) {
         0
       ),
       likes,
+      comments: commentCount,
       recentChanges,
     },
     recentlyEdited: plushies.slice(0, LIST_SIZE).map(({ plushie, row }) => ({
@@ -137,6 +166,14 @@ export async function getDashboard({ admin }: { admin: boolean }) {
       total: incomplete.length,
     },
     birthdays,
+    comments: {
+      latest: comments.map((comment) => ({
+        ...comment,
+        createdAt: comment.createdAt.toISOString(),
+        editedAt: comment.editedAt?.toISOString() ?? null,
+      })),
+      recentCount: recentCommentCount,
+    },
     users: admin
       ? {
           total: roles.reduce((sum, row) => sum + row._count, 0),

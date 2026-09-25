@@ -23,11 +23,14 @@ import { cn, count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ItemMenuButton } from '@/components/item-menu';
 import { ListControls } from '@/components/list-controls';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
 import { Reveal } from '@/components/motion';
+import { PlushieMenu } from '@/components/plushie-menu';
 import { PlushiePhoto } from '@/components/plushie-photo';
+import { RowLink } from '@/components/row-link';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Edit Plushies' };
@@ -190,57 +193,64 @@ export default async function PlushiesPage(
       {plushies.length > 0 ? (
         <Reveal
           as='ul'
-          className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
+          className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'
         >
           {plushies.map((plushie) => (
-            <Reveal
-              as='li'
-              direction='none'
-              key={plushie.id}
-              className='flex items-center gap-4 p-3'
-            >
-              <PlushiePhoto
-                plushie={plushie}
-                sizes='56px'
-                compact
-                className='size-14 shrink-0 rounded-xl'
-              />
-              <div className='min-w-0 flex-1'>
-                <Link
-                  href={`/plushies/${plushie.slug}`}
-                  className='block truncate font-heading font-semibold hover:underline'
-                >
-                  {plushie.name}
-                </Link>
-                {view === 'attention' ? (
-                  <MissingBadges missing={plushie.missing} />
-                ) : view === 'birthdays' && plushie.birthday ? (
-                  <p className='text-sm text-muted-foreground'>
-                    {birthdayLine(
-                      plushie.birthday,
-                      nextBirthdays.get(plushie.id) ?? null
+            <Reveal as='li' direction='none' key={plushie.id}>
+              <PlushieMenu
+                plushie={{
+                  id: plushie.id,
+                  slug: plushie.slug,
+                  name: plushie.name,
+                }}
+                className='flex items-center gap-4 p-3'
+              >
+                {/* The photo and details all link to the plushie's page. */}
+                <div className='relative flex min-w-0 flex-1 items-center gap-4'>
+                  <PlushiePhoto
+                    plushie={plushie}
+                    sizes='56px'
+                    compact
+                    className='size-14 shrink-0 rounded-xl'
+                  />
+                  <div className='min-w-0 flex-1'>
+                    <RowLink href={`/plushies/${plushie.slug}`}>
+                      {plushie.name}
+                    </RowLink>
+                    {view === 'attention' ? (
+                      <MissingBadges missing={plushie.missing} />
+                    ) : view === 'birthdays' && plushie.birthday ? (
+                      <p className='text-sm text-muted-foreground'>
+                        {birthdayLine(
+                          plushie.birthday,
+                          nextBirthdays.get(plushie.id) ?? null
+                        )}
+                      </p>
+                    ) : view === 'recent' ? (
+                      <p className='text-sm text-muted-foreground'>
+                        {plushie.isNew ? 'Added' : 'Edited'}{' '}
+                        <LocalTime iso={plushie.updatedAt} />
+                        {plushie.editedBy && ` by ${plushie.editedBy}`}
+                      </p>
+                    ) : (
+                      <p className='text-sm text-muted-foreground'>
+                        {count(plushie.photos, 'photo')} ·{' '}
+                        {count(plushie.likes, 'like')} ·{' '}
+                        {count(plushie.comments, 'comment')}
+                      </p>
                     )}
-                  </p>
-                ) : view === 'recent' ? (
-                  <p className='text-sm text-muted-foreground'>
-                    {plushie.isNew ? 'Added' : 'Edited'}{' '}
-                    <LocalTime iso={plushie.updatedAt} />
-                    {plushie.editedBy && ` by ${plushie.editedBy}`}
-                  </p>
-                ) : (
-                  <p className='text-sm text-muted-foreground'>
-                    {count(plushie.photos, 'photo')} ·{' '}
-                    {count(plushie.likes, 'like')} ·{' '}
-                    {count(plushie.comments, 'comment')}
-                  </p>
-                )}
-              </div>
-              <Button variant='outline' size='sm' asChild>
-                <Link href={`/dashboard/plushies/${plushie.id}`}>
-                  <PencilIcon />
-                  Edit
-                </Link>
-              </Button>
+                  </div>
+                </div>
+                <div className='flex shrink-0 items-center gap-1'>
+                  <Button variant='outline' size='sm' asChild>
+                    <Link href={`/dashboard/plushies/${plushie.id}`}>
+                      <PencilIcon />
+                      Edit
+                    </Link>
+                  </Button>
+                  <ItemMenuButton size='icon-sm' />
+                </div>
+              </PlushieMenu>
             </Reveal>
           ))}
         </Reveal>

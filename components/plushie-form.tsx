@@ -32,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { BirthdayField } from '@/components/birthday-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Reveal } from '@/components/motion';
+import { deletePlushieConfirm } from '@/components/plushie-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -362,14 +363,10 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             variant='destructive'
             disabled={saving || deleting}
             onClick={async () => {
-              const confirmed = await ask({
-                title: `Delete ${plushie.name}?`,
-                description:
-                  'This also deletes their photos and comments. You can restore them and their photos from the activity page for 30 days, but not their comments.',
-                action: 'Delete',
-                destructive: true,
-              });
-              if (confirmed) startDelete(() => deletePlushie(plushie.id));
+              if (!(await ask(deletePlushieConfirm(plushie.name)))) return;
+              startDelete(() =>
+                deletePlushie(plushie.id, { backToList: true })
+              );
             }}
           >
             {deleting ? (

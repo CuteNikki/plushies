@@ -197,7 +197,10 @@ export async function savePlushie(
   redirect(`/plushies/${slug}`);
 }
 
-export async function deletePlushie(id: string) {
+export async function deletePlushie(
+  id: string,
+  options: { backToList?: boolean } = {}
+) {
   const actor = await assertEditor();
 
   const plushie = await db.plushie.delete({
@@ -219,7 +222,8 @@ export async function deletePlushie(id: string) {
   });
 
   revalidatePath('/', 'layout');
-  redirect('/dashboard/plushies');
+  // From its edit page, which is gone now; lists just refresh.
+  if (options.backToList) redirect('/dashboard/plushies');
 }
 
 /** Removes photos that were uploaded but never saved, e.g. on cancel. */

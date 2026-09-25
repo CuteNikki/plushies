@@ -27,12 +27,16 @@ import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
 import { CommentAuthor } from '@/components/comment-author';
+import { CommentMenu } from '@/components/comment-menu';
 import { EmptyState } from '@/components/empty-state';
 import { Greeting } from '@/components/greeting';
+import { ItemMenuButton } from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import { PlushieMenu } from '@/components/plushie-menu';
 import { PlushiePhoto } from '@/components/plushie-photo';
+import { RowLink, rowTint } from '@/components/row-link';
 import { StorageUsage } from '@/components/storage-usage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,6 +54,7 @@ const row = 'flex min-h-18 items-center gap-3 px-3 py-2';
 export default async function DashboardPage() {
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
+  const viewer = { id: session.user.id, admin };
 
   const dashboard = await getDashboard({ admin });
   const { stats, users } = dashboard;
@@ -218,22 +223,32 @@ export default async function DashboardPage() {
           {dashboard.comments.latest.length > 0 ? (
             <List>
               {dashboard.comments.latest.map((comment) => (
-                <PlushieRow
-                  key={comment.id}
-                  plushie={comment.plushie}
-                  aside={
+                <li key={comment.id}>
+                  <CommentMenu
+                    comment={comment}
+                    viewer={viewer}
+                    className={row}
+                  >
+                    <RowMain
+                      plushie={comment.plushie}
+                      href={`/plushies/${comment.plushie.slug}#comment-${comment.id}`}
+                    >
+                      {/* One line here; the whole comment is on the comments
+                          page. */}
+                      <p className='truncate'>
+                        <span className='relative'>
+                          <CommentAuthor author={comment.author} link={admin} />
+                        </span>
+                        {comment.replyTo ? ' replied: ' : ': '}
+                        <span className='text-foreground'>{comment.body}</span>
+                      </p>
+                    </RowMain>
                     <span className='shrink-0 text-sm text-muted-foreground'>
                       <LocalTime iso={comment.createdAt} />
                     </span>
-                  }
-                >
-                  {/* One line here; the whole comment is on the comments page. */}
-                  <p className='truncate'>
-                    <CommentAuthor author={comment.author} link={admin} />
-                    {comment.replyTo ? ' replied: ' : ': '}
-                    <span className='text-foreground'>{comment.body}</span>
-                  </p>
-                </PlushieRow>
+                    <ItemMenuButton size='icon-sm' />
+                  </CommentMenu>
+                </li>
               ))}
             </List>
           ) : (
@@ -290,14 +305,14 @@ export default async function DashboardPage() {
             {users.newAccounts.length > 0 ? (
               <List>
                 {users.newAccounts.map((user) => (
-                  <li key={user.id} className={cn(row, 'flex-wrap gap-y-1')}>
+                  <li
+                    key={user.id}
+                    className={cn(row, rowTint, 'relative flex-wrap gap-y-1')}
+                  >
                     <div className='min-w-0 flex-1'>
-                      <Link
-                        href={`/dashboard/users/${user.id}`}
-                        className='block truncate font-heading font-semibold hover:underline'
-                      >
+                      <RowLink href={`/dashboard/users/${user.id}`}>
                         {user.name}
-                      </Link>
+                      </RowLink>
                       <p className='text-sm text-muted-foreground'>
                         Joined <LocalTime iso={user.createdAt} />
                       </p>
@@ -402,13 +417,16 @@ function SeeAll({
 
 function List({ children }: { children: React.ReactNode }) {
   return (
-    <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+    <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
       {children}
     </ul>
   );
 }
 
-/** A plushie with its photo, a line of details, and an edit link or `aside`. */
+/**
+ * A plushie with its photo, a line of details, and an edit link or `aside`,
+ * and its other actions in a menu.
+ */
 function PlushieRow({
   plushie,
   edit,
@@ -421,7 +439,43 @@ function PlushieRow({
   children: React.ReactNode;
 }) {
   return (
-    <li className={row}>
+    <li>
+      <PlushieMenu
+        plushie={{ id: plushie.id, slug: plushie.slug, name: plushie.name }}
+        className={row}
+      >
+        <RowMain plushie={plushie} href={`/plushies/${plushie.slug}`}>
+          {children}
+        </RowMain>
+        {aside}
+        <div className='flex shrink-0 items-center gap-1'>
+          {edit && (
+            <Button variant='outline' size='sm' asChild>
+              <Link href={`/dashboard/plushies/${plushie.id}`}>
+                <PencilIcon />
+                Edit
+              </Link>
+            </Button>
+          )}
+          <ItemMenuButton size='icon-sm' />
+        </div>
+      </PlushieMenu>
+    </li>
+  );
+}
+
+/** A row's photo, name and details, all linking to `href`. */
+function RowMain({
+  plushie,
+  href,
+  children,
+}: {
+  plushie: DashboardPlushie;
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className='relative flex min-w-0 flex-1 items-center gap-3'>
       <PlushiePhoto
         plushie={plushie}
         sizes='40px'
@@ -429,24 +483,10 @@ function PlushieRow({
         className='size-10 shrink-0 rounded-lg'
       />
       <div className='min-w-0 flex-1'>
-        <Link
-          href={`/plushies/${plushie.slug}`}
-          className='block truncate font-heading font-semibold hover:underline'
-        >
-          {plushie.name}
-        </Link>
+        <RowLink href={href}>{plushie.name}</RowLink>
         <div className='text-sm text-muted-foreground'>{children}</div>
       </div>
-      {edit && (
-        <Button variant='outline' size='sm' asChild>
-          <Link href={`/dashboard/plushies/${plushie.id}`}>
-            <PencilIcon />
-            Edit
-          </Link>
-        </Button>
-      )}
-      {aside}
-    </li>
+    </div>
   );
 }
 

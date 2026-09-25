@@ -11,8 +11,11 @@ import { count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ItemMenuButton } from '@/components/item-menu';
 import { ListControls } from '@/components/list-controls';
 import { Reveal } from '@/components/motion';
+import { PlushieMenu } from '@/components/plushie-menu';
+import { RowLink } from '@/components/row-link';
 import { StorageUsage } from '@/components/storage-usage';
 import { Button } from '@/components/ui/button';
 
@@ -108,15 +111,24 @@ export default async function PhotosPage(
             key={plushie.id}
             className='flex max-w-full flex-col gap-2 rounded-xl p-3 ring-1 ring-foreground/10'
           >
-            <div className='flex items-start gap-2'>
-              <div className='min-w-0 flex-1'>
-                <h2 className='truncate'>
-                  <Link
+            {/* Right-click the name for the plushie's actions; the photos
+                keep the browser's own menu, e.g. to save them. */}
+            <PlushieMenu
+              plushie={{
+                id: plushie.id,
+                slug: plushie.slug,
+                name: plushie.name,
+              }}
+              className='-m-1 flex items-start gap-2 rounded-lg p-1'
+            >
+              <div className='relative min-w-0 flex-1'>
+                <h2>
+                  <RowLink
                     href={`/plushies/${plushie.slug}`}
-                    className='font-heading text-lg font-semibold hover:underline'
+                    className='text-lg'
                   >
                     {plushie.name}
-                  </Link>
+                  </RowLink>
                 </h2>
                 <p className='text-sm text-muted-foreground'>
                   {count(plushie.photos.length, 'photo')}
@@ -131,7 +143,8 @@ export default async function PhotosPage(
                   <PencilIcon />
                 </Link>
               </Button>
-            </div>
+              <ItemMenuButton size='icon-sm' />
+            </PlushieMenu>
             <ul className='flex flex-wrap gap-2'>
               {plushie.photos.map((photo, index) => (
                 <li

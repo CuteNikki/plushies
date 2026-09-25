@@ -9,9 +9,9 @@ import {
   EyeIcon,
   KeyRoundIcon,
   LogOutIcon,
-  MoreHorizontalIcon,
   ShieldOffIcon,
   Trash2Icon,
+  UserIcon,
 } from 'lucide-react';
 
 import {
@@ -25,14 +25,11 @@ import { isAdmin } from '@/lib/permissions';
 
 import { BanDialog, confirmLiftBan, liftBan } from '@/components/ban-controls';
 import { useConfirm } from '@/components/confirm-dialog';
-import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  ItemMenu,
+  ItemMenuItem,
+  ItemMenuSeparator,
+} from '@/components/item-menu';
 
 export function UserActions({
   user,
@@ -40,6 +37,8 @@ export function UserActions({
   twoFactor,
   disabled,
   afterDelete,
+  className,
+  children,
 }: {
   user: { id: string; name: string; role: string };
   /** Offers lifting the ban instead of banning, and hides viewing as them. */
@@ -49,6 +48,9 @@ export function UserActions({
   disabled?: boolean;
   /** Where to go once the account is deleted, e.g. away from its page. */
   afterDelete?: string;
+  /** A row to wrap, which also opens the menu on right-click; see ItemMenu. */
+  children?: React.ReactNode;
+  className?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -73,133 +75,141 @@ export function UserActions({
 
   return (
     <>
-      {/* Not modal, so the dialogs it opens get the focus as it closes. */}
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant='ghost'
-            size='icon'
-            disabled={disabled || pending}
-            aria-label={`Actions for ${user.name}`}
-          >
-            <MoreHorizontalIcon />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end' className='w-auto min-w-52'>
-          {/* Admins can't be viewed as: they could do anything. */}
-          {!isAdmin(user.role) && !banned && (
-            <>
-              <DropdownMenuItem
-                onClick={() =>
-                  startTransition(async () => {
-                    try {
-                      await viewAsUser(user.id);
-                      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- A full reload, so every part of the page uses their session.
-                      window.location.href = '/';
-                    } catch {
-                      toast.error('Something went wrong, try again');
-                    }
-                  })
-                }
+      <ItemMenu
+        label={`Actions for ${user.name}`}
+        disabled={disabled || pending}
+        className={className}
+        items={
+          <>
+            {/* In a row; their page doesn't need a link to itself. */}
+            {children && (
+              <>
+                <ItemMenuItem
+                  icon={UserIcon}
+                  href={`/dashboard/users/${user.id}`}
+                >
+                  View account
+                </ItemMenuItem>
+                <ItemMenuSeparator />
+              </>
+            )}
+            {/* Admins can't be viewed as: they could do anything. */}
+            {!isAdmin(user.role) && !banned && (
+              <>
+                <ItemMenuItem
+                  icon={EyeIcon}
+                  onSelect={() =>
+                    startTransition(async () => {
+                      try {
+                        await viewAsUser(user.id);
+                        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- A full reload, so every part of the page uses their session.
+                        window.location.href = '/';
+                      } catch {
+                        toast.error('Something went wrong, try again');
+                      }
+                    })
+                  }
+                >
+                  View as {user.name}
+                </ItemMenuItem>
+                <ItemMenuSeparator />
+              </>
+            )}
+            <ItemMenuItem
+              icon={KeyRoundIcon}
+              onSelect={() =>
+                run(
+                  () => sendUserPasswordReset(user.id),
+                  `Password reset email sent to ${user.name}`
+                )
+              }
+            >
+              Send password reset
+            </ItemMenuItem>
+            <ItemMenuItem
+              icon={LogOutIcon}
+              onSelect={() =>
+                run(
+                  () => signOutUser(user.id),
+                  `${user.name} is signed out everywhere`
+                )
+              }
+            >
+              Sign out everywhere
+            </ItemMenuItem>
+            {twoFactor && (
+              <ItemMenuItem
+                icon={ShieldOffIcon}
+                onSelect={async () => {
+                  const confirmed = await ask({
+                    title: `Reset ${user.name}’s two-step sign-in?`,
+                    description:
+                      'For when they lost their phone and backup codes. They sign in with just their password until they set it up again.',
+                    action: 'Reset',
+                    destructive: true,
+                  });
+                  if (!confirmed) return;
+                  run(
+                    () => resetTwoFactor(user.id),
+                    `${user.name}’s two-step sign-in is off`
+                  );
+                }}
               >
-                <EyeIcon />
-                View as {user.name}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <DropdownMenuItem
-            onClick={() =>
-              run(
-                () => sendUserPasswordReset(user.id),
-                `Password reset email sent to ${user.name}`
-              )
-            }
-          >
-            <KeyRoundIcon />
-            Send password reset
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() =>
-              run(
-                () => signOutUser(user.id),
-                `${user.name} is signed out everywhere`
-              )
-            }
-          >
-            <LogOutIcon />
-            Sign out everywhere
-          </DropdownMenuItem>
-          {twoFactor && (
-            <DropdownMenuItem
-              onClick={async () => {
+                Reset two-step sign-in
+              </ItemMenuItem>
+            )}
+            <ItemMenuSeparator />
+            {/* Admins can't be banned; make them an editor first. */}
+            {!isAdmin(user.role) &&
+              (banned ? (
+                <ItemMenuItem
+                  icon={BanIcon}
+                  variant='destructive'
+                  onSelect={async () => {
+                    if (!(await confirmLiftBan(user, ask))) return;
+                    startTransition(async () => {
+                      if (await liftBan(user)) router.refresh();
+                    });
+                  }}
+                >
+                  Lift ban
+                </ItemMenuItem>
+              ) : (
+                // The dialog lives outside the menu, which unmounts on close.
+                <ItemMenuItem
+                  icon={BanIcon}
+                  variant='destructive'
+                  onSelect={() => setBanOpen(true)}
+                >
+                  Ban account
+                </ItemMenuItem>
+              ))}
+            <ItemMenuItem
+              icon={Trash2Icon}
+              variant='destructive'
+              onSelect={async () => {
                 const confirmed = await ask({
-                  title: `Reset ${user.name}’s two-step sign-in?`,
+                  title: `Delete ${user.name}’s account?`,
                   description:
-                    'For when they lost their phone and backup codes. They sign in with just their password until they set it up again.',
-                  action: 'Reset',
+                    'They can sign up again, but will start as a viewer.',
+                  action: 'Delete account',
                   destructive: true,
                 });
                 if (!confirmed) return;
                 run(
-                  () => resetTwoFactor(user.id),
-                  `${user.name}’s two-step sign-in is off`
+                  () => deleteUser(user.id),
+                  `${user.name}'s account was deleted`,
+                  afterDelete ? () => router.push(afterDelete) : undefined
                 );
               }}
             >
-              <ShieldOffIcon />
-              Reset two-step sign-in
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          {/* Admins can't be banned; make them an editor first. */}
-          {!isAdmin(user.role) &&
-            (banned ? (
-              <DropdownMenuItem
-                variant='destructive'
-                onClick={async () => {
-                  if (!(await confirmLiftBan(user, ask))) return;
-                  startTransition(async () => {
-                    if (await liftBan(user)) router.refresh();
-                  });
-                }}
-              >
-                <BanIcon />
-                Lift ban
-              </DropdownMenuItem>
-            ) : (
-              // The dialog lives outside the menu, which unmounts on close.
-              <DropdownMenuItem
-                variant='destructive'
-                onSelect={() => setBanOpen(true)}
-              >
-                <BanIcon />
-                Ban account
-              </DropdownMenuItem>
-            ))}
-          <DropdownMenuItem
-            variant='destructive'
-            onClick={async () => {
-              const confirmed = await ask({
-                title: `Delete ${user.name}’s account?`,
-                description:
-                  'They can sign up again, but will start as a viewer.',
-                action: 'Delete account',
-                destructive: true,
-              });
-              if (!confirmed) return;
-              run(
-                () => deleteUser(user.id),
-                `${user.name}'s account was deleted`,
-                afterDelete ? () => router.push(afterDelete) : undefined
-              );
-            }}
-          >
-            <Trash2Icon />
-            Delete account
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+              Delete account
+            </ItemMenuItem>
+          </>
+        }
+      >
+        {children}
+      </ItemMenu>
       <BanDialog user={user} open={banOpen} onOpenChangeAction={setBanOpen} />
       {confirmDialog}
     </>

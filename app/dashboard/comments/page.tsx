@@ -89,7 +89,7 @@ export default async function CommentsPage(
         // The card rises as a whole, then its rows fade in without moving.
         <Reveal
           as='ul'
-          className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
+          className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'
         >
           {comments.map((comment) => (
             <CommentRow

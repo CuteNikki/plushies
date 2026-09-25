@@ -11,19 +11,42 @@ import { deleteComment } from '@/actions/comments';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 
+type DeleteCommentProps = {
+  comment: { id: string; authorName: string | null; replies: number };
+  own: boolean;
+  canPurge: boolean;
+};
+
 /**
  * Deletes a comment from the dashboard's comments page, after asking, the
  * way it's done on the plushie's page. Admins can erase its replies with it.
  */
-export function DeleteCommentButton({
+export function DeleteCommentButton(props: DeleteCommentProps) {
+  const [remove, deleting, confirmDialog] = useDeleteComment(props);
+
+  return (
+    <>
+      <Button
+        variant='outline'
+        size='sm'
+        className='shrink-0 hover:border-destructive/40 hover:text-destructive'
+        disabled={deleting}
+        onClick={remove}
+      >
+        {deleting ? <Loader2Icon className='animate-spin' /> : <Trash2Icon />}
+        Delete
+      </Button>
+      {confirmDialog}
+    </>
+  );
+}
+
+/** Asks, then deletes; render `dialog` outside any menu that calls `remove`. */
+export function useDeleteComment({
   comment,
   own,
   canPurge,
-}: {
-  comment: { id: string; authorName: string | null; replies: number };
-  own: boolean;
-  canPurge: boolean;
-}) {
+}: DeleteCommentProps) {
   const router = useRouter();
   const [deleting, startDelete] = useTransition();
   const [ask, confirmDialog] = useConfirm();
@@ -61,19 +84,5 @@ export function DeleteCommentButton({
     });
   }
 
-  return (
-    <>
-      <Button
-        variant='outline'
-        size='sm'
-        className='shrink-0 hover:border-destructive/40 hover:text-destructive'
-        disabled={deleting}
-        onClick={remove}
-      >
-        {deleting ? <Loader2Icon className='animate-spin' /> : <Trash2Icon />}
-        Delete
-      </Button>
-      {confirmDialog}
-    </>
-  );
+  return [remove, deleting, confirmDialog] as const;
 }

@@ -190,7 +190,7 @@ export default async function UserPage(
         }
       >
         {user.comments.length > 0 ? (
-          <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+          <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
             {user.comments.map((comment) => (
               <CommentRow
                 key={comment.id}
@@ -210,7 +210,7 @@ export default async function UserPage(
         description={`Changes to this account and changes they made, from the last ${ACTIVITY_DAYS} days.`}
       >
         {activity.entries.length > 0 ? (
-          <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
+          <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
             {activity.entries.map(({ entry, revert, revertedBy }) => (
               <li key={entry.id}>
                 <ActivityEntry

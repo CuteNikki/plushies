@@ -114,7 +114,7 @@ export default async function DashboardPage() {
         {tiles.map((tile) => (
           <RevealItem
             key={tile.label}
-            className='group relative flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 transition-colors last:col-span-2 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:hover]:bg-muted/50 lg:last:col-span-1'
+            className='group relative flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 transition-colors last:col-span-2 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:hover]:bg-muted/50 xs:p-4 lg:last:col-span-1'
           >
             <dt
               className={cn(
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
             </dd>
             {tile.href && (
               <ChevronRightIcon
-                className='absolute top-4 right-4 size-4 text-muted-foreground transition-transform group-has-[a:hover]:translate-x-0.5'
+                className='absolute top-3 right-3 size-4 text-muted-foreground transition-transform group-has-[a:hover]:translate-x-0.5 xs:top-4 xs:right-4'
                 aria-hidden
               />
             )}
@@ -148,7 +148,7 @@ export default async function DashboardPage() {
         ))}
       </RevealGroup>
 
-      <RevealGroup as='ul' className='grid gap-4 sm:grid-cols-2'>
+      <RevealGroup as='ul' className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <RevealItem as='li' key={link.href}>
             <DashboardLink {...link} />
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
 
       {/* Each section spans two rows, header and list, so sections side by
           side share both: their lists start and end at the same height. */}
-      <div className='grid gap-8 lg:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
         <Section
           title='Recently edited'
           description='Plushies that have been recently edited.'
@@ -363,7 +363,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Reveal as='section' className='row-span-2 grid grid-rows-subgrid gap-4'>
+    <Reveal
+      as='section'
+      className='row-span-2 grid grid-cols-1 grid-rows-subgrid gap-4'
+    >
       <div className='flex items-end justify-between gap-2'>
         <div>
           <h2 className='font-heading text-xl font-semibold'>{title}</h2>
@@ -428,7 +431,7 @@ function PlushieRow({
       <div className='min-w-0 flex-1'>
         <Link
           href={`/plushies/${plushie.slug}`}
-          className='font-heading font-semibold hover:underline'
+          className='block truncate font-heading font-semibold hover:underline'
         >
           {plushie.name}
         </Link>

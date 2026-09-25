@@ -36,7 +36,7 @@ export function CommentRow({
           <div className='min-w-0'>
             <Link
               href={`/plushies/${comment.plushie.slug}`}
-              className='font-heading font-semibold hover:underline'
+              className='block truncate font-heading font-semibold hover:underline'
             >
               {comment.plushie.name}
             </Link>

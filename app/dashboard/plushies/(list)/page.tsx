@@ -208,7 +208,7 @@ export default async function PlushiesPage(
               <div className='min-w-0 flex-1'>
                 <Link
                   href={`/plushies/${plushie.slug}`}
-                  className='font-heading font-semibold hover:underline'
+                  className='block truncate font-heading font-semibold hover:underline'
                 >
                   {plushie.name}
                 </Link>

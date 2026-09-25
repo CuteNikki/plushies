@@ -30,14 +30,14 @@ export default function DashboardLoading() {
         {tiles.map((tile) => (
           <div
             key={tile}
-            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 last:col-span-2 lg:last:col-span-1'
+            className='flex flex-col gap-1 rounded-xl p-3 ring-1 ring-foreground/10 last:col-span-2 xs:p-4 lg:last:col-span-1'
           >
             <TextSkeleton className='text-sm'>{tile}</TextSkeleton>
             <TextSkeleton className='text-3xl font-semibold'>12</TextSkeleton>
           </div>
         ))}
       </div>
-      <ul className='grid gap-4 sm:grid-cols-2'>
+      <ul className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
         {links.map((link) => (
           <li
             key={link.title}
@@ -59,7 +59,7 @@ export default function DashboardLoading() {
       </ul>
       {/* Sections side by side share their header and list rows, as on
           the real page. Admins see all six; editors don't have New accounts. */}
-      <div className='grid gap-8 lg:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-8 lg:grid-cols-2'>
         <Section
           title='Recently edited'
           description='Plushies that have been recently edited.'
@@ -122,7 +122,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className='row-span-2 grid grid-rows-subgrid gap-4'>
+    <div className='row-span-2 grid grid-cols-1 grid-rows-subgrid gap-4'>
       <div className='flex items-end justify-between gap-2'>
         <SectionHeadingSkeleton title={title} description={description} />
         <Skeleton className='h-6 w-20 shrink-0' />

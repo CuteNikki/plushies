@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState } from 'react';
+import { useId, useState, useTransition } from 'react';
 import QRCode from 'react-qr-code';
 import { toast } from 'sonner';
 
@@ -15,8 +15,10 @@ import {
   SmartphoneIcon,
 } from 'lucide-react';
 
+import { forgetTrustedDevices } from '@/actions/account';
 import type { TwoFactorMethod } from '@/data/account';
 import { authClient } from '@/lib/auth-client';
+import { count } from '@/lib/utils';
 
 import { CodeInput } from '@/components/code-input';
 import { Button } from '@/components/ui/button';
@@ -45,12 +47,16 @@ const methodLabels = {
 export function TwoFactorSettings({
   method,
   hasPassword,
+  trustedDevices,
 }: {
   method: TwoFactorMethod;
   hasPassword: boolean;
+  /** Devices where "Don't ask again" was ticked, and still counts. */
+  trustedDevices: number;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>({ kind: 'idle' });
+  const [forgetting, startForgetting] = useTransition();
 
   function done(message: string) {
     toast.success(message);
@@ -177,38 +183,64 @@ export function TwoFactorSettings({
   }
 
   return (
-    <div className='flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10 sm:flex-row sm:items-center'>
-      <div className='flex flex-1 items-center gap-3'>
-        <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary'>
-          <ShieldCheckIcon className='size-5' aria-hidden />
-        </span>
-        <div>
-          <p className='font-medium'>On, with {methodLabels[method]}</p>
-          <p className='text-sm text-muted-foreground'>
-            {method === 'app'
-              ? 'You can also get a code by email, or use a backup code.'
-              : 'A code comes to your email address each time.'}
-          </p>
+    <div className='flex flex-col gap-3'>
+      <div className='flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10 sm:flex-row sm:items-center'>
+        <div className='flex flex-1 items-center gap-3'>
+          <span className='flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary'>
+            <ShieldCheckIcon className='size-5' aria-hidden />
+          </span>
+          <div>
+            <p className='font-medium'>On, with {methodLabels[method]}</p>
+            <p className='text-sm text-muted-foreground'>
+              {method === 'app'
+                ? 'You can also get a code by email, or use a backup code.'
+                : 'A code comes to your email address each time.'}
+            </p>
+          </div>
+        </div>
+        <div className='flex flex-wrap gap-2'>
+          {method === 'app' && (
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => setStep({ kind: 'password', action: 'codes' })}
+            >
+              New backup codes
+            </Button>
+          )}
+          <Button
+            variant='destructive'
+            size='sm'
+            onClick={() => setStep({ kind: 'password', action: 'off' })}
+          >
+            Turn off
+          </Button>
         </div>
       </div>
-      <div className='flex flex-wrap gap-2'>
-        {method === 'app' && (
+      {trustedDevices > 0 && (
+        <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between'>
+          <p className='text-sm text-pretty text-muted-foreground'>
+            {count(trustedDevices, 'device')} won&rsquo;t ask for a code,
+            because you ticked &ldquo;Don&rsquo;t ask again&rdquo; there.
+          </p>
           <Button
-            variant='outline'
+            variant='destructive'
             size='sm'
-            onClick={() => setStep({ kind: 'password', action: 'codes' })}
+            className='w-fit shrink-0'
+            disabled={forgetting}
+            onClick={() =>
+              startForgetting(async () => {
+                const { error } = await forgetTrustedDevices();
+                if (error) toast.error(error);
+                else toast.success('Every device asks for a code again');
+              })
+            }
           >
-            New backup codes
+            {forgetting && <Loader2Icon className='animate-spin' />}
+            Forget trusted devices
           </Button>
-        )}
-        <Button
-          variant='destructive'
-          size='sm'
-          onClick={() => setStep({ kind: 'password', action: 'off' })}
-        >
-          Turn off
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

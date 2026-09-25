@@ -25,6 +25,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
     discordAccountId,
     sessions,
     twoFactor,
+    trustedDevices,
     passkeys,
   } = await getAccountSettings({ userId: user.id, sessionId: session.id });
 
@@ -70,7 +71,11 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Section>
 
       <Section title='Two-Step Sign-In'>
-        <TwoFactorSettings method={twoFactor} hasPassword={hasPassword} />
+        <TwoFactorSettings
+          method={twoFactor}
+          hasPassword={hasPassword}
+          trustedDevices={trustedDevices}
+        />
       </Section>
 
       <Section

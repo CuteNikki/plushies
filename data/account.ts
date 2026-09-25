@@ -8,6 +8,17 @@ import { describeUserAgent } from '@/lib/user-agent';
 export type TwoFactorMethod = 'app' | 'email' | null;
 
 /**
+ * Where Better Auth keeps the devices that skip two-step sign-in ("Don't ask
+ * again"), one verification row each, holding the user's id.
+ */
+export function trustedDevicesWhere(userId: string) {
+  return {
+    identifier: { startsWith: 'trust-device-' },
+    value: userId,
+  };
+}
+
+/**
  * Sign-in methods, two-step sign-in, passkeys and sessions for the account page. Takes the signed-in
  * user's session, which the page has already checked.
  */
@@ -17,30 +28,37 @@ export async function getAccountSettings(current: {
 }) {
   // Straight from the database: Better Auth's listSessions would check the
   // session cookie again first, a second round trip for the same answer.
-  const [accounts, sessions, user, app, passkeys] = await Promise.all([
-    db.account.findMany({
-      where: { userId: current.userId },
-      select: { id: true, providerId: true },
-    }),
-    db.session.findMany({
-      where: { userId: current.userId, expiresAt: { gt: new Date() } },
-      orderBy: { updatedAt: 'desc' },
-    }),
-    db.user.findUniqueOrThrow({
-      where: { id: current.userId },
-      select: { twoFactorEnabled: true },
-    }),
-    // An authenticator app counts once its first code confirmed it.
-    db.twoFactor.findFirst({
-      where: { userId: current.userId, verified: { not: false } },
-      select: { id: true },
-    }),
-    db.passkey.findMany({
-      where: { userId: current.userId },
-      orderBy: { createdAt: 'asc' },
-      select: { id: true, name: true, createdAt: true, backedUp: true },
-    }),
-  ]);
+  const [accounts, sessions, user, app, passkeys, trustedDevices] =
+    await Promise.all([
+      db.account.findMany({
+        where: { userId: current.userId },
+        select: { id: true, providerId: true },
+      }),
+      db.session.findMany({
+        where: { userId: current.userId, expiresAt: { gt: new Date() } },
+        orderBy: { updatedAt: 'desc' },
+      }),
+      db.user.findUniqueOrThrow({
+        where: { id: current.userId },
+        select: { twoFactorEnabled: true },
+      }),
+      // An authenticator app counts once its first code confirmed it.
+      db.twoFactor.findFirst({
+        where: { userId: current.userId, verified: { not: false } },
+        select: { id: true },
+      }),
+      db.passkey.findMany({
+        where: { userId: current.userId },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, name: true, createdAt: true, backedUp: true },
+      }),
+      db.verification.count({
+        where: {
+          ...trustedDevicesWhere(current.userId),
+          expiresAt: { gt: new Date() },
+        },
+      }),
+    ]);
   const providers = accounts.map((account) => account.providerId);
   const twoFactor: TwoFactorMethod = !user.twoFactorEnabled
     ? null
@@ -74,6 +92,7 @@ export async function getAccountSettings(current: {
     discordAccountId: accounts.find((a) => a.providerId === 'discord')?.id,
     sessions: sessionInfos,
     twoFactor,
+    trustedDevices,
     passkeys: passkeys.map((passkey) => ({
       ...passkey,
       createdAt: passkey.createdAt?.toISOString() ?? null,

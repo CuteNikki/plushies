@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
+import { trustedDevicesWhere } from '@/data/account';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { isViewingAs, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { getSession } from '@/lib/session';
 
 export type ActionResult = { error?: string };
@@ -40,6 +42,23 @@ export async function revokeSession(sessionId: string): Promise<ActionResult> {
   await auth.api.revokeSession({
     body: { token: target.token },
     headers: await headers(),
+  });
+  revalidatePath('/account');
+  return {};
+}
+
+/**
+ * Makes every device ask for a code again, including this one. Their
+ * "Don't ask again" cookies stay, but no longer count for anything.
+ */
+export async function forgetTrustedDevices(): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session) return { error: 'Not signed in' };
+  // Straight to the database, so Better Auth's hook doesn't catch this.
+  if (isViewingAs(session)) return { error: VIEWING_AS_MESSAGE };
+
+  await db.verification.deleteMany({
+    where: trustedDevicesWhere(session.user.id),
   });
   revalidatePath('/account');
   return {};

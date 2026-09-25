@@ -10,8 +10,13 @@ export async function GET(
   context: RouteContext<'/api/plushies/[id]/comments'>
 ) {
   const { id } = await context.params;
-  const cursor = new URL(request.url).searchParams.get('cursor');
-  const page = await getComments(id, cursor, await getSession());
+  const { searchParams } = new URL(request.url);
+  const page = await getComments(
+    id,
+    searchParams.get('cursor'),
+    await getSession(),
+    searchParams.get('focus')
+  );
   return Response.json(page, {
     headers: { 'Cache-Control': 'private, no-store' },
   });

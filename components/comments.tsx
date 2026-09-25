@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
+  CopyIcon,
+  LinkIcon,
   Loader2Icon,
   MessageCircleIcon,
   PencilIcon,
@@ -40,6 +42,11 @@ import { cn } from '@/lib/utils';
 
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
+import {
+  ItemMenu,
+  ItemMenuItem,
+  ItemMenuSeparator,
+} from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -101,6 +108,28 @@ function findIn(comment: CommentView, id: string): CommentView | undefined {
   }
 }
 
+/** The comment a link points to, as in #comment-…, if there is one. */
+function linkedComment() {
+  const match = /^#comment-(.+)$/.exec(location.hash);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** The ids from the top of the comment's thread down to it, if it's here. */
+function pathTo(comments: CommentView[], id: string): string[] | null {
+  for (const comment of comments) {
+    if (comment.id === id) return [id];
+    const below = pathTo(comment.replies, id);
+    if (below) return [comment.id, ...below];
+  }
+  return null;
+}
+
+/**
+ * The linked comment and the ones above it, while it's highlighted. The
+ * replies and threads they're hidden behind start out open.
+ */
+const FocusContext = createContext<{ id: string; path: string[] } | null>(null);
+
 /**
  * Set inside an opened "Continue this thread" box: going further shows the
  * deeper replies in that same box, rather than in a box inside it.
@@ -146,19 +175,59 @@ export function Comments({
   const [loadingMore, startLoadingMore] = useTransition();
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [focus, setFocus] = useState<{ id: string; path: string[] } | null>(
+    null
+  );
   const [ask, confirmDialog] = useConfirm();
 
   useEffect(() => {
     // Waits for the session, so the page loads once with the right viewer.
     if (sessionPending) return;
     let current = true;
-    fetchPage(plushieId, null)
-      .then((fresh) => current && setPage(fresh))
+    // A linked comment loads with the rest, however far down its thread is.
+    const linked = linkedComment();
+    fetchPage(plushieId, null, linked)
+      .then((fresh) => {
+        if (!current) return;
+        setPage(fresh);
+        if (!linked) return;
+        const path = pathTo(fresh.threads, linked);
+        if (path) setFocus({ id: linked, path });
+        else toast.error('That comment isn’t here anymore');
+      })
       .catch(() => current && setFailed(true));
     return () => {
       current = false;
     };
   }, [plushieId, userId, sessionPending]);
+
+  // Its replies and threads open as it renders; then it's scrolled to, and
+  // flashes (.comment-linked) until this clears it.
+  useEffect(() => {
+    if (!focus) return;
+    const element = document.getElementById(`comment-${focus.id}`);
+    const scroll = () => element?.scrollIntoView({ block: 'center' });
+    // Photos above it can still be loading, after coming from another page,
+    // and push it back down. So it's kept in view while the page settles,
+    // until they scroll or click themselves.
+    const observer = new ResizeObserver(scroll);
+    observer.observe(document.body);
+    const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+    const stop = () => {
+      observer.disconnect();
+      for (const event of events) removeEventListener(event, stop);
+    };
+    for (const event of events) {
+      addEventListener(event, stop, { passive: true });
+    }
+    const settled = setTimeout(stop, 2000);
+    const cleared = setTimeout(() => setFocus(null), 2500);
+    return () => {
+      stop();
+      clearTimeout(settled);
+      clearTimeout(cleared);
+    };
+  }, [focus]);
 
   function loadMore() {
     if (!page?.nextCursor) return;
@@ -321,13 +390,15 @@ export function Comments({
           {!viewer?.blocked && ' Be the first!'}
         </EmptyState>
       ) : (
-        <ul className='flex flex-col gap-6'>
-          {page.threads.map((thread) => (
-            <li key={thread.id}>
-              <Comment comment={thread} depth={0} actions={actions} />
-            </li>
-          ))}
-        </ul>
+        <FocusContext value={focus}>
+          <ul className='flex flex-col gap-6'>
+            {page.threads.map((thread) => (
+              <li key={thread.id}>
+                <Comment comment={thread} depth={0} actions={actions} />
+              </li>
+            ))}
+          </ul>
+        </FocusContext>
       )}
 
       {page?.nextCursor && (
@@ -346,8 +417,15 @@ export function Comments({
   );
 }
 
-async function fetchPage(plushieId: string, cursor: string | null) {
-  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+async function fetchPage(
+  plushieId: string,
+  cursor: string | null,
+  focus: string | null = null
+) {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  if (focus) params.set('focus', focus);
+  const query = params.size > 0 ? `?${params}` : '';
   const response = await fetch(`/api/plushies/${plushieId}/comments${query}`);
   if (!response.ok) throw new Error(`Comments failed: ${response.status}`);
   return (await response.json()) as CommentsPage;
@@ -391,10 +469,25 @@ function Comment({
     deletedInRow++;
   }
 
-  const [showAll, setShowAll] = useState(false);
-  const [continued, setContinued] = useState(false);
   // Inside an opened box, going further happens in that box.
   const continueInBox = useContext(ContinueContext);
+  // Open from the start if the linked comment is behind them.
+  const focus = useContext(FocusContext);
+  const [showAll, setShowAll] = useState(
+    () =>
+      !!focus &&
+      comment.replies
+        .slice(REPLIES_SHOWN)
+        .some((reply) => focus.path.includes(reply.id))
+  );
+  const [continued, setContinued] = useState(
+    () =>
+      !!focus &&
+      !continueInBox &&
+      depth >= actions.maxDepth &&
+      focus.id !== comment.id &&
+      focus.path.includes(comment.id)
+  );
   const continueThread = () =>
     continueInBox ? continueInBox(comment.id) : setContinued(true);
   const replying = actions.replyingTo === comment.id;
@@ -521,8 +614,19 @@ function ContinuedThread({
   actions: Actions;
   onHide: () => void;
 }) {
+  const focus = useContext(FocusContext);
   // The comments whose replies were opened, from the first to the shown one.
-  const [path, setPath] = useState([from.id]);
+  // For a linked comment deeper down, as far as it takes to show it: each
+  // step shows its replies to maxDepth levels, then the next step's.
+  const [path, setPath] = useState(() => {
+    const chain = focus?.path.slice(focus.path.indexOf(from.id)) ?? [];
+    if (chain[0] !== from.id) return [from.id];
+    const steps: string[] = [];
+    for (let i = 0; i < chain.length - 1; i += actions.maxDepth + 1) {
+      steps.push(chain[i]);
+    }
+    return steps;
+  });
   const box = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
   // Back to the start if the shown one was deleted meanwhile.
@@ -594,72 +698,145 @@ function CommentBody({
   const own = !!viewer?.id && viewer.id === author.id;
   const canWrite = viewer && !viewer.blocked;
   const isEditing = actions.editing === comment.id;
+  const linked = useContext(FocusContext)?.id === comment.id;
+  const canDelete =
+    (own || viewer?.canModerate) && viewer?.blocked !== 'viewing-as';
+
+  async function copy(text: string, done: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(done);
+    } catch {
+      toast.error('Couldn’t copy it, try again');
+    }
+  }
 
   return (
-    <article className='flex gap-3' aria-label={`Comment by ${author.name}`}>
-      <div className='flex shrink-0 flex-col items-center gap-1'>
-        <span className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20'>
-          <UserAvatar user={author} />
-        </span>
-        {hasReplies && <span className='comment-line flex-1' />}
-      </div>
-      <div className='flex min-w-0 flex-1 flex-col gap-1'>
-        <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
-          <span className='font-heading font-semibold'>{author.name}</span>
-          {author.role !== Role.USER && (
-            <Badge variant='secondary'>{roleLabels[author.role]}</Badge>
+    // Its actions on right-click too, except while it's being edited, so
+    // the text box keeps the browser's menu, e.g. to paste.
+    <ItemMenu
+      label={`Actions for ${author.name}’s comment`}
+      disabled={isEditing}
+      tint={false}
+      className='comment-item'
+      items={
+        <>
+          {canWrite && (
+            <ItemMenuItem
+              icon={ReplyIcon}
+              onSelect={() => actions.setReplyingTo(comment.id)}
+            >
+              Reply
+            </ItemMenuItem>
           )}
-          <LocalTime
-            iso={comment.createdAt}
-            className='text-xs text-muted-foreground'
-          />
-          {comment.editedAt && (
-            <span className='text-xs text-muted-foreground'>(edited)</span>
+          {own && canWrite && (
+            <ItemMenuItem
+              icon={PencilIcon}
+              onSelect={() => actions.setEditing(comment.id)}
+            >
+              Edit
+            </ItemMenuItem>
           )}
+          <ItemMenuItem
+            icon={CopyIcon}
+            onSelect={() => copy(comment.body, 'Comment copied')}
+          >
+            Copy text
+          </ItemMenuItem>
+          <ItemMenuItem
+            icon={LinkIcon}
+            onSelect={() =>
+              copy(
+                new URL(`#comment-${comment.id}`, location.href).href,
+                'Link copied'
+              )
+            }
+          >
+            Copy link
+          </ItemMenuItem>
+          {canDelete && (
+            <>
+              <ItemMenuSeparator />
+              <ItemMenuItem
+                icon={Trash2Icon}
+                variant='destructive'
+                onSelect={() => actions.remove(comment, own)}
+              >
+                Delete
+              </ItemMenuItem>
+            </>
+          )}
+        </>
+      }
+    >
+      {/* Its id is what links to it use, e.g. from the dashboard. */}
+      <article
+        id={`comment-${comment.id}`}
+        className={cn('flex gap-3', linked && 'comment-linked')}
+        aria-label={`Comment by ${author.name}`}
+      >
+        <div className='flex shrink-0 flex-col items-center gap-1'>
+          <span className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20'>
+            <UserAvatar user={author} />
+          </span>
+          {hasReplies && <span className='comment-line flex-1' />}
         </div>
-        {isEditing ? (
-          <CommentForm
-            label='Edit your comment'
-            submit='Save'
-            initial={comment.body}
-            autoFocus
-            onCancel={() => actions.setEditing(null)}
-            onSubmit={async (body) => {
-              const result = await editComment(comment.id, { body });
-              if (!result.ok) return result.error;
-              actions.edited(result.comment);
-              actions.setEditing(null);
-            }}
-          />
-        ) : (
-          <p className='text-sm/relaxed wrap-break-word whitespace-pre-line'>
-            {comment.body}
-          </p>
-        )}
-        {!isEditing && (canWrite || own || viewer?.canModerate) && (
-          <div className='-ml-2 flex flex-wrap gap-1'>
-            {canWrite && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={() => actions.setReplyingTo(comment.id)}
-              >
-                <ReplyIcon />
-                Reply
-              </Button>
+        <div className='flex min-w-0 flex-1 flex-col gap-1'>
+          <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
+            <span className='font-heading font-semibold'>{author.name}</span>
+            {author.role !== Role.USER && (
+              <Badge variant='secondary'>{roleLabels[author.role]}</Badge>
             )}
-            {own && canWrite && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={() => actions.setEditing(comment.id)}
-              >
-                <PencilIcon />
-                Edit
-              </Button>
+            <LocalTime
+              iso={comment.createdAt}
+              className='text-xs text-muted-foreground'
+            />
+            {comment.editedAt && (
+              <span className='text-xs text-muted-foreground'>(edited)</span>
             )}
-            {(own || viewer?.canModerate) &&
-              viewer?.blocked !== 'viewing-as' && (
+          </div>
+          {isEditing ? (
+            <CommentForm
+              label='Edit your comment'
+              submit='Save'
+              initial={comment.body}
+              autoFocus
+              onCancel={() => actions.setEditing(null)}
+              onSubmit={async (body) => {
+                const result = await editComment(comment.id, { body });
+                if (!result.ok) return result.error;
+                actions.edited(result.comment);
+                actions.setEditing(null);
+              }}
+            />
+          ) : (
+            <p className='text-sm/relaxed wrap-break-word whitespace-pre-line'>
+              {comment.body}
+            </p>
+          )}
+          {!isEditing && (canWrite || own || viewer?.canModerate) && (
+            <div className='-ml-2 flex flex-wrap gap-1'>
+              {canWrite && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => actions.setReplyingTo(comment.id)}
+                >
+                  <ReplyIcon />
+                  Reply
+                </Button>
+              )}
+              {own && canWrite && (
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={() => actions.setEditing(comment.id)}
+                >
+                  <PencilIcon />
+                  Edit
+                </Button>
+              )}
+              {canDelete && (
                 <Button
                   variant='ghost'
                   size='sm'
@@ -670,10 +847,11 @@ function CommentBody({
                   Delete
                 </Button>
               )}
-          </div>
-        )}
-      </div>
-    </article>
+            </div>
+          )}
+        </div>
+      </article>
+    </ItemMenu>
   );
 }
 

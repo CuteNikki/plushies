@@ -227,3 +227,49 @@
     border-left: 2px solid var(--thread-line);
   }
 }
+
+/*
+ * A comment someone followed a link to, e.g. from the dashboard: it flashes,
+ * holds for a moment, then fades back. The shadow pads the tint out past the
+ * text, as the comment has no padding of its own.
+ */
+@keyframes comment-linked {
+  0%,
+  40% {
+    background: color-mix(in oklab, var(--primary) 20%, transparent);
+    box-shadow: 0 0 0 0.5rem
+      color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+  100% {
+    background: transparent;
+    box-shadow: 0 0 0 0.5rem transparent;
+  }
+}
+
+@layer components {
+  .comment-linked {
+    border-radius: 0.5rem;
+    animation: comment-linked 2.5s ease-out;
+  }
+}
+
+/*
+ * A comment under the pointer, or with its right-click menu open: the same
+ * padded tint as .comment-linked, in a quieter colour.
+ */
+@layer components {
+  .comment-item {
+    --halo: transparent;
+    border-radius: 0.5rem;
+    background: var(--halo);
+    box-shadow: 0 0 0 0.5rem var(--halo);
+    transition:
+      background-color 150ms,
+      box-shadow 150ms;
+  }
+
+  .comment-item:hover,
+  .comment-item[data-state='open'] {
+    --halo: color-mix(in oklab, var(--foreground) 6%, transparent);
+  }
+}

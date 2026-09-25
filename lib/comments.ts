@@ -83,20 +83,26 @@ export async function commentViewer(
 export async function getComments(
   plushieId: string,
   cursor: string | null,
-  session: Session | null
+  session: Session | null,
+  /** A comment to reach: the first page goes on down to its thread. */
+  focus: string | null = null
 ): Promise<CommentsPage> {
+  const size =
+    focus && !cursor
+      ? Math.max(COMMENTS_PER_PAGE, await threadsUpTo(plushieId, focus))
+      : COMMENTS_PER_PAGE;
   const [rows, total, viewer] = await Promise.all([
     db.comment.findMany({
       where: { plushieId, threadId: null },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      take: COMMENTS_PER_PAGE + 1,
+      take: size + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       include: viewInclude,
     }),
     db.comment.count({ where: { plushieId, deletedAt: null } }),
     commentViewer(session),
   ]);
-  const page = rows.slice(0, COMMENTS_PER_PAGE);
+  const page = rows.slice(0, size);
 
   const replies = await db.comment.findMany({
     where: { threadId: { in: page.map((row) => row.id) } },
@@ -118,10 +124,39 @@ export async function getComments(
 
   return {
     threads,
-    nextCursor: rows.length > COMMENTS_PER_PAGE ? page.at(-1)!.id : null,
+    nextCursor: rows.length > size ? page.at(-1)!.id : null,
     total,
     viewer,
   };
+}
+
+/**
+ * How many threads, newest first, it takes to get to the one this comment
+ * is in, that one included. 0 if it isn't on this plushie anymore.
+ */
+async function threadsUpTo(plushieId: string, commentId: string) {
+  const comment = await db.comment.findFirst({
+    where: { id: commentId, plushieId },
+    select: { threadId: true },
+  });
+  const thread =
+    comment &&
+    (await db.comment.findUnique({
+      where: { id: comment.threadId ?? commentId },
+      select: { id: true, createdAt: true },
+    }));
+  if (!thread) return 0;
+  // The same order as the page: newest first, then by id.
+  return db.comment.count({
+    where: {
+      plushieId,
+      threadId: null,
+      OR: [
+        { createdAt: { gt: thread.createdAt } },
+        { createdAt: thread.createdAt, id: { gte: thread.id } },
+      ],
+    },
+  });
 }
 
 export function commentSnapshot(comment: {

@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { PencilIcon, PlusIcon } from 'lucide-react';
 
 import { getPlushieList } from '@/data/dashboard';
+import {
+  formatBirthday,
+  formatWhen,
+  sortByNextBirthday,
+  type NextBirthday,
+} from '@/lib/birthday';
 import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
@@ -21,6 +27,7 @@ const views = {
   all: 'All',
   recent: 'Recently edited',
   attention: 'Needs attention',
+  birthdays: 'Birthdays',
 } as const;
 
 type View = keyof typeof views;
@@ -38,12 +45,22 @@ export default async function PlushiesPage(
   const incomplete = all
     .filter((plushie) => plushie.missing.length > 0)
     .sort((a, b) => a.name.localeCompare(b.name));
+  const withBirthday = sortByNextBirthday(
+    all.flatMap((plushie) =>
+      plushie.birthday ? [{ ...plushie, birthday: plushie.birthday }] : []
+    )
+  );
+  const nextBirthdays = new Map(
+    withBirthday.map((plushie) => [plushie.id, plushie.next])
+  );
   const plushies =
     view === 'recent'
       ? all.toSorted((a, b) => b.updatedAt.localeCompare(a.updatedAt))
       : view === 'attention'
         ? incomplete
-        : all;
+        : view === 'birthdays'
+          ? withBirthday
+          : all;
   const counts: Partial<Record<View, number>> = {
     all: all.length,
     attention: incomplete.length,
@@ -131,6 +148,13 @@ export default async function PlushiesPage(
                 </Link>
                 {view === 'attention' ? (
                   <MissingBadges missing={plushie.missing} />
+                ) : view === 'birthdays' && plushie.birthday ? (
+                  <p className='text-sm text-muted-foreground'>
+                    {birthdayLine(
+                      plushie.birthday,
+                      nextBirthdays.get(plushie.id) ?? null
+                    )}
+                  </p>
                 ) : view === 'recent' ? (
                   <p className='text-sm text-muted-foreground'>
                     {plushie.isNew ? 'Added' : 'Edited'}{' '}
@@ -160,9 +184,21 @@ export default async function PlushiesPage(
         >
           {view === 'attention'
             ? 'Every plushie is complete.'
-            : 'No plushies yet.'}
+            : view === 'birthdays'
+              ? 'No plushie has a birthday yet.'
+              : 'No plushies yet.'}
         </Reveal>
       )}
     </div>
   );
+}
+
+/**
+ * e.g. 'Turns 4 in 12 days · Born April 2, 2021'. Year-only birthdays have
+ * no date to count to, so just 'Born 2021'.
+ */
+function birthdayLine(birthday: string, next: NextBirthday | null) {
+  const born = `Born ${formatBirthday(birthday)}`;
+  if (!next || next.turns < 1) return born;
+  return `Turns ${next.turns} ${formatWhen(next)} · ${born}`;
 }

@@ -18,8 +18,8 @@ export default function PlushiesLoading() {
         />
         <Skeleton className='h-7 w-26' />
       </div>
-      {/* The view tabs: All, Recently edited, Needs attention. */}
-      <Skeleton className='h-9 w-80 max-w-full rounded-lg' />
+      {/* The view tabs: All, Recently edited, Needs attention, Birthdays. */}
+      <Skeleton className='h-9 w-104 max-w-full rounded-lg' />
       <ListSkeleton rows={3}>
         <Skeleton className='size-14 shrink-0 rounded-xl' />
         <TextLinesSkeleton />

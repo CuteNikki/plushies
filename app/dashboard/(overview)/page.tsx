@@ -14,12 +14,11 @@ import {
 } from 'lucide-react';
 
 import {
-  BIRTHDAY_DAYS,
   getDashboard,
   RECENT_DAYS,
   type DashboardPlushie,
 } from '@/data/dashboard';
-import { parseBirthday } from '@/lib/birthday';
+import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
 import { requireEditor } from '@/lib/session';
@@ -201,7 +200,10 @@ export default async function DashboardPage() {
 
         <Section
           title='Upcoming birthdays'
-          description={`In the next ${BIRTHDAY_DAYS} days.`}
+          description='Whose birthday comes next.'
+          action={
+            <SeeAll href='/dashboard/plushies?view=birthdays'>Show all</SeeAll>
+          }
         >
           {dashboard.birthdays.length > 0 ? (
             <List>
@@ -213,24 +215,24 @@ export default async function DashboardPage() {
                     <span
                       className={cn(
                         'flex shrink-0 items-center gap-1.5 text-sm',
-                        plushie.days === 0
+                        plushie.next.days === 0
                           ? 'font-semibold text-primary'
                           : 'text-muted-foreground'
                       )}
                     >
-                      {plushie.days === 0 && (
+                      {plushie.next.days === 0 && (
                         <CakeIcon className='size-4' aria-hidden />
                       )}
-                      {whenLabel(plushie.days)}
+                      {whenLabel(plushie.next)}
                     </span>
                   }
                 >
-                  Turns {plushie.turns} · {birthdayDate(plushie.birthday)}
+                  Turns {plushie.next.turns} · {birthdayDate(plushie.birthday)}
                 </PlushieRow>
               ))}
             </List>
           ) : (
-            <Empty>No birthdays coming up.</Empty>
+            <Empty>No plushie has a birthday yet.</Empty>
           )}
         </Section>
 
@@ -306,12 +308,10 @@ function CommentAuthor({
   );
 }
 
-/** e.g. 'Today', 'Tomorrow', 'In 5 days', or 'This month' without a day. */
-function whenLabel(days: number | null) {
-  if (days === null) return 'This month';
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Tomorrow';
-  return `In ${days} days`;
+/** e.g. 'Today', 'In 5 days', or 'This month' or 'In October' without a day. */
+function whenLabel(next: NextBirthday) {
+  const when = formatWhen(next);
+  return when.charAt(0).toUpperCase() + when.slice(1);
 }
 
 /** e.g. 'October 2', or 'Sometime in October' without a day. */

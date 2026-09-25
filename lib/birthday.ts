@@ -81,38 +81,79 @@ export function formatAge(value: string, now = new Date()) {
   return `${years} year${years === 1 ? '' : 's'}`;
 }
 
-export type UpcomingBirthday = {
+export type NextBirthday = {
   /** Days until the birthday, 0 for today. Null when only the month is known. */
   days: number | null;
+  /** For sorting: days until the birthday or its month, 0 during it. */
+  until: number;
+  /** 1 to 12. */
+  month: number;
   /** The age they turn. */
   turns: number;
 };
 
 /**
- * The next birthday if it's within `withinDays`, or this month for birthdays
- * without a day. Null for year-only birthdays, which have no date to count to.
+ * The next birthday, however far off. Birthdays without a day count as the
+ * whole month, so they stay upcoming until it ends. Null for year-only
+ * birthdays, which have no date to count to.
  */
-export function upcomingBirthday(
+export function nextBirthday(
   value: string,
-  withinDays: number,
   now = new Date()
-): UpcomingBirthday | null {
+): NextBirthday | null {
   const birthday = parseBirthday(value);
   if (!birthday?.month) return null;
   const { year, month, day } = birthday;
 
-  if (!day) {
-    const turns = now.getFullYear() - year;
-    if (month !== now.getMonth() + 1 || turns < 1) return null;
-    return { days: null, turns };
-  }
-
   // Feb 29 falls on Mar 1 in other years, which Date does by itself.
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  let next = new Date(today.getFullYear(), month - 1, day);
-  if (next < today) next = new Date(today.getFullYear() + 1, month - 1, day);
-  const days = Math.round((next.getTime() - today.getTime()) / 86_400_000);
-  const turns = next.getFullYear() - year;
-  if (days > withinDays || turns < 1) return null;
-  return { days, turns };
+  let next = new Date(today.getFullYear(), month - 1, day ?? 1);
+  const passed = day ? next < today : month - 1 < today.getMonth();
+  if (passed) next = new Date(today.getFullYear() + 1, month - 1, day ?? 1);
+  // Before today only for this month's birthdays without a day.
+  const until = Math.max(
+    0,
+    Math.round((next.getTime() - today.getTime()) / 86_400_000)
+  );
+
+  return {
+    days: day ? until : null,
+    until,
+    month,
+    turns: next.getFullYear() - year,
+  };
+}
+
+/**
+ * Whose birthday comes next first, those without a day after the dated ones
+ * on the same day. Year-only birthdays have no date, so they go last, A–Z.
+ */
+export function sortByNextBirthday<
+  T extends { name: string; birthday: string },
+>(items: T[], now = new Date()) {
+  return items
+    .map((item) => ({ ...item, next: nextBirthday(item.birthday, now) }))
+    .sort(
+      (a, b) =>
+        (a.next?.until ?? Infinity) - (b.next?.until ?? Infinity) ||
+        Number(a.next?.days === null) - Number(b.next?.days === null) ||
+        a.name.localeCompare(b.name)
+    );
+}
+
+/**
+ * e.g. 'today', 'tomorrow', 'in 5 days', and for birthdays without a day
+ * 'this month' or 'in October'.
+ */
+export function formatWhen({ days, until, month }: NextBirthday) {
+  if (days === null) {
+    if (until === 0) return 'this month';
+    const name = new Date(2000, month - 1).toLocaleDateString('en-US', {
+      month: 'long',
+    });
+    return `in ${name}`;
+  }
+  if (days === 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  return `in ${days} days`;
 }

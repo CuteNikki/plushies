@@ -1,13 +1,10 @@
 import 'server-only';
 
 import { ActivitySubject, ActivityType } from '@/lib/activity';
-import { upcomingBirthday } from '@/lib/birthday';
+import { sortByNextBirthday } from '@/lib/birthday';
 import { db } from '@/lib/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
 import { Role } from '@/lib/permissions';
-
-/** How far ahead the dashboard looks for birthdays. */
-export const BIRTHDAY_DAYS = 30;
 
 /** How far back the dashboard counts changes and new accounts. */
 export const RECENT_DAYS = 7;
@@ -104,6 +101,7 @@ export async function getPlushieList() {
     photos: row._count.gallery + (row.thumbnailKey ? 1 : 0),
     likes: row._count.likes,
     missing: missingFrom(row),
+    birthday: row.birthday,
     updatedAt: row.updatedAt.toISOString(),
     isNew: isNew(row),
     editedBy: editors.get(row.id) ?? null,
@@ -189,17 +187,17 @@ export async function getDashboard({ admin }: { admin: boolean }) {
     .filter(({ missing }) => missing.length > 0)
     .sort((a, b) => a.plushie.name.localeCompare(b.plushie.name));
 
-  const birthdays = plushies
-    .flatMap(({ plushie, row: { birthday } }) => {
-      const upcoming = birthday
-        ? upcomingBirthday(birthday, BIRTHDAY_DAYS)
-        : null;
-      return birthday && upcoming
-        ? [{ ...plushie, birthday, ...upcoming }]
-        : [];
-    })
-    // Month-only birthdays have no day, so they go after the dated ones.
-    .sort((a, b) => (a.days ?? Infinity) - (b.days ?? Infinity));
+  // The same order as the plushie list's birthdays, without year-only ones,
+  // which have no date to come up on.
+  const birthdays = sortByNextBirthday(
+    plushies.flatMap(({ plushie, row: { birthday } }) =>
+      birthday ? [{ ...plushie, birthday }] : []
+    )
+  )
+    .flatMap(({ next, ...plushie }) =>
+      next && next.turns > 0 ? [{ ...plushie, next }] : []
+    )
+    .slice(0, LIST_SIZE);
 
   const withRole = (role: Role) =>
     roles.find((row) => row.role === role)?._count ?? 0;

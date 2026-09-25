@@ -38,6 +38,12 @@ export const metadata: Metadata = { title: 'Dashboard' };
 
 const compact = new Intl.NumberFormat('en-US', { notation: 'compact' });
 
+/**
+ * Every list row is this tall, whatever it holds, so side-by-side lists line
+ * up row for row: a photo, two lines of text, or a name and a badge line.
+ */
+const row = 'flex min-h-18 items-center gap-3 px-3 py-2';
+
 export default async function DashboardPage() {
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
@@ -118,7 +124,9 @@ export default async function DashboardPage() {
         ))}
       </RevealGroup>
 
-      <div className='grid items-start gap-8 lg:grid-cols-2'>
+      {/* Each section spans two rows, header and list, so sections side by
+          side share both: their lists start and end at the same height. */}
+      <div className='grid gap-8 lg:grid-cols-2'>
         <Section
           title='Recently edited'
           description='Plushies that have been recently edited.'
@@ -159,7 +167,7 @@ export default async function DashboardPage() {
             <List>
               {dashboard.needsAttention.plushies.map((plushie) => (
                 <PlushieRow key={plushie.id} plushie={plushie} edit>
-                  <MissingBadges missing={plushie.missing} />
+                  <MissingBadges missing={plushie.missing} limit={2} />
                 </PlushieRow>
               ))}
             </List>
@@ -175,8 +183,14 @@ export default async function DashboardPage() {
           {dashboard.comments.latest.length > 0 ? (
             <List>
               {dashboard.comments.latest.map((comment) => (
-                <li key={comment.id} className='flex flex-col gap-1 p-3'>
-                  <p className='text-sm text-muted-foreground'>
+                <li
+                  key={comment.id}
+                  className={cn(
+                    row,
+                    'flex-col items-stretch justify-center gap-1'
+                  )}
+                >
+                  <p className='truncate text-sm text-muted-foreground'>
                     <CommentAuthor author={comment.author} link={admin} /> on{' '}
                     <Link
                       href={`/plushies/${comment.plushie.slug}`}
@@ -187,9 +201,8 @@ export default async function DashboardPage() {
                     <LocalTime iso={comment.createdAt} />
                     {comment.editedAt && ' (edited)'}
                   </p>
-                  <p className='line-clamp-3 text-sm wrap-break-word whitespace-pre-line'>
-                    {comment.body}
-                  </p>
+                  {/* One line here; the whole comment is on the plushie's page. */}
+                  <p className='truncate text-sm'>{comment.body}</p>
                 </li>
               ))}
             </List>
@@ -245,10 +258,7 @@ export default async function DashboardPage() {
             {users.newAccounts.length > 0 ? (
               <List>
                 {users.newAccounts.map((user) => (
-                  <li
-                    key={user.id}
-                    className='flex flex-wrap items-center gap-x-3 gap-y-1 p-3'
-                  >
+                  <li key={user.id} className={cn(row, 'flex-wrap gap-y-1')}>
                     <div className='min-w-0 flex-1'>
                       <Link
                         href={`/dashboard/users/${user.id}`}
@@ -410,7 +420,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <Reveal as='section' className='flex flex-col gap-4'>
+    <Reveal as='section' className='row-span-2 grid grid-rows-subgrid gap-4'>
       <div className='flex items-end justify-between gap-2'>
         <div>
           <h2 className='font-heading text-xl font-semibold'>{title}</h2>
@@ -473,7 +483,7 @@ function PlushieRow({
   children: React.ReactNode;
 }) {
   return (
-    <li className='flex items-center gap-3 p-3'>
+    <li className={row}>
       <PlushiePhoto
         plushie={plushie}
         sizes='40px'

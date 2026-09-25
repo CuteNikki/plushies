@@ -57,13 +57,16 @@ export default function DashboardLoading() {
           </li>
         ))}
       </ul>
-      <div className='grid items-start gap-8 lg:grid-cols-2'>
+      <div className='grid gap-8 lg:grid-cols-2'>
         <div className='flex flex-col gap-4'>
           <SectionHeadingSkeleton
             title='Recently edited'
             description='Plushies that have been recently edited.'
           />
-          <ListSkeleton rows={3} rowClassName='flex items-center gap-3 p-3'>
+          <ListSkeleton
+            rows={3}
+            rowClassName='flex min-h-18 items-center gap-3 px-3 py-2'
+          >
             <Skeleton className='size-10 shrink-0 rounded-lg' />
             <TextLinesSkeleton />
           </ListSkeleton>
@@ -73,7 +76,10 @@ export default function DashboardLoading() {
             title='Needs attention'
             description='Plushies whose page is still missing something.'
           />
-          <ListSkeleton rows={2} rowClassName='flex items-center gap-3 p-3'>
+          <ListSkeleton
+            rows={2}
+            rowClassName='flex min-h-18 items-center gap-3 px-3 py-2'
+          >
             <Skeleton className='size-10 shrink-0 rounded-lg' />
             <TextLinesSkeleton />
           </ListSkeleton>

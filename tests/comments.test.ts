@@ -64,7 +64,7 @@ describe('who can comment', () => {
     }
     expect(await addComment(plushieId, { body: 'One more' })).toEqual({
       ok: false,
-      error: 'That’s a lot of comments. Wait a minute.',
+      error: 'That’s a lot of comments. Try again later.',
     });
   });
 });

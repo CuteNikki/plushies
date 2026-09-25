@@ -94,7 +94,7 @@ export default function PrivacyPage() {
             own comments. Editors and admins can delete any comment; such
             deletions are recorded in the activity log together with the
             comment, so they can be undone. To stop spam, we check how many
-            comments your account posted in the last minute.
+            comments your account posted recently.
           </li>
           <li>
             <strong>Likes:</strong> when you like a plushie, we store that your

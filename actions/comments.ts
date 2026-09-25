@@ -68,7 +68,8 @@ export async function addComment(
     },
   });
   if (recent >= COMMENTS_PER_MINUTE) {
-    return { ok: false, error: 'That’s a lot of comments. Wait a minute.' };
+    // Not saying for how long, so spam can't be timed to it.
+    return { ok: false, error: 'That’s a lot of comments. Try again later.' };
   }
 
   let threadId: string | null = null;

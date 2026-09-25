@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
 
+import { CloudOffIcon } from 'lucide-react';
+
 import { getStorageUsage } from '@/lib/uploads';
 import { cn, count, formatBytes } from '@/lib/utils';
 
+import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /** How full UploadThing is, for the dashboard and the photos page. */
@@ -25,9 +28,9 @@ async function Usage() {
   });
   if (!usage) {
     return (
-      <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
+      <EmptyState icon={CloudOffIcon}>
         Couldn&rsquo;t load storage usage right now.
-      </p>
+      </EmptyState>
     );
   }
 

@@ -6,8 +6,11 @@ import {
   ChevronRightIcon,
   HeartIcon,
   HistoryIcon,
+  MessageCircleIcon,
   PencilIcon,
   PlusIcon,
+  SparklesIcon,
+  UserPlusIcon,
   UsersIcon,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +26,7 @@ import { providerLabels } from '@/lib/providers';
 import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
+import { EmptyState } from '@/components/empty-state';
 import { Greeting } from '@/components/greeting';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
@@ -171,7 +175,7 @@ export default async function DashboardPage() {
               ))}
             </List>
           ) : (
-            <Empty>No plushies yet.</Empty>
+            <EmptyState icon={HeartIcon}>No plushies yet.</EmptyState>
           )}
         </Section>
 
@@ -199,7 +203,9 @@ export default async function DashboardPage() {
               ))}
             </List>
           ) : (
-            <Empty>Every plushie is complete.</Empty>
+            <EmptyState icon={SparklesIcon}>
+              Every plushie is complete.
+            </EmptyState>
           )}
         </Section>
 
@@ -234,7 +240,7 @@ export default async function DashboardPage() {
               ))}
             </List>
           ) : (
-            <Empty>No comments yet.</Empty>
+            <EmptyState icon={MessageCircleIcon}>No comments yet.</EmptyState>
           )}
         </Section>
 
@@ -272,7 +278,9 @@ export default async function DashboardPage() {
               ))}
             </List>
           ) : (
-            <Empty>No plushie has a birthday yet.</Empty>
+            <EmptyState icon={CakeIcon}>
+              No plushie has a birthday yet.
+            </EmptyState>
           )}
         </Section>
 
@@ -308,7 +316,7 @@ export default async function DashboardPage() {
                 ))}
               </List>
             ) : (
-              <Empty>No one new this week.</Empty>
+              <EmptyState icon={UserPlusIcon}>No one new this week.</EmptyState>
             )}
           </Section>
         )}
@@ -419,14 +427,6 @@ function List({ children }: { children: React.ReactNode }) {
     <ul className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'>
       {children}
     </ul>
-  );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
-      {children}
-    </p>
   );
 }
 

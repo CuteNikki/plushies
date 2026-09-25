@@ -2,13 +2,14 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { PencilIcon, StarIcon } from 'lucide-react';
+import { ImageIcon, PencilIcon, StarIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 import { count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
+import { EmptyState } from '@/components/empty-state';
 import { Reveal } from '@/components/motion';
 import { StorageUsage } from '@/components/storage-usage';
 import { Button } from '@/components/ui/button';
@@ -55,11 +56,8 @@ export default async function PhotosPage() {
       </Reveal>
 
       {plushies.length === 0 && (
-        <Reveal
-          as='p'
-          className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'
-        >
-          No photos yet.
+        <Reveal>
+          <EmptyState icon={ImageIcon}>No photos yet.</EmptyState>
         </Reveal>
       )}
 

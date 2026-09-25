@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { HistoryIcon } from 'lucide-react';
+
 import { getActivity } from '@/data/activity';
 import { ACTIVITY_DAYS, ActivitySubject } from '@/lib/activity';
 import { isAdmin } from '@/lib/permissions';
@@ -8,6 +10,7 @@ import { requireEditor } from '@/lib/session';
 
 import { ActivityEntry } from '@/components/activity-entry';
 import { BackButton } from '@/components/back-button';
+import { EmptyState } from '@/components/empty-state';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 
@@ -105,11 +108,10 @@ export default async function ActivityPage(
           ))}
         </Reveal>
       ) : (
-        <Reveal
-          as='p'
-          className='rounded-xl p-8 text-center text-pretty text-muted-foreground ring-1 ring-foreground/10'
-        >
-          Nothing yet. Changes show up here as they happen.
+        <Reveal>
+          <EmptyState icon={HistoryIcon} className='p-8'>
+            Nothing yet. Changes show up here as they happen.
+          </EmptyState>
         </Reveal>
       )}
     </div>

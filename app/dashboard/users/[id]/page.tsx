@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { HeartIcon, HistoryIcon, MessageCircleIcon } from 'lucide-react';
+
 import { getActivity } from '@/data/activity';
 import { getUser } from '@/data/users';
 import { ACTIVITY_DAYS } from '@/lib/activity';
@@ -13,6 +15,7 @@ import { count } from '@/lib/utils';
 import { ActivityEntry } from '@/components/activity-entry';
 import { BackButton } from '@/components/back-button';
 import { BanForm, UnbanButton } from '@/components/ban-controls';
+import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Reveal } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
@@ -126,9 +129,9 @@ export default async function UserPage(
               <UnbanButton user={user} />
             </div>
           ) : isAdmin(user.role) ? (
-            <Empty>
+            <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
               Admins can&rsquo;t be banned. Make them an editor first.
-            </Empty>
+            </p>
           ) : (
             <div className='rounded-xl p-4 ring-1 ring-foreground/10'>
               <BanForm user={user} />
@@ -172,7 +175,7 @@ export default async function UserPage(
             ))}
           </ul>
         ) : (
-          <Empty>No likes yet.</Empty>
+          <EmptyState icon={HeartIcon}>No likes yet.</EmptyState>
         )}
       </Section>
 
@@ -206,7 +209,7 @@ export default async function UserPage(
             ))}
           </ul>
         ) : (
-          <Empty>No comments yet.</Empty>
+          <EmptyState icon={MessageCircleIcon}>No comments yet.</EmptyState>
         )}
       </Section>
 
@@ -228,7 +231,9 @@ export default async function UserPage(
             ))}
           </ul>
         ) : (
-          <Empty>Nothing in the last {ACTIVITY_DAYS} days.</Empty>
+          <EmptyState icon={HistoryIcon}>
+            Nothing in the last {ACTIVITY_DAYS} days.
+          </EmptyState>
         )}
       </Section>
     </div>
@@ -256,13 +261,5 @@ function Section({
       </div>
       {children}
     </Reveal>
-  );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return (
-    <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
-      {children}
-    </p>
   );
 }

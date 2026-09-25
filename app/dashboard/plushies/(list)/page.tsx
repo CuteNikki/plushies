@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { PencilIcon, PlusIcon } from 'lucide-react';
+import {
+  CakeIcon,
+  HeartIcon,
+  PencilIcon,
+  PlusIcon,
+  SparklesIcon,
+} from 'lucide-react';
 
 import { getPlushieList } from '@/data/dashboard';
 import {
@@ -14,6 +20,7 @@ import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
+import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
 import { Reveal } from '@/components/motion';
@@ -178,15 +185,18 @@ export default async function PlushiesPage(
           ))}
         </Reveal>
       ) : (
-        <Reveal
-          as='p'
-          className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'
-        >
-          {view === 'attention'
-            ? 'Every plushie is complete.'
-            : view === 'birthdays'
-              ? 'No plushie has a birthday yet.'
-              : 'No plushies yet.'}
+        <Reveal>
+          {view === 'attention' ? (
+            <EmptyState icon={SparklesIcon}>
+              Every plushie is complete.
+            </EmptyState>
+          ) : view === 'birthdays' ? (
+            <EmptyState icon={CakeIcon}>
+              No plushie has a birthday yet.
+            </EmptyState>
+          ) : (
+            <EmptyState icon={HeartIcon}>No plushies yet.</EmptyState>
+          )}
         </Reveal>
       )}
     </div>

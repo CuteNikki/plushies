@@ -6,6 +6,7 @@ import { SearchIcon } from 'lucide-react';
 
 import type { Plushie } from '@/data/plushies';
 
+import { EmptyState } from '@/components/empty-state';
 import { Reveal } from '@/components/motion';
 import { PlushieCard } from '@/components/plushie-card';
 import { Input } from '@/components/ui/input';
@@ -35,9 +36,9 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
       </Reveal>
 
       {filtered.length === 0 ? (
-        <p className='py-12 text-center text-muted-foreground'>
+        <EmptyState icon={SearchIcon} className='py-12'>
           No plushies match &ldquo;{query}&rdquo;.
-        </p>
+        </EmptyState>
       ) : (
         <ul className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4'>
           {filtered.map((plushie, index) => (

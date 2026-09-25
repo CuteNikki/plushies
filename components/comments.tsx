@@ -39,6 +39,7 @@ import { roleLabels, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 import { useConfirm } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -317,11 +318,10 @@ export function Comments({
           Loading comments…
         </p>
       ) : page.threads.length === 0 ? (
-        <Notice>
-          <MessageCircleIcon className='size-4' aria-hidden />
+        <EmptyState icon={MessageCircleIcon}>
           No comments yet.
           {!viewer?.blocked && ' Be the first!'}
-        </Notice>
+        </EmptyState>
       ) : (
         <ul className='flex flex-col gap-6'>
           {page.threads.map((thread) => (

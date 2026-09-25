@@ -6,6 +6,7 @@ import {
   HeartIcon,
   PencilIcon,
   PlusIcon,
+  SearchIcon,
   SparklesIcon,
 } from 'lucide-react';
 
@@ -16,11 +17,13 @@ import {
   sortByNextBirthday,
   type NextBirthday,
 } from '@/lib/birthday';
+import { oneOf, plainQuery, searchQuery, withQuery } from '@/lib/list-params';
 import { requireEditor } from '@/lib/session';
 import { cn, count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ListControls } from '@/components/list-controls';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
 import { Reveal } from '@/components/motion';
@@ -39,16 +42,36 @@ const views = {
 
 type View = keyof typeof views;
 
+/** Orders for the All tab; the others have their own. */
+const sorts = ['oldest', 'newest', 'name', 'likes', 'photos'] as const;
+
 export default async function PlushiesPage(
   props: PageProps<'/dashboard/plushies'>
 ) {
   await requireEditor();
-  const { view: viewParam } = await props.searchParams;
+  const searchParams = await props.searchParams;
+  const { view: viewParam } = searchParams;
   const view: View =
     typeof viewParam === 'string' && Object.hasOwn(views, viewParam)
       ? (viewParam as View)
       : 'all';
-  const all = await getPlushieList();
+  const query = plainQuery(searchParams);
+  const q = searchQuery(searchParams.q)?.toLowerCase();
+  const sort = oneOf(searchParams.sort, sorts);
+  // Every tab only shows plushies whose name or species matches the search.
+  const all = (await getPlushieList()).filter(
+    (plushie) =>
+      !q ||
+      plushie.name.toLowerCase().includes(q) ||
+      !!plushie.species?.toLowerCase().includes(q)
+  );
+  const inOrder = {
+    oldest: all,
+    newest: all.toReversed(),
+    name: all.toSorted((a, b) => a.name.localeCompare(b.name)),
+    likes: all.toSorted((a, b) => b.likes - a.likes),
+    photos: all.toSorted((a, b) => b.photos - a.photos),
+  }[sort];
   const incomplete = all
     .filter((plushie) => plushie.missing.length > 0)
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -67,7 +90,7 @@ export default async function PlushiesPage(
         ? incomplete
         : view === 'birthdays'
           ? withBirthday
-          : all;
+          : inOrder;
   const counts: Partial<Record<View, number>> = {
     all: all.length,
     attention: incomplete.length,
@@ -103,11 +126,11 @@ export default async function PlushiesPage(
         {(Object.keys(views) as View[]).map((key) => (
           <Link
             key={key}
-            href={
-              key === 'all'
-                ? '/dashboard/plushies'
-                : `/dashboard/plushies?view=${key}`
-            }
+            href={withQuery('/dashboard/plushies', {
+              q: query.q ?? null,
+              sort: query.sort ?? null,
+              view: key === 'all' ? null : key,
+            })}
             aria-current={key === view ? 'page' : undefined}
             className={cn(
               'flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -124,6 +147,33 @@ export default async function PlushiesPage(
             )}
           </Link>
         ))}
+      </Reveal>
+
+      <Reveal>
+        <ListControls
+          query={query}
+          search={{
+            label: 'Search plushies',
+            placeholder: 'Search names or species',
+          }}
+          selects={
+            view === 'all'
+              ? [
+                  {
+                    param: 'sort',
+                    label: 'Order',
+                    options: [
+                      { value: 'oldest', label: 'Oldest first' },
+                      { value: 'newest', label: 'Newest first' },
+                      { value: 'name', label: 'Name A–Z' },
+                      { value: 'likes', label: 'Most liked' },
+                      { value: 'photos', label: 'Most photos' },
+                    ],
+                  },
+                ]
+              : []
+          }
+        />
       </Reveal>
 
       {/* The card rises as a whole, then its rows fade in without moving, so
@@ -186,7 +236,9 @@ export default async function PlushiesPage(
         </Reveal>
       ) : (
         <Reveal>
-          {view === 'attention' ? (
+          {q ? (
+            <EmptyState icon={SearchIcon}>No plushies match.</EmptyState>
+          ) : view === 'attention' ? (
             <EmptyState icon={SparklesIcon}>
               Every plushie is complete.
             </EmptyState>

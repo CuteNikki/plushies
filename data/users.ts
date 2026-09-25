@@ -2,11 +2,44 @@ import 'server-only';
 
 import { commentRowSelect } from '@/data/comment-rows';
 import { db } from '@/lib/db';
+import { Role } from '@/lib/permissions';
 
-/** Everyone, oldest account first, with their sign-in methods. */
-export async function getUsers() {
+export const userSorts = ['oldest', 'newest', 'name'] as const;
+export const userRoles = ['all', 'admin', 'editor', 'user', 'banned'] as const;
+
+/**
+ * Accounts with their sign-in methods: everyone, or only one role or the
+ * banned ones, and only names or emails matching `q`.
+ */
+export async function getUsers({
+  q = null,
+  role = 'all',
+  sort = 'oldest',
+}: {
+  q?: string | null;
+  role?: (typeof userRoles)[number];
+  sort?: (typeof userSorts)[number];
+} = {}) {
+  const contains = q && { contains: q, mode: 'insensitive' as const };
+  const roles = { admin: Role.ADMIN, editor: Role.EDITOR, user: Role.USER };
   return db.user.findMany({
-    orderBy: { createdAt: 'asc' },
+    where: {
+      AND: [
+        contains ? { OR: [{ name: contains }, { email: contains }] } : {},
+        role === 'banned'
+          ? {
+              banned: true,
+              OR: [{ banExpires: null }, { banExpires: { gt: new Date() } }],
+            }
+          : role === 'all'
+            ? {}
+            : { role: roles[role] },
+      ],
+    },
+    orderBy:
+      sort === 'name'
+        ? [{ name: 'asc' }, { createdAt: 'asc' }]
+        : { createdAt: sort === 'newest' ? 'desc' : 'asc' },
     include: {
       accounts: { select: { providerId: true } },
       _count: { select: { passkeys: true } },

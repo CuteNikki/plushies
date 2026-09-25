@@ -3,15 +3,18 @@ import Link from 'next/link';
 
 import { HistoryIcon } from 'lucide-react';
 
-import { getActivity } from '@/data/activity';
+import { activitySorts, getActivity } from '@/data/activity';
 import { ACTIVITY_DAYS, ActivitySubject } from '@/lib/activity';
+import { oneOf, plainQuery, searchQuery, withQuery } from '@/lib/list-params';
 import { isAdmin } from '@/lib/permissions';
 import { requireEditor } from '@/lib/session';
 
 import { ActivityEntry } from '@/components/activity-entry';
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ListControls } from '@/components/list-controls';
 import { Reveal } from '@/components/motion';
+import { Pagination } from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Activity' };
@@ -42,14 +45,35 @@ export default async function ActivityPage(
 ) {
   const session = await requireEditor();
   const admin = isAdmin(session.user.role);
-  const { show } = await props.searchParams;
+  const searchParams = await props.searchParams;
+  const { show, before } = searchParams;
+  const query = plainQuery(searchParams);
+  const q = searchQuery(searchParams.q);
+  const sort = oneOf(searchParams.sort, activitySorts);
   const shown = filters.filter((filter) => admin || !filter.adminOnly);
   const filter = shown.find((filter) => filter.show === show) ?? shown[0];
   const subjects: ActivitySubject[] | undefined =
     filter.subjects ??
     (admin ? undefined : [ActivitySubject.PLUSHIE, ActivitySubject.COMMENT]);
 
-  const { entries, context } = await getActivity({ subjects, admin });
+  // The last entry of the page before.
+  const cursor = typeof before === 'string' ? before : null;
+  const { entries, context, next } = await getActivity({
+    subjects,
+    admin,
+    cursor,
+    q,
+    sort,
+  });
+  // Paging keeps the search, order and tab; a tab starts at the first page.
+  const pageHref = (cursor: string | null) =>
+    withQuery('/dashboard/activity', { ...query, before: cursor });
+  const tabHref = (show?: string) =>
+    withQuery('/dashboard/activity', {
+      q: query.q ?? null,
+      sort: query.sort ?? null,
+      show: show ?? null,
+    });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -76,17 +100,33 @@ export default async function ActivityPage(
             asChild
           >
             <Link
-              href={
-                option.show
-                  ? `/dashboard/activity?show=${option.show}`
-                  : '/dashboard/activity'
-              }
+              href={tabHref(option.show)}
               aria-current={option === filter ? 'page' : undefined}
             >
               {option.label}
             </Link>
           </Button>
         ))}
+      </Reveal>
+
+      <Reveal>
+        <ListControls
+          query={query}
+          search={{
+            label: 'Search activity',
+            placeholder: 'Search plushies, accounts or who did it',
+          }}
+          selects={[
+            {
+              param: 'sort',
+              label: 'Order',
+              options: [
+                { value: 'newest', label: 'Newest first' },
+                { value: 'oldest', label: 'Oldest first' },
+              ],
+            },
+          ]}
+        />
       </Reveal>
 
       {entries.length > 0 ? (
@@ -110,10 +150,21 @@ export default async function ActivityPage(
       ) : (
         <Reveal>
           <EmptyState icon={HistoryIcon} className='p-8'>
-            Nothing yet. Changes show up here as they happen.
+            {q
+              ? 'No changes match.'
+              : cursor
+                ? 'No more changes.'
+                : 'Nothing yet. Changes show up here as they happen.'}
           </EmptyState>
         </Reveal>
       )}
+
+      <Pagination
+        newest={cursor ? pageHref(null) : null}
+        older={next ? pageHref(next) : null}
+        newestLabel={sort === 'oldest' ? 'Oldest' : 'Newest'}
+        olderLabel={sort === 'oldest' ? 'Newer changes' : 'Older changes'}
+      />
     </div>
   );
 }

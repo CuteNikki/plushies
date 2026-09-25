@@ -237,12 +237,12 @@ describe('the comments page', () => {
       data: { deletedAt: new Date(), body: '', authorId: null },
     });
 
-    const first = await getCommentList(null);
+    const first = await getCommentList();
     expect(first.total).toBe(COMMENTS_PAGE_SIZE + 4);
     expect(first.comments[0].body).toBe(`Comment ${COMMENTS_PAGE_SIZE + 4}`);
     expect(first.comments).toHaveLength(COMMENTS_PAGE_SIZE);
 
-    const second = await getCommentList(first.next);
+    const second = await getCommentList({ cursor: first.next });
     expect(second.comments.map((c) => c.body)).toEqual([
       'Comment 4',
       'Comment 3',
@@ -258,10 +258,38 @@ describe('the comments page', () => {
     const top = await post(ann.browser, 'Top');
     await post(ben.browser, 'Reply', top);
 
-    const { comments } = await getCommentList(null);
+    const { comments } = await getCommentList();
     expect(comments.map((c) => [c.body, c.replyTo, c.replies])).toEqual([
       ['Reply', { author: { id: ann.user.id, name: 'Ann' }, body: 'Top' }, 0],
       ['Top', null, 1],
     ]);
+  });
+
+  test('searches text, names and plushies, and filters and orders', async () => {
+    const ann = await createUser({ name: 'Ann' });
+    const ben = await createUser({ name: 'Ben' });
+    const top = await post(ann.browser, 'Soft like a cloud');
+    await post(ben.browser, 'Totally agree', top);
+    const other = await createPlushie('Pickle');
+    actAs(ben.browser);
+    await addComment(other.id, { body: 'Crunchy' });
+
+    const bodies = async (options: Parameters<typeof getCommentList>[0]) =>
+      (await getCommentList(options)).comments.map((c) => c.body);
+
+    expect(await bodies({ q: 'CLOUD' })).toEqual(['Soft like a cloud']);
+    expect(await bodies({ q: 'ben' })).toEqual(['Crunchy', 'Totally agree']);
+    expect(await bodies({ q: 'pickle' })).toEqual(['Crunchy']);
+    expect(await bodies({ kind: 'replies' })).toEqual(['Totally agree']);
+    expect(await bodies({ kind: 'top' })).toEqual([
+      'Crunchy',
+      'Soft like a cloud',
+    ]);
+    expect(await bodies({ sort: 'oldest' })).toEqual([
+      'Soft like a cloud',
+      'Totally agree',
+      'Crunchy',
+    ]);
+    expect((await getCommentList({ q: 'ben' })).total).toBe(2);
   });
 });

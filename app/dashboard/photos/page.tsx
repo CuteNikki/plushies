@@ -2,22 +2,32 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { ImageIcon, PencilIcon, StarIcon } from 'lucide-react';
+import { ImageIcon, PencilIcon, SearchIcon, StarIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
+import { oneOf, plainQuery, searchQuery } from '@/lib/list-params';
 import { requireEditor } from '@/lib/session';
 import { count } from '@/lib/utils';
 
 import { BackButton } from '@/components/back-button';
 import { EmptyState } from '@/components/empty-state';
+import { ListControls } from '@/components/list-controls';
 import { Reveal } from '@/components/motion';
 import { StorageUsage } from '@/components/storage-usage';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = { title: 'Photos' };
 
-export default async function PhotosPage() {
+const sorts = ['most', 'fewest', 'name'] as const;
+
+export default async function PhotosPage(
+  props: PageProps<'/dashboard/photos'>
+) {
   await requireEditor();
+  const searchParams = await props.searchParams;
+  const query = plainQuery(searchParams);
+  const q = searchQuery(searchParams.q)?.toLowerCase();
+  const sort = oneOf(searchParams.sort, sorts);
   // Each plushie's photos as its page shows them: the thumbnail, then the
   // gallery in order. Plushies without any are under Needs attention.
   const plushies = (await getPlushies())
@@ -28,12 +38,20 @@ export default async function PhotosPage() {
         ...plushie.gallery.map((photo) => ({ ...photo, main: false })),
       ],
     }))
-    .filter((plushie) => plushie.photos.length > 0)
-    // Most photos first: the wide cards take each row first and the small
-    // ones fill in after, so the gaps end up at the end, not in between.
+    .filter(
+      (plushie) =>
+        plushie.photos.length > 0 &&
+        (!q || plushie.name.toLowerCase().includes(q))
+    )
+    // Most photos first by default: the wide cards take each row first and
+    // the small ones fill in after, so the gaps end up at the end.
     .sort(
       (a, b) =>
-        b.photos.length - a.photos.length || a.name.localeCompare(b.name)
+        (sort === 'most'
+          ? b.photos.length - a.photos.length
+          : sort === 'fewest'
+            ? a.photos.length - b.photos.length
+            : 0) || a.name.localeCompare(b.name)
     );
   const total = plushies.reduce((sum, p) => sum + p.photos.length, 0);
 
@@ -55,9 +73,29 @@ export default async function PhotosPage() {
         <StorageUsage />
       </Reveal>
 
+      <Reveal>
+        <ListControls
+          query={query}
+          search={{ label: 'Search photos', placeholder: 'Search plushies' }}
+          selects={[
+            {
+              param: 'sort',
+              label: 'Order',
+              options: [
+                { value: 'most', label: 'Most photos' },
+                { value: 'fewest', label: 'Fewest photos' },
+                { value: 'name', label: 'Name A–Z' },
+              ],
+            },
+          ]}
+        />
+      </Reveal>
+
       {plushies.length === 0 && (
         <Reveal>
-          <EmptyState icon={ImageIcon}>No photos yet.</EmptyState>
+          <EmptyState icon={q ? SearchIcon : ImageIcon}>
+            {q ? 'No plushies match.' : 'No photos yet.'}
+          </EmptyState>
         </Reveal>
       )}
 

@@ -9,6 +9,7 @@ import {
   signOutUser,
   viewAsUser,
 } from '@/actions/users';
+import { getUsers } from '@/data/users';
 import { ActivityType } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -196,5 +197,22 @@ describe('viewing the site as someone', () => {
       })
     );
     expect((await sessionOf(admin.browser))?.user.id).toBe(admin.user.id);
+  });
+});
+
+describe('the users page', () => {
+  test('searches names and emails, filters by role, and orders', async () => {
+    const { user } = await adminAndUser();
+    await createUser({ name: 'Eddie', role: Role.EDITOR });
+    await banUser(user.user.id, { reason: '', duration: 'permanent' });
+    const names = async (options: Parameters<typeof getUsers>[0]) =>
+      (await getUsers(options)).map((u) => u.name);
+
+    expect(await names({})).toEqual(['Ada', 'Bea', 'Eddie']);
+    expect(await names({ sort: 'newest' })).toEqual(['Eddie', 'Bea', 'Ada']);
+    expect(await names({ q: 'EDDIE@example' })).toEqual(['Eddie']);
+    expect(await names({ role: 'editor' })).toEqual(['Eddie']);
+    expect(await names({ role: 'banned' })).toEqual(['Bea']);
+    expect(await names({ role: 'banned', q: 'ada' })).toEqual([]);
   });
 });

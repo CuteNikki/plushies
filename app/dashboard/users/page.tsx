@@ -1,11 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { getUsers } from '@/data/users';
+import { UsersIcon } from 'lucide-react';
+
+import { getUsers, userRoles, userSorts } from '@/data/users';
 import { isBanned } from '@/lib/bans';
+import { oneOf, plainQuery, searchQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
+import { EmptyState } from '@/components/empty-state';
+import { ListControls } from '@/components/list-controls';
 import { Reveal } from '@/components/motion';
 import { PrivateText } from '@/components/private-text';
 import { RoleSelect } from '@/components/role-select';
@@ -14,9 +19,15 @@ import { UserBadges } from '@/components/user-badges';
 
 export const metadata: Metadata = { title: 'Users' };
 
-export default async function UsersPage() {
+export default async function UsersPage(props: PageProps<'/dashboard/users'>) {
   const session = await requireAdmin();
-  const users = await getUsers();
+  const searchParams = await props.searchParams;
+  const query = plainQuery(searchParams);
+  const users = await getUsers({
+    q: searchQuery(searchParams.q),
+    role: oneOf(searchParams.role, userRoles),
+    sort: oneOf(searchParams.sort, userSorts),
+  });
 
   return (
     <div className='flex flex-col gap-6'>
@@ -32,67 +43,109 @@ export default async function UsersPage() {
         </p>
       </Reveal>
 
-      {/* The card rises as a whole, then its rows fade in without moving, so
-          nothing slides past the card's edge. */}
-      <Reveal
-        as='ul'
-        className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
-      >
-        {users.map((user) => {
-          const isYou = user.id === session.user.id;
-          return (
-            <Reveal
-              as='li'
-              direction='none'
-              key={user.id}
-              className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
-            >
-              <div className='flex min-w-0 flex-col gap-1.5'>
-                <div className='flex min-w-0 items-center gap-1.5'>
-                  <Link
-                    href={`/dashboard/users/${user.id}`}
-                    className='truncate font-heading font-semibold hover:underline'
-                  >
-                    {user.name}
-                  </Link>
-                </div>
-                <PrivateText className='w-fit text-sm text-muted-foreground'>
-                  {user.email}
-                </PrivateText>
-                <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
-                  <UserBadges
-                    user={user}
-                    passkeys={user._count.passkeys}
-                    banned={isBanned(user)}
-                  />
-                  <span>
-                    Joined{' '}
-                    {user.createdAt.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </span>
-                </div>
-              </div>
-              <div className='self-start xs:order-last xs:self-center'>
-                <UserActions
-                  user={{ id: user.id, name: user.name, role: user.role }}
-                  banned={isBanned(user)}
-                  twoFactor={!!user.twoFactorEnabled}
-                  disabled={isYou}
-                />
-              </div>
-              <RoleSelect
-                userId={user.id}
-                role={user.role}
-                disabled={isYou}
-                className='col-span-2 w-full xs:col-span-1 xs:w-24'
-              />
-            </Reveal>
-          );
-        })}
+      <Reveal>
+        <ListControls
+          query={query}
+          search={{
+            label: 'Search accounts',
+            placeholder: 'Search names or emails',
+          }}
+          selects={[
+            {
+              param: 'role',
+              label: 'Role',
+              options: [
+                { value: 'all', label: 'Everyone' },
+                { value: 'admin', label: 'Admins' },
+                { value: 'editor', label: 'Editors' },
+                { value: 'user', label: 'Users' },
+                { value: 'banned', label: 'Banned' },
+              ],
+            },
+            {
+              param: 'sort',
+              label: 'Order',
+              options: [
+                { value: 'oldest', label: 'Oldest first' },
+                { value: 'newest', label: 'Newest first' },
+                { value: 'name', label: 'Name A–Z' },
+              ],
+            },
+          ]}
+        />
       </Reveal>
+
+      {users.length === 0 && (
+        <Reveal>
+          <EmptyState icon={UsersIcon}>No accounts match.</EmptyState>
+        </Reveal>
+      )}
+
+      {users.length > 0 && (
+        <>
+          {/* The card rises as a whole, then its rows fade in without moving, so
+          nothing slides past the card's edge. */}
+          <Reveal
+            as='ul'
+            className='flex flex-col divide-y rounded-xl ring-1 ring-foreground/10'
+          >
+            {users.map((user) => {
+              const isYou = user.id === session.user.id;
+              return (
+                <Reveal
+                  as='li'
+                  direction='none'
+                  key={user.id}
+                  className='grid grid-cols-[1fr_auto] items-center gap-3 p-4 xs:grid-cols-[1fr_auto_auto]'
+                >
+                  <div className='flex min-w-0 flex-col gap-1.5'>
+                    <div className='flex min-w-0 items-center gap-1.5'>
+                      <Link
+                        href={`/dashboard/users/${user.id}`}
+                        className='truncate font-heading font-semibold hover:underline'
+                      >
+                        {user.name}
+                      </Link>
+                    </div>
+                    <PrivateText className='w-fit text-sm text-muted-foreground'>
+                      {user.email}
+                    </PrivateText>
+                    <div className='flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground'>
+                      <UserBadges
+                        user={user}
+                        passkeys={user._count.passkeys}
+                        banned={isBanned(user)}
+                      />
+                      <span>
+                        Joined{' '}
+                        {user.createdAt.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className='self-start xs:order-last xs:self-center'>
+                    <UserActions
+                      user={{ id: user.id, name: user.name, role: user.role }}
+                      banned={isBanned(user)}
+                      twoFactor={!!user.twoFactorEnabled}
+                      disabled={isYou}
+                    />
+                  </div>
+                  <RoleSelect
+                    userId={user.id}
+                    role={user.role}
+                    disabled={isYou}
+                    className='col-span-2 w-full xs:col-span-1 xs:w-24'
+                  />
+                </Reveal>
+              );
+            })}
+          </Reveal>
+        </>
+      )}
     </div>
   );
 }

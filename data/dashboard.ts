@@ -102,6 +102,7 @@ export async function getPlushieList() {
     photos: row._count.gallery + (row.thumbnailKey ? 1 : 0),
     likes: row._count.likes,
     missing: missingFrom(row),
+    species: row.species,
     birthday: row.birthday,
     updatedAt: row.updatedAt.toISOString(),
     isNew: isNew(row),
@@ -241,21 +242,48 @@ export async function getDashboard({ admin }: { admin: boolean }) {
 /** How many comments the comments page shows at a time. */
 export const COMMENTS_PAGE_SIZE = 30;
 
+export const commentSorts = ['newest', 'oldest'] as const;
+export const commentKinds = ['all', 'top', 'replies'] as const;
+
 /**
- * Comments for the dashboard's comments page, newest first, a page at a
- * time: `cursor` is the last one of the page before. "[deleted]" ones are
- * left out; only their replies still show.
+ * Comments for the dashboard's comments page, a page at a time: `cursor` is
+ * the last one of the page before. "[deleted]" ones are left out; only their
+ * replies still show. `q` searches the text, the author and the plushie.
  */
-export async function getCommentList(cursor: string | null) {
+export async function getCommentList({
+  cursor = null,
+  q = null,
+  sort = 'newest',
+  kind = 'all',
+}: {
+  cursor?: string | null;
+  q?: string | null;
+  sort?: (typeof commentSorts)[number];
+  kind?: (typeof commentKinds)[number];
+} = {}) {
+  const contains = q && { contains: q, mode: 'insensitive' as const };
+  const where: Prisma.CommentWhereInput = {
+    deletedAt: null,
+    ...(kind === 'top' && { parentId: null }),
+    ...(kind === 'replies' && { parentId: { not: null } }),
+    ...(contains && {
+      OR: [
+        { body: contains },
+        { author: { name: contains } },
+        { plushie: { name: contains } },
+      ],
+    }),
+  };
+  const direction = sort === 'oldest' ? 'asc' : 'desc';
   const [rows, total] = await Promise.all([
     db.comment.findMany({
-      where: { deletedAt: null },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      where,
+      orderBy: [{ createdAt: direction }, { id: direction }],
       take: COMMENTS_PAGE_SIZE + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       select: commentRowSelect,
     }),
-    db.comment.count({ where: { deletedAt: null } }),
+    db.comment.count({ where }),
   ]);
   const page = rows.slice(0, COMMENTS_PAGE_SIZE);
 

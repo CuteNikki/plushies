@@ -38,6 +38,17 @@ Go to `/dashboard` and click **New plushie**. Each plushie has a thumbnail (show
 
 Edit `prisma/schema.prisma`, then run `bun db:migrate` to create a migration. In production, run `bun db:deploy` to apply migrations.
 
+## Tests
+
+Tests live in `tests/`, one file per area: plushies and photos, comments, likes and user management, bans, reverts, two-step sign-in, account settings, and rules like birthdays. They need Docker running:
+
+```bash
+bun run test                           # all of them
+bun run test tests/comments.test.ts    # one file
+```
+
+Each run starts a throwaway Postgres in Docker, applies the migrations and removes it again afterwards. The tests empty the database before each test, so they refuse to run against anything else. Don't run plain `bun test`: without the throwaway database it stops right away. Emails are recorded instead of sent, and UploadThing is replaced by a pretend file store.
+
 ## Colors
 
 The pink/purple theme lives in `app/globals.css` (`:root` for light mode, `.dark` for dark mode).

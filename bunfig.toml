@@ -1,0 +1,4 @@
+[test]
+# Checks the database is a local one and swaps in Next.js stand-ins.
+preload = ["./tests/setup.ts"]
+root = "./tests"

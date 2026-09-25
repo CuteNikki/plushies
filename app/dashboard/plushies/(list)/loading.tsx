@@ -26,7 +26,11 @@ export default function PlushiesLoading() {
       <ListSkeleton rows={3}>
         <Skeleton className='size-14 shrink-0 rounded-xl' />
         <TextLinesSkeleton />
-        <Skeleton className='h-6 w-14' />
+        {/* Edit, and ⋯ for the rest. */}
+        <div className='flex shrink-0 items-center gap-1'>
+          <Skeleton className='h-6 w-14' />
+          <Skeleton className='size-6' />
+        </div>
       </ListSkeleton>
     </LoadingPage>
   );

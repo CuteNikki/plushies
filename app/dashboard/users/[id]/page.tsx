@@ -102,69 +102,6 @@ export default async function UserPage(
         </Reveal>
       </div>
 
-      {!isYou && (
-        <Section
-          title='Ban'
-          description={
-            banned
-              ? undefined
-              : 'Signs them out everywhere and stops them signing in. They see the reason, if you give one, when they try.'
-          }
-        >
-          {banned ? (
-            <div className='flex flex-col gap-3 rounded-xl bg-destructive/5 p-4 ring-1 ring-destructive/20'>
-              <p className='text-sm'>
-                Banned
-                {user.bannedBy && (
-                  <>
-                    {' '}
-                    by{' '}
-                    <UserContextMenu user={user.bannedBy}>
-                      <Link
-                        href={`/dashboard/users/${user.bannedBy.id}`}
-                        className='font-semibold hover:underline'
-                      >
-                        {user.bannedBy.name}
-                      </Link>
-                    </UserContextMenu>
-                  </>
-                )}
-                {user.bannedAt && (
-                  <>
-                    {' '}
-                    <LocalTime iso={user.bannedAt.toISOString()} />
-                  </>
-                )}
-                {user.banExpires ? (
-                  <>
-                    , until{' '}
-                    <LocalTime iso={user.banExpires.toISOString()} absolute />.
-                  </>
-                ) : (
-                  ', until lifted.'
-                )}
-              </p>
-              <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
-                {user.banReason ?? (
-                  <span className='text-muted-foreground italic'>
-                    No reason given
-                  </span>
-                )}
-              </p>
-              <UnbanButton user={user} />
-            </div>
-          ) : isAdmin(user.role) ? (
-            <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
-              Admins can&rsquo;t be banned. Make them an editor first.
-            </p>
-          ) : (
-            <div className='rounded-xl p-4 ring-1 ring-foreground/10'>
-              <BanForm user={user} />
-            </div>
-          )}
-        </Section>
-      )}
-
       <Section
         title='Likes'
         description={count(user._count.likes, 'plushie') + ' liked.'}
@@ -275,6 +212,71 @@ export default async function UserPage(
           </EmptyState>
         )}
       </Section>
+
+      {/* Last: it's not there on your own page, and everything above stays
+          put either way, as the loading placeholders expect. */}
+      {!isYou && (
+        <Section
+          title='Ban'
+          description={
+            banned
+              ? undefined
+              : 'Signs them out everywhere and stops them signing in. They see the reason, if you give one, when they try.'
+          }
+        >
+          {banned ? (
+            <div className='flex flex-col gap-3 rounded-xl bg-destructive/5 p-4 ring-1 ring-destructive/20'>
+              <p className='text-sm'>
+                Banned
+                {user.bannedBy && (
+                  <>
+                    {' '}
+                    by{' '}
+                    <UserContextMenu user={user.bannedBy}>
+                      <Link
+                        href={`/dashboard/users/${user.bannedBy.id}`}
+                        className='font-semibold hover:underline'
+                      >
+                        {user.bannedBy.name}
+                      </Link>
+                    </UserContextMenu>
+                  </>
+                )}
+                {user.bannedAt && (
+                  <>
+                    {' '}
+                    <LocalTime iso={user.bannedAt.toISOString()} />
+                  </>
+                )}
+                {user.banExpires ? (
+                  <>
+                    , until{' '}
+                    <LocalTime iso={user.banExpires.toISOString()} absolute />.
+                  </>
+                ) : (
+                  ', until lifted.'
+                )}
+              </p>
+              <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
+                {user.banReason ?? (
+                  <span className='text-muted-foreground italic'>
+                    No reason given
+                  </span>
+                )}
+              </p>
+              <UnbanButton user={user} />
+            </div>
+          ) : isAdmin(user.role) ? (
+            <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
+              Admins can&rsquo;t be banned. Make them an editor first.
+            </p>
+          ) : (
+            <div className='rounded-xl p-4 ring-1 ring-foreground/10'>
+              <BanForm user={user} />
+            </div>
+          )}
+        </Section>
+      )}
     </div>
   );
 }

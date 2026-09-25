@@ -73,14 +73,14 @@ export default function DashboardLoading() {
           title='Recently edited'
           description='Plushies that have been recently edited.'
         >
-          <Rows aside={<Skeleton className='h-6 w-14 shrink-0' />} />
+          <Rows aside={<Actions edit />} />
         </Section>
         <Section
           title='Needs attention'
           description='3 plushies whose page is still missing something.'
         >
           <Rows
-            aside={<Skeleton className='h-6 w-14 shrink-0' />}
+            aside={<Actions edit />}
             detail={
               <div className='flex gap-1'>
                 <Skeleton className='h-6 w-24 rounded-full' />
@@ -93,21 +93,40 @@ export default function DashboardLoading() {
           title='Recent comments'
           description='12 comments in the last 7 days.'
         >
-          <Rows aside={<Skeleton className='h-4 w-20 shrink-0' />} />
+          <Rows
+            aside={
+              <>
+                <Skeleton className='h-4 w-20 shrink-0' />
+                <Actions />
+              </>
+            }
+          />
         </Section>
         <Section
           title='Upcoming birthdays'
           description='Whose birthday comes next.'
         >
-          <Rows aside={<Skeleton className='h-4 w-16 shrink-0' />} />
+          <Rows
+            aside={
+              <>
+                <Skeleton className='h-4 w-16 shrink-0' />
+                <Actions />
+              </>
+            }
+          />
         </Section>
         <Section
           title='New accounts'
           description='3 accounts in the last 7 days.'
         >
           <Rows
-            photo={false}
-            aside={<Skeleton className='h-6 w-14 rounded-full' />}
+            photo='rounded-full'
+            aside={
+              <div className='flex shrink-0 items-center gap-1'>
+                <Skeleton className='h-6 w-14 rounded-full' />
+                <Skeleton className='size-6' />
+              </div>
+            }
           />
         </Section>
         <Section title='Photo storage' description='Space used on UploadThing.'>
@@ -141,16 +160,27 @@ function Section({
   );
 }
 
+/** The end of a row: its ⋯ button, after Edit on rows that have one. */
+function Actions({ edit }: { edit?: boolean }) {
+  return (
+    <div className='flex shrink-0 items-center gap-1'>
+      {edit && <Skeleton className='h-6 w-14' />}
+      <Skeleton className='size-6' />
+    </div>
+  );
+}
+
 /**
- * Three rows as tall as the real ones: a photo, a name with a line under
- * it (or `detail`), and something on the right.
+ * Three rows as tall as the real ones: a photo (or a round picture), a name
+ * with a line under it (or `detail`), and what's on the right.
  */
 function Rows({
-  photo = true,
+  photo = 'rounded-lg',
   detail,
   aside,
 }: {
-  photo?: boolean;
+  /** The photo's shape: a plushie's, or someone's round picture. */
+  photo?: 'rounded-lg' | 'rounded-full';
   detail?: React.ReactNode;
   aside: React.ReactNode;
 }) {
@@ -159,7 +189,7 @@ function Rows({
       rows={3}
       rowClassName='flex min-h-18 items-center gap-3 px-3 py-2'
     >
-      {photo && <Skeleton className='size-10 shrink-0 rounded-lg' />}
+      <Skeleton className={cn('size-10 shrink-0', photo)} />
       <div className='flex min-w-0 flex-1 flex-col gap-2'>
         <Skeleton className='h-5 w-32 max-w-full' />
         {detail ?? <Skeleton className='h-4 w-48 max-w-full' />}

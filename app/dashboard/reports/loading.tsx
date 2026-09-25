@@ -1,7 +1,7 @@
 import {
-  CommentRowsSkeleton,
   HeadingSkeleton,
   LoadingPage,
+  ReportCardSkeleton,
 } from '@/components/skeletons';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -12,9 +12,17 @@ export default function ReportsLoading() {
       <Skeleton className='h-6 w-24' />
       <HeadingSkeleton
         title='Reports'
-        subtitle='2 reported comments to look at.'
+        subtitle='Comments and accounts people reported. 3 reports in 24 hours hide a comment until it’s kept or deleted.'
       />
-      <CommentRowsSkeleton rows={2} />
+      {/* All, Comments and Users, then Open and Closed. */}
+      <div className='flex flex-wrap gap-2'>
+        <Skeleton className='h-9 w-60 rounded-lg' />
+        <Skeleton className='h-9 w-36 rounded-lg' />
+      </div>
+      <div className='flex flex-col gap-4'>
+        <ReportCardSkeleton />
+        <ReportCardSkeleton />
+      </div>
     </LoadingPage>
   );
 }

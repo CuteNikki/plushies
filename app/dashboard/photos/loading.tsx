@@ -26,6 +26,8 @@ export default function PhotosLoading() {
                 <Skeleton className='h-6 w-24' />
                 <Skeleton className='h-5 w-14' />
               </div>
+              {/* Edit, and ⋯ for the rest. */}
+              <Skeleton className='size-6' />
               <Skeleton className='size-6' />
             </div>
             <div className='flex flex-wrap gap-2'>

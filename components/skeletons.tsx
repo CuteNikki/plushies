@@ -155,7 +155,7 @@ export function ListControlsSkeleton({
 
 /**
  * Comments like CommentRow shows them: the plushie's photo and name, who
- * wrote it and when, the text, and the Delete button.
+ * wrote it and when, the text, and the Delete and ⋯ buttons.
  */
 export function CommentRowsSkeleton({ rows = 3 }: { rows?: number }) {
   return (
@@ -167,7 +167,10 @@ export function CommentRowsSkeleton({ rows = 3 }: { rows?: number }) {
             <Skeleton className='my-0.5 h-5 w-24 max-w-full' />
             <Skeleton className='my-0.5 h-4 w-36 max-w-full' />
           </div>
-          <Skeleton className='h-6 w-18 shrink-0' />
+          <div className='flex shrink-0 gap-1'>
+            <Skeleton className='h-6 w-18' />
+            <Skeleton className='size-6' />
+          </div>
         </div>
         <Skeleton className='my-0.5 h-4 w-full max-w-md' />
       </div>
@@ -241,5 +244,42 @@ export function AuthCardSkeleton({
         <Skeleton className={cn('w-full rounded-2xl', height)} />
       </div>
     </LoadingPage>
+  );
+}
+
+/**
+ * A report like ReportCard shows it: the strip saying what and where it
+ * stands, who, their comment and where it was posted, the table of reports,
+ * and the buttons.
+ */
+export function ReportCardSkeleton() {
+  return (
+    <div className='overflow-hidden rounded-xl ring-1 ring-foreground/10'>
+      <div className='flex items-center gap-2 border-b bg-muted/50 px-4 py-2'>
+        <Skeleton className='my-0.5 h-4 w-20' />
+        <Skeleton className='my-0.5 h-4 w-44 max-w-full' />
+      </div>
+      <div className='flex flex-col gap-4 p-4'>
+        <div className='flex items-center gap-3'>
+          <Skeleton className='size-10 shrink-0 rounded-full' />
+          <div className='flex flex-col gap-1.5'>
+            <Skeleton className='h-5 w-28' />
+            <Skeleton className='h-4 w-24' />
+          </div>
+        </div>
+        <Skeleton className='h-9 w-full rounded-lg' />
+        <Skeleton className='h-6 w-48 max-w-full' />
+        {/* The table: its headings, then a report. */}
+        <div className='flex flex-col gap-2.5 border-t pt-3'>
+          <Skeleton className='h-3 w-72 max-w-full' />
+          <Skeleton className='h-4 w-80 max-w-full' />
+        </div>
+        <div className='flex gap-2'>
+          <Skeleton className='h-6 w-16' />
+          <Skeleton className='h-6 w-16' />
+          <Skeleton className='h-6 w-24' />
+        </div>
+      </div>
+    </div>
   );
 }

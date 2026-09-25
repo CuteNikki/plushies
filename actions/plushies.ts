@@ -56,10 +56,11 @@ const plushieSchema = z.object({
       (value) => !value || parseBirthday(value),
       "That birthday isn't a real date"
     )
-    .refine(
-      (value) => !value || isNotInFuture(parseBirthday(value)!),
-      "The birthday can't be in the future"
-    ),
+    // Zod runs this even when the check above failed, so it skips those.
+    .refine((value) => {
+      const birthday = value && parseBirthday(value);
+      return !birthday || isNotInFuture(birthday);
+    }, "The birthday can't be in the future"),
   gender: optional,
   pronouns: optional,
   origin: optional,

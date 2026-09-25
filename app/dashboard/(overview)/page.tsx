@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Suspense } from 'react';
 
 import {
   CakeIcon,
@@ -22,17 +21,16 @@ import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
 import { requireEditor } from '@/lib/session';
-import { getStorageUsage } from '@/lib/uploads';
-import { cn, count, formatBytes } from '@/lib/utils';
+import { cn, count } from '@/lib/utils';
 
 import { Greeting } from '@/components/greeting';
 import { LocalTime } from '@/components/local-time';
 import { MissingBadges } from '@/components/missing-badges';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { PlushiePhoto } from '@/components/plushie-photo';
+import { StorageUsage } from '@/components/storage-usage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata: Metadata = { title: 'Dashboard' };
 
@@ -51,12 +49,17 @@ export default async function DashboardPage() {
   const dashboard = await getDashboard({ admin });
   const { stats, users } = dashboard;
 
-  const tiles = [
-    { label: 'Plushies', value: stats.plushies },
-    { label: 'Photos', value: stats.photos },
+  // Tiles with a page of their own link to it.
+  const tiles: { label: string; value: number; href?: string }[] = [
+    { label: 'Plushies', value: stats.plushies, href: '/dashboard/plushies' },
+    { label: 'Photos', value: stats.photos, href: '/dashboard/photos' },
     { label: 'Likes', value: stats.likes },
     { label: 'Comments', value: stats.comments },
-    { label: `Changes in ${RECENT_DAYS} days`, value: stats.recentChanges },
+    {
+      label: `Changes in ${RECENT_DAYS} days`,
+      value: stats.recentChanges,
+      href: '/dashboard/activity',
+    },
   ];
 
   const links = [
@@ -106,12 +109,36 @@ export default async function DashboardPage() {
         {tiles.map((tile) => (
           <RevealItem
             key={tile.label}
-            className='flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 last:col-span-2 lg:last:col-span-1'
+            className='group relative flex flex-col gap-1 rounded-xl p-4 ring-1 ring-foreground/10 transition-colors last:col-span-2 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:hover]:bg-muted/50 lg:last:col-span-1'
           >
-            <dt className='text-sm text-muted-foreground'>{tile.label}</dt>
+            <dt
+              className={cn(
+                'text-sm text-muted-foreground',
+                tile.href && 'pr-5'
+              )}
+            >
+              {tile.label}
+            </dt>
             <dd className='text-3xl font-semibold'>
-              {compact.format(tile.value)}
+              {tile.href ? (
+                // Stretched over the whole tile, so all of it is clickable.
+                <Link
+                  href={tile.href}
+                  aria-label={`${tile.label}: ${compact.format(tile.value)}`}
+                  className='outline-none after:absolute after:inset-0 after:rounded-xl'
+                >
+                  {compact.format(tile.value)}
+                </Link>
+              ) : (
+                compact.format(tile.value)
+              )}
             </dd>
+            {tile.href && (
+              <ChevronRightIcon
+                className='absolute top-4 right-4 size-4 text-muted-foreground transition-transform group-has-[a:hover]:translate-x-0.5'
+                aria-hidden
+              />
+            )}
           </RevealItem>
         ))}
       </RevealGroup>
@@ -286,10 +313,16 @@ export default async function DashboardPage() {
           </Section>
         )}
 
-        <Section title='Photo storage' description='Space used on UploadThing.'>
-          <Suspense fallback={<StorageSkeleton />}>
+        <Section
+          title='Photo storage'
+          description='Space used on UploadThing.'
+          action={<SeeAll href='/dashboard/photos'>All photos</SeeAll>}
+        >
+          {/* Not a list, so it keeps its own height instead of stretching
+              to match the section beside it. */}
+          <div className='self-start'>
             <StorageUsage />
-          </Suspense>
+          </div>
         </Section>
       </div>
     </div>
@@ -333,79 +366,6 @@ function birthdayDate(value: string) {
     return `Sometime in ${date.toLocaleDateString('en-US', { month: 'long' })}`;
   }
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-}
-
-/**
- * Looked up from UploadThing on each visit. It streams in after the rest of
- * the page, so a slow answer doesn't hold up the dashboard.
- */
-async function StorageUsage() {
-  const usage = await getStorageUsage().catch((error) => {
-    console.error('Failed to load UploadThing usage', error);
-    return null;
-  });
-  if (!usage)
-    return <Empty>Couldn&rsquo;t load storage usage right now.</Empty>;
-
-  const share =
-    usage.limitBytes > 0 ? Math.min(usage.usedBytes / usage.limitBytes, 1) : 0;
-  const percent = Math.round(share * 100);
-  const almostFull = share >= 0.9;
-
-  return (
-    <div className='flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10'>
-      <div className='flex flex-wrap items-baseline justify-between gap-x-2'>
-        <p className='font-semibold'>
-          {formatBytes(usage.usedBytes)}{' '}
-          <span className='font-normal text-muted-foreground'>
-            of {formatBytes(usage.limitBytes)}
-          </span>
-        </p>
-        <p
-          className={cn(
-            'text-sm',
-            almostFull
-              ? 'font-semibold text-destructive'
-              : 'text-muted-foreground'
-          )}
-        >
-          {almostFull ? `Almost full, ${percent}%` : `${percent}% used`}
-        </p>
-      </div>
-      <div
-        role='meter'
-        aria-label='Photo storage used'
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
-        className={cn(
-          'h-2.5 overflow-hidden rounded-full',
-          almostFull ? 'bg-destructive/15' : 'bg-primary/15'
-        )}
-      >
-        <div
-          className={cn(
-            'h-full rounded-full',
-            almostFull ? 'bg-destructive' : 'bg-primary'
-          )}
-          style={{ width: `${share * 100}%` }}
-        />
-      </div>
-      <p className='text-sm text-muted-foreground'>
-        {count(usage.files, 'file')} uploaded
-      </p>
-    </div>
-  );
-}
-
-function StorageSkeleton() {
-  return (
-    <div className='flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10'>
-      <Skeleton className='h-6 w-40' />
-      <Skeleton className='h-2.5 w-full rounded-full' />
-      <Skeleton className='h-5 w-28' />
-    </div>
-  );
 }
 
 function Section({

@@ -114,36 +114,43 @@ enum Role {
 }
 
 model User {
-  id               String          @id
-  name             String
-  email            String          @unique
-  emailVerified    Boolean         @default(false)
-  image            String?
-  role             Role            @default(USER)
+  id                  String          @id
+  name                String
+  email               String          @unique
+  emailVerified       Boolean         @default(false)
+  image               String?
+  role                Role            @default(USER)
   /// Whether signing in with a password asks for a second step.
-  twoFactorEnabled Boolean?        @default(false)
-  banned           Boolean?        @default(false)
-  banReason        String?
+  twoFactorEnabled    Boolean?        @default(false)
+  banned              Boolean?        @default(false)
+  banReason           String?
   /// When the ban ends by itself. Null bans for good.
-  banExpires       DateTime?
+  banExpires          DateTime?
   /// The admin who banned them, and when. Better Auth doesn't know these,
   /// and leaves them behind when a ban expires, so check banned first.
-  bannedById       String?
-  bannedBy         User?           @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
-  bannedAt         DateTime?
+  bannedById          String?
+  bannedBy            User?           @relation("BannedBy", fields: [bannedById], references: [id], onDelete: SetNull)
+  bannedAt            DateTime?
   /// Accounts this admin banned.
-  usersBanned      User[]          @relation("BannedBy")
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  sessions         Session[]
-  accounts         Account[]
-  twoFactors       TwoFactor[]
-  passkeys         Passkey[]
-  likes            PlushieLike[]
-  comments         Comment[]
+  usersBanned         User[]          @relation("BannedBy")
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  sessions            Session[]
+  accounts            Account[]
+  twoFactors          TwoFactor[]
+  passkeys            Passkey[]
+  likes               PlushieLike[]
+  comments            Comment[]
   /// Comments this account reported, and reports it dealt with.
-  reportsMade      CommentReport[] @relation("ReportedBy")
-  reportsResolved  CommentReport[] @relation("ResolvedBy")
+  reportsMade         CommentReport[] @relation("ReportedBy")
+  reportsResolved     CommentReport[] @relation("ResolvedBy")
+  /// Reports about this account, e.g. its name or picture.
+  reportsAgainst      UserReport[]    @relation("ReportedUser")
+  userReportsMade     UserReport[]    @relation("UserReportedBy")
+  userReportsResolved UserReport[]    @relation("UserReportResolvedBy")
+  /// Set when an editor or admin reset their name after reports; their
+  /// account page asks for a new one until they change it.
+  nameResetAt         DateTime?
 
   @@map("user")
 }
@@ -331,4 +338,45 @@ model CommentReport {
   @@unique([commentId, reporterId])
   @@index([resolvedAt, createdAt])
   @@map("comment_report")
+}
+
+/// Why someone reported an account.
+enum UserReportReason {
+  /// An offensive name, or one pretending to be someone.
+  NAME
+  PICTURE
+  SPAM
+  /// Harassment, or anything else, said in the note.
+  OTHER
+}
+
+/// What an editor or admin did about a reported account.
+enum UserReportOutcome {
+  DISMISSED
+  /// Their name or picture was reset.
+  RESET
+  BANNED
+}
+
+/// Someone flagging an account, e.g. for its name. Open until an editor or
+/// admin deals with it, which closes every open report on the account.
+model UserReport {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation("ReportedUser", fields: [userId], references: [id], onDelete: Cascade)
+  /// Null once their account is deleted; the report still counts.
+  reporterId   String?
+  reporter     User?              @relation("UserReportedBy", fields: [reporterId], references: [id], onDelete: SetNull)
+  reason       UserReportReason
+  /// What they added, if anything.
+  note         String?
+  createdAt    DateTime           @default(now())
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   User?              @relation("UserReportResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  outcome      UserReportOutcome?
+
+  @@index([userId, resolvedAt])
+  @@index([resolvedAt, createdAt])
+  @@map("user_report")
 }

@@ -67,3 +67,62 @@ export function countOpenReports() {
     where: { deletedAt: null, reports: { some: { resolvedAt: null } } },
   });
 }
+
+/**
+ * Accounts with reports no one has dealt with, the most recently reported
+ * first, with those reports. Their email is only for admins.
+ */
+export async function getOpenUserReports({ admin }: { admin: boolean }) {
+  const users = await db.user.findMany({
+    where: { reportsAgainst: { some: { resolvedAt: null } } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      banned: true,
+      banExpires: true,
+      createdAt: true,
+      reportsAgainst: {
+        where: { resolvedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          reason: true,
+          note: true,
+          createdAt: true,
+          reporter: { select: { id: true, name: true } },
+        },
+      },
+    },
+  });
+
+  return users
+    .map(({ reportsAgainst, email, banExpires, banned, ...user }) => ({
+      user: {
+        ...user,
+        email: admin ? email : null,
+        banned: isBanned({ banned, banExpires }),
+        createdAt: user.createdAt.toISOString(),
+      },
+      reports: reportsAgainst.map((report) => ({
+        ...report,
+        createdAt: report.createdAt.toISOString(),
+      })),
+    }))
+    .sort((a, b) =>
+      b.reports[0].createdAt.localeCompare(a.reports[0].createdAt)
+    );
+}
+
+export type OpenUserReport = Awaited<
+  ReturnType<typeof getOpenUserReports>
+>[number];
+
+/** Accounts waiting on someone to look at their reports. */
+export function countOpenUserReports() {
+  return db.user.count({
+    where: { reportsAgainst: { some: { resolvedAt: null } } },
+  });
+}

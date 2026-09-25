@@ -25,6 +25,8 @@ import {
   PencilIcon,
   ReplyIcon,
   Trash2Icon,
+  UserIcon,
+  UserRoundXIcon,
 } from 'lucide-react';
 
 import { addComment, deleteComment, editComment } from '@/actions/comments';
@@ -51,7 +53,7 @@ import {
   ItemMenuSeparator,
 } from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
-import { ReportDialog } from '@/components/report-dialog';
+import { ReportDialog, type ReportTarget } from '@/components/report-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -182,7 +184,7 @@ export function Comments({
   const [focus, setFocus] = useState<{ id: string; path: string[] } | null>(
     null
   );
-  const [reporting, setReporting] = useState<CommentView | null>(null);
+  const [reporting, setReporting] = useState<ReportTarget | null>(null);
   const [ask, confirmDialog] = useConfirm();
 
   useEffect(() => {
@@ -291,8 +293,7 @@ export function Comments({
 
   /**
    * Marks a comment they reported. If that hid it, it's hidden from them
-   * too: reporting is for comments that aren't theirs, and editors and
-   * admins delete rather than report.
+   * too, unless they're an editor or admin: it can't be their own.
    */
   function reported(id: string, hidden: boolean) {
     setPage(
@@ -302,9 +303,9 @@ export function Comments({
           threads: mapTree(before.threads, (item) =>
             item.id !== id
               ? item
-              : hidden
+              : hidden && !before.viewer.canModerate
                 ? { ...item, reported: true, hidden, body: '', author: null }
-                : { ...item, reported: true }
+                : { ...item, reported: true, hidden: hidden || item.hidden }
           ),
         }
     );
@@ -442,12 +443,7 @@ export function Comments({
       )}
       {confirmDialog}
       <ReportDialog
-        comment={
-          reporting && {
-            id: reporting.id,
-            authorName: reporting.author?.name ?? 'Someone',
-          }
-        }
+        target={reporting}
         onReportedAction={reported}
         onCloseAction={() => setReporting(null)}
       />
@@ -481,8 +477,8 @@ type Actions = {
   added: (comment: CommentView, parentId: string | null) => void;
   edited: (comment: CommentView) => void;
   remove: (comment: CommentView, own: boolean) => Promise<void>;
-  /** Opens the report form for it. */
-  report: (comment: CommentView) => void;
+  /** Opens the report form for a comment or its author. */
+  report: (target: ReportTarget) => void;
 };
 
 /** A comment, with its replies nested under it, and theirs under them. */
@@ -748,11 +744,12 @@ function CommentBody({
   const isEditing = actions.editing === comment.id;
   const linked = useContext(FocusContext)?.id === comment.id;
   const canDelete = own || viewer?.canModerate;
-  // Editors and admins can delete it instead.
-  const canReport = canWrite && !own && !viewer.canModerate;
+  const canReport = canWrite && !own;
   // Viewing as someone: what they could do shows, but can't be used.
   const readOnly = !!viewer?.viewingAs;
   const off = readOnly ? VIEWING_AS_MESSAGE : undefined;
+  // Admins can open the author's account from their name and picture.
+  const account = viewer?.canPurge ? `/dashboard/users/${author.id}` : null;
 
   async function copy(text: string, done: string) {
     try {
@@ -808,15 +805,40 @@ function CommentBody({
           >
             Copy link
           </ItemMenuItem>
+          {account && (
+            <ItemMenuItem icon={UserIcon} href={account}>
+              View {author.name}’s account
+            </ItemMenuItem>
+          )}
           {canReport && (
             <>
               <ItemMenuSeparator />
               <ItemMenuItem
                 icon={FlagIcon}
                 disabled={readOnly || comment.reported}
-                onSelect={() => actions.report(comment)}
+                onSelect={() =>
+                  actions.report({
+                    kind: 'comment',
+                    id: comment.id,
+                    authorName: author.name,
+                  })
+                }
               >
-                {comment.reported ? 'Reported' : 'Report'}
+                {comment.reported ? 'Comment reported' : 'Report comment'}
+              </ItemMenuItem>
+              {/* E.g. for their name or picture, not just what they wrote. */}
+              <ItemMenuItem
+                icon={UserRoundXIcon}
+                disabled={readOnly}
+                onSelect={() =>
+                  actions.report({
+                    kind: 'user',
+                    id: author.id,
+                    name: author.name,
+                  })
+                }
+              >
+                Report {author.name}
               </ItemMenuItem>
             </>
           )}
@@ -843,14 +865,33 @@ function CommentBody({
         aria-label={`Comment by ${author.name}`}
       >
         <div className='flex shrink-0 flex-col items-center gap-1'>
-          <span className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20'>
-            <UserAvatar user={author} />
-          </span>
+          {account ? (
+            <Link
+              href={account}
+              aria-label={`${author.name}’s account`}
+              className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20 transition-shadow outline-none hover:ring-2 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-ring'
+            >
+              <UserAvatar user={author} />
+            </Link>
+          ) : (
+            <span className='flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm text-primary ring-1 ring-primary/20'>
+              <UserAvatar user={author} />
+            </span>
+          )}
           {hasReplies && <span className='comment-line flex-1' />}
         </div>
         <div className='flex min-w-0 flex-1 flex-col gap-1'>
           <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
-            <span className='font-heading font-semibold'>{author.name}</span>
+            {account ? (
+              <Link
+                href={account}
+                className='font-heading font-semibold hover:underline'
+              >
+                {author.name}
+              </Link>
+            ) : (
+              <span className='font-heading font-semibold'>{author.name}</span>
+            )}
             {author.role !== Role.USER && (
               <Badge variant='secondary'>{roleLabels[author.role]}</Badge>
             )}

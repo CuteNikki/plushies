@@ -45,7 +45,7 @@ export function ReportActions({
   return (
     <div className='flex flex-wrap gap-2'>
       <Button
-        variant='outline'
+        variant='default'
         size='sm'
         disabled={busy}
         onClick={() =>
@@ -61,9 +61,8 @@ export function ReportActions({
         Keep
       </Button>
       <Button
-        variant='outline'
+        variant='destructive'
         size='sm'
-        className='hover:border-destructive/40 hover:text-destructive'
         disabled={busy}
         onClick={remove}
       >
@@ -73,9 +72,8 @@ export function ReportActions({
       {canBan && author && (
         <>
           <Button
-            variant='outline'
+            variant='destructive'
             size='sm'
-            className='hover:border-destructive/40 hover:text-destructive'
             disabled={busy}
             onClick={() => setBanOpen(true)}
           >

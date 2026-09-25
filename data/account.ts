@@ -30,7 +30,7 @@ export async function getAccountSettings(current: {
       }),
       db.user.findUniqueOrThrow({
         where: { id: current.userId },
-        select: { twoFactorEnabled: true },
+        select: { twoFactorEnabled: true, nameResetAt: true },
       }),
       // An authenticator app counts once its first code confirmed it.
       db.twoFactor.findFirst({
@@ -77,6 +77,8 @@ export async function getAccountSettings(current: {
   );
 
   return {
+    /** An editor or admin reset their name after reports. */
+    nameReset: !!user.nameResetAt,
     providers,
     hasPassword: providers.includes('credential'),
     discordAccountId: accounts.find((a) => a.providerId === 'discord')?.id,

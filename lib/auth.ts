@@ -187,10 +187,21 @@ export const auth = betterAuth({
     // Turning two-step sign-in off forgets every trusted device, not just
     // this one as Better Auth does, so turning it back on asks everywhere.
     after: createAuthMiddleware(async (ctx) => {
-      if (ctx.path !== '/two-factor/disable') return;
       if (isAPIError(ctx.context.returned)) return;
-      const session = await getSessionFromCtx(ctx);
-      if (session) await forgetTrustedDevices(session.user.id);
+      if (ctx.path === '/two-factor/disable') {
+        const session = await getSessionFromCtx(ctx);
+        if (session) await forgetTrustedDevices(session.user.id);
+      }
+      // A new name after an editor or admin reset theirs: stop asking.
+      if (ctx.path === '/update-user' && ctx.body?.name) {
+        const session = await getSessionFromCtx(ctx);
+        if (session) {
+          await db.user.updateMany({
+            where: { id: session.user.id, nameResetAt: { not: null } },
+            data: { nameResetAt: null },
+          });
+        }
+      }
     }),
   },
   plugins: [

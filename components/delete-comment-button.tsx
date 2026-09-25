@@ -27,9 +27,8 @@ export function DeleteCommentButton(props: DeleteCommentProps) {
   return (
     <>
       <Button
-        variant='outline'
+        variant='destructive'
         size='sm'
-        className='shrink-0 hover:border-destructive/40 hover:text-destructive'
         disabled={deleting}
         onClick={remove}
       >

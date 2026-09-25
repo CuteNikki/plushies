@@ -5,9 +5,12 @@ import { toast } from 'sonner';
 
 import { FlagIcon, Loader2Icon } from 'lucide-react';
 
-import { reportComment } from '@/actions/reports';
-import type { ReportReason } from '@/lib/generated/prisma/enums';
-import { REPORT_NOTE_MAX, reportReasons } from '@/lib/report-rules';
+import { reportComment, reportUser } from '@/actions/reports';
+import {
+  REPORT_NOTE_MAX,
+  reportReasons,
+  userReportReasons,
+} from '@/lib/report-rules';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,22 +24,31 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
+/** What's being reported: a comment, or someone's account. */
+export type ReportTarget =
+  | { kind: 'comment'; id: string; authorName: string }
+  | { kind: 'user'; id: string; name: string };
+
 /**
- * Asks what's wrong with a comment, with an optional note, and reports it.
- * Open while `comment` is set.
+ * Asks what's wrong with a comment or an account, with an optional note, and
+ * reports it. Open while `target` is set.
  */
 export function ReportDialog({
-  comment,
+  target: current,
   onReportedAction,
   onCloseAction,
 }: {
-  comment: { id: string; authorName: string } | null;
-  /** Once it's reported; `hidden` if that was enough to hide it. */
+  target: ReportTarget | null;
+  /** Once a comment is reported; `hidden` if that was enough to hide it. */
   onReportedAction: (id: string, hidden: boolean) => void;
   onCloseAction: () => void;
 }) {
   const id = useId();
-  const [reason, setReason] = useState<ReportReason | null>(null);
+  // The last one, so its text stays while the dialog animates out.
+  const [target, setTarget] = useState(current);
+  if (current && current !== target) setTarget(current);
+  const reasons = target?.kind === 'user' ? userReportReasons : reportReasons;
+  const [reason, setReason] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
@@ -52,22 +64,31 @@ export function ReportDialog({
   }
 
   function send() {
-    if (!comment) return;
-    if (!reason) return setError('Pick what’s wrong with it');
+    if (!target) return;
+    if (!reason) return setError('Pick what’s wrong');
     startTransition(async () => {
-      const result = await reportComment(comment.id, { reason, note });
-      if (!result.ok) return setError(result.error);
-      onReportedAction(comment.id, result.hidden);
+      if (target.kind === 'comment') {
+        const result = await reportComment(target.id, { reason, note });
+        if (!result.ok) return setError(result.error);
+        onReportedAction(target.id, result.hidden);
+      } else {
+        const result = await reportUser(target.id, { reason, note });
+        if (!result.ok) return setError(result.error);
+      }
       toast.success('Thanks, an editor will take a look');
       close();
     });
   }
 
   return (
-    <Dialog open={!!comment} onOpenChange={(open) => !open && close()}>
+    <Dialog open={!!current} onOpenChange={(open) => !open && close()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Report {comment?.authorName}’s comment</DialogTitle>
+          <DialogTitle>
+            {target?.kind === 'user'
+              ? `Report ${target.name}`
+              : `Report ${target?.authorName}’s comment`}
+          </DialogTitle>
           <DialogDescription>
             An editor will look at it. Only editors and admins see who reported
             it.
@@ -81,8 +102,8 @@ export function ReportDialog({
           className='flex flex-col gap-4'
         >
           <fieldset className='flex flex-col gap-2'>
-            <legend className='sr-only'>What’s wrong with it</legend>
-            {Object.entries(reportReasons).map(([value, option]) => (
+            <legend className='sr-only'>What’s wrong</legend>
+            {Object.entries(reasons).map(([value, option]) => (
               // The whole card picks it, and shows once it's picked.
               <label
                 key={value}
@@ -94,7 +115,7 @@ export function ReportDialog({
                   value={value}
                   checked={reason === value}
                   onChange={() => {
-                    setReason(value as ReportReason);
+                    setReason(value);
                     setError(undefined);
                   }}
                   className='mt-0.5 accent-primary'

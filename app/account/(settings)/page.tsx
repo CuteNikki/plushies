@@ -20,6 +20,7 @@ export default async function AccountPage(props: PageProps<'/account'>) {
   const { error } = await props.searchParams;
 
   const {
+    nameReset,
     providers,
     hasPassword,
     discordAccountId,
@@ -41,6 +42,15 @@ export default async function AccountPage(props: PageProps<'/account'>) {
       </Reveal>
 
       <Section title='Profile'>
+        {nameReset && (
+          <p
+            role='status'
+            className='rounded-lg bg-primary/10 px-3 py-2 text-sm text-pretty ring-1 ring-primary/30'
+          >
+            An editor reset your name after people reported it. Pick a new one
+            that’s okay for everyone here.
+          </p>
+        )}
         <ProfileForm name={user.name} />
       </Section>
 

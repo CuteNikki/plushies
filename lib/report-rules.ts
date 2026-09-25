@@ -1,6 +1,6 @@
 // Shared by the report form and the server, so keep this free of server-only imports.
 
-import { ReportReason } from '@/lib/generated/prisma/enums';
+import { ReportReason, UserReportReason } from '@/lib/generated/prisma/enums';
 
 /** Why someone can report a comment, as the form lists them. */
 export const reportReasons = {
@@ -29,6 +29,33 @@ export function isReportReason(value: string): value is ReportReason {
   return Object.hasOwn(reportReasons, value);
 }
 
+/** Why someone can report an account, as the form lists them. */
+export const userReportReasons = {
+  [UserReportReason.NAME]: {
+    label: 'Their name',
+    description: 'Offensive, or pretending to be someone',
+  },
+  [UserReportReason.PICTURE]: {
+    label: 'Their picture',
+    description: 'Not okay for everyone to see here',
+  },
+  [UserReportReason.SPAM]: {
+    label: 'Spam or a bot',
+    description: 'Only here to advertise or flood the comments',
+  },
+  [UserReportReason.OTHER]: {
+    label: 'Harassment or something else',
+    description: 'Say what in the note',
+  },
+} as const satisfies Record<
+  UserReportReason,
+  { label: string; description: string }
+>;
+
+export function isUserReportReason(value: string): value is UserReportReason {
+  return Object.hasOwn(userReportReasons, value);
+}
+
 /** The longest note someone can add to a report. */
 export const REPORT_NOTE_MAX = 500;
 
@@ -40,7 +67,7 @@ export const REPORTS_TO_HIDE = 3;
 export const REPORT_WINDOW_HOURS = 24;
 
 /**
- * How many comments an account can report an hour, so no one can hide lots
- * of them with a few accounts.
+ * How many reports, of comments and accounts together, someone can send an
+ * hour, so no one can hide lots of comments with a few accounts.
  */
 export const REPORTS_PER_HOUR = 10;

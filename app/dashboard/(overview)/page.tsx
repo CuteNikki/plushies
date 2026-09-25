@@ -21,7 +21,7 @@ import {
   RECENT_DAYS,
   type DashboardPlushie,
 } from '@/data/dashboard';
-import { countOpenReports } from '@/data/reports';
+import { countOpenReports, countOpenUserReports } from '@/data/reports';
 import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
@@ -58,9 +58,10 @@ export default async function DashboardPage() {
   const admin = isAdmin(session.user.role);
   const viewer = { id: session.user.id, admin };
 
-  const [dashboard, openReports] = await Promise.all([
+  const [dashboard, reportedComments, reportedUsers] = await Promise.all([
     getDashboard({ admin }),
     countOpenReports(),
+    countOpenUserReports(),
   ]);
   const { stats, users } = dashboard;
 
@@ -101,8 +102,14 @@ export default async function DashboardPage() {
       icon: FlagIcon,
       title: 'Reports',
       text:
-        openReports > 0
-          ? `${count(openReports, 'reported comment')} to look at`
+        reportedComments + reportedUsers > 0
+          ? `${[
+              reportedComments > 0 &&
+                count(reportedComments, 'reported comment'),
+              reportedUsers > 0 && count(reportedUsers, 'reported account'),
+            ]
+              .filter(Boolean)
+              .join(' and ')} to look at`
           : 'Nothing reported right now',
     },
     ...(users

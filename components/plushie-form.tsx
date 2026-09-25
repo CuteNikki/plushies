@@ -2,7 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useActionState, useState, useTransition } from 'react';
+import {
+  startTransition,
+  useActionState,
+  useState,
+  useTransition,
+} from 'react';
 
 import {
   ArrowLeftIcon,
@@ -84,7 +89,16 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
   const error = state.error ?? uploadError;
 
   return (
-    <form action={formAction} className='flex flex-col gap-8'>
+    <form
+      // Not `action`: React resets a form's fields after its action runs,
+      // even when saving failed, and everything typed would be gone.
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        startTransition(() => formAction(formData));
+      }}
+      className='flex flex-col gap-8'
+    >
       {plushie && <input type='hidden' name='id' value={plushie.id} />}
       <input type='hidden' name='thumbnail' value={JSON.stringify(thumbnail)} />
       <input type='hidden' name='gallery' value={JSON.stringify(gallery)} />

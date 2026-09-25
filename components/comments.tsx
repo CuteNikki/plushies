@@ -43,6 +43,7 @@ import { EmptyState } from '@/components/empty-state';
 import { LocalTime } from '@/components/local-time';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
 
@@ -284,7 +285,7 @@ export function Comments({
   return (
     // isolate: the opened boxes sit above the thread lines, but not above
     // anything outside the comments, like the sticky header.
-    <section className='isolate flex flex-col gap-6' aria-labelledby='comments'>
+    <section className='isolate flex flex-col gap-4' aria-labelledby='comments'>
       <h2 id='comments' className='font-heading text-2xl font-semibold'>
         Comments
         {page && page.total > 0 && (
@@ -313,10 +314,7 @@ export function Comments({
           Comments couldn&rsquo;t be loaded. Try reloading the page.
         </Notice>
       ) : !page ? (
-        <p className='flex items-center gap-2 text-sm text-muted-foreground'>
-          <Loader2Icon className='size-4 animate-spin' aria-hidden />
-          Loading comments…
-        </p>
+        <CommentsSkeleton />
       ) : page.threads.length === 0 ? (
         <EmptyState icon={MessageCircleIcon}>
           No comments yet.
@@ -788,7 +786,9 @@ function CommentForm({
         aria-invalid={!!error || undefined}
         className='min-h-20'
       />
-      <div className='flex flex-wrap items-center justify-between gap-2'>
+      {/* At the top, so the count sits right under the box, not centered
+          next to the taller buttons. */}
+      <div className='flex flex-wrap items-start justify-between gap-2'>
         <p
           className={cn(
             'text-xs',
@@ -796,7 +796,7 @@ function CommentForm({
           )}
           aria-live='polite'
         >
-          {error ?? `${body.length}/${COMMENT_MAX} · No links`}
+          {error ?? `${body.length}/${COMMENT_MAX}`}
         </p>
         <div className='flex gap-2'>
           {onCancel && (
@@ -811,6 +811,32 @@ function CommentForm({
         </div>
       </div>
     </form>
+  );
+}
+
+/** Comments while they load, shaped like the real ones. */
+function CommentsSkeleton() {
+  return (
+    <div aria-busy>
+      <span className='sr-only' role='status'>
+        Loading comments…
+      </span>
+      <ul className='flex flex-col gap-6' aria-hidden>
+        {['w-full max-w-md', 'w-2/3', 'w-5/6 max-w-sm'].map((line) => (
+          <li key={line} className='flex gap-3'>
+            <Skeleton className='size-8 shrink-0 rounded-full' />
+            <div className='flex min-w-0 flex-1 flex-col gap-2'>
+              <div className='flex items-center gap-2'>
+                <Skeleton className='h-5 w-24' />
+                <Skeleton className='h-3 w-16' />
+              </div>
+              <Skeleton className={cn('h-4', line)} />
+              <Skeleton className='h-4 w-1/3' />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

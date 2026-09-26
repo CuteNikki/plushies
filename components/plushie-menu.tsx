@@ -3,7 +3,13 @@
 import { useTransition } from 'react';
 import { toast } from 'sonner';
 
-import { EyeIcon, LinkIcon, PencilIcon, Trash2Icon } from 'lucide-react';
+import {
+  CopyPlusIcon,
+  EyeIcon,
+  LinkIcon,
+  PencilIcon,
+  Trash2Icon,
+} from 'lucide-react';
 
 import { deletePlushie } from '@/actions/plushies';
 import { authClient } from '@/lib/auth-client';
@@ -91,6 +97,12 @@ export function PlushieMenu({
               href={`/dashboard/plushies/${plushie.id}`}
             >
               Edit
+            </ItemMenuItem>
+            <ItemMenuItem
+              icon={CopyPlusIcon}
+              href={`/dashboard/plushies/new?from=${plushie.id}`}
+            >
+              Duplicate
             </ItemMenuItem>
             <ItemMenuItem
               icon={LinkIcon}

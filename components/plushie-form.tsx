@@ -47,14 +47,22 @@ const dropzoneClassName = cn(
   'ut-button:mt-2 ut-button:h-8 ut-button:w-auto ut-button:rounded-full ut-button:bg-primary ut-button:px-3 ut-button:text-xs ut-button:text-primary-foreground ut-button:ut-readying:bg-primary/60'
 );
 
-export function PlushieForm({ plushie }: { plushie?: Plushie }) {
+export function PlushieForm({
+  plushie,
+  source,
+}: {
+  plushie?: Plushie;
+  /** A plushie to duplicate: everything but their name and photos. */
+  source?: Plushie;
+}) {
+  const details = plushie ?? source;
   const [state, formAction, saving] = useActionState<FormState, FormData>(
     savePlushie,
     {}
   );
   const [thumbnail, setThumbnail] = useState(plushie?.thumbnail ?? null);
   const [gallery, setGallery] = useState(plushie?.gallery ?? []);
-  const [facts, setFacts] = useState<PlushieFact[]>(plushie?.facts ?? []);
+  const [facts, setFacts] = useState<PlushieFact[]>(details?.facts ?? []);
   const [uploadError, setUploadError] = useState<string>();
   const [deleting, startDelete] = useTransition();
   const [ask, confirmDialog] = useConfirm();
@@ -239,27 +247,27 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
           <Field
             label='Species'
             name='species'
-            defaultValue={plushie?.species}
+            defaultValue={details?.species}
             placeholder='Bunny'
           />
-          <BirthdayField defaultValue={plushie?.birthday} />
-          <Field label='Gender' name='gender' defaultValue={plushie?.gender} />
+          <BirthdayField defaultValue={details?.birthday} />
+          <Field label='Gender' name='gender' defaultValue={details?.gender} />
           <Field
             label='Pronouns'
             name='pronouns'
-            defaultValue={plushie?.pronouns}
+            defaultValue={details?.pronouns}
             placeholder='she/her'
           />
           <Field
             label='From'
             name='origin'
-            defaultValue={plushie?.origin}
+            defaultValue={details?.origin}
             placeholder='A claw machine in Tokyo'
           />
           <Field
             label='Traits'
             name='traits'
-            defaultValue={plushie?.traits.join(', ')}
+            defaultValue={details?.traits.join(', ')}
             placeholder='Sleepy, Gentle, Cuddly'
             hint='Separate with commas'
           />
@@ -271,7 +279,7 @@ export function PlushieForm({ plushie }: { plushie?: Plushie }) {
             name='description'
             required
             rows={4}
-            defaultValue={plushie?.description}
+            defaultValue={details?.description}
           />
         </div>
       </Section>

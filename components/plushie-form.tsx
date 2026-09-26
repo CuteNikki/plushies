@@ -250,6 +250,12 @@ export function PlushieForm({
             defaultValue={details?.species}
             placeholder='Bunny'
           />
+          <Field
+            label='From'
+            name='origin'
+            defaultValue={details?.origin}
+            placeholder='A claw machine in Tokyo'
+          />
           <BirthdayField defaultValue={details?.birthday} />
           <Field label='Gender' name='gender' defaultValue={details?.gender} />
           <Field
@@ -257,12 +263,6 @@ export function PlushieForm({
             name='pronouns'
             defaultValue={details?.pronouns}
             placeholder='she/her'
-          />
-          <Field
-            label='From'
-            name='origin'
-            defaultValue={details?.origin}
-            placeholder='A claw machine in Tokyo'
           />
           <Field
             label='Traits'

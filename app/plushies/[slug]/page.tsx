@@ -63,11 +63,11 @@ export default async function PlushiePage(
 
   const details: [string, React.ReactNode][] = [
     ['Species', plushie.species],
+    ['From', plushie.origin],
     ['Age', plushie.birthday && <PlushieAge birthday={plushie.birthday} />],
+    ['Birthday', plushie.birthday && formatBirthday(plushie.birthday)],
     ['Gender', plushie.gender],
     ['Pronouns', plushie.pronouns],
-    ['Birthday', plushie.birthday && formatBirthday(plushie.birthday)],
-    ['From', plushie.origin],
     ...plushie.facts.map(({ label, value }): [string, string] => [
       label,
       value,

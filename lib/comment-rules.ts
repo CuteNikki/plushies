@@ -1,6 +1,7 @@
 // Shared by the comment form and the server, so keep this free of server-only imports.
 
 import type { Role } from '@/lib/generated/prisma/enums';
+import { mentionsToText } from '@/lib/mentions';
 
 /** The longest a comment can be, in characters. */
 export const COMMENT_MAX = 1000;
@@ -35,11 +36,13 @@ export function theReplies(count: number) {
 
 /** What's wrong with a comment's text, or null if it's fine. */
 export function commentError(body: string) {
-  if (!body.trim()) return 'Write something first';
-  if (body.length > COMMENT_MAX) {
+  // Counted as it reads, with mentions as names: they're saved much longer.
+  const text = mentionsToText(body);
+  if (!text.trim()) return 'Write something first';
+  if (text.length > COMMENT_MAX || body.length > COMMENT_MAX * 3) {
     return `Keep it under ${COMMENT_MAX} characters`;
   }
-  if (hasLink(body)) return 'Links aren’t allowed in comments';
+  if (hasLink(text)) return 'Links aren’t allowed in comments';
   return null;
 }
 

@@ -74,6 +74,17 @@ export const getPlushies = cache(async () => {
   return rows.map(toPlushie);
 });
 
+/** Everyone who can be mentioned with @, for the plushie form. */
+export const getMentionOptions = cache(async () => {
+  const plushies = await getPlushies();
+  return plushies.map(({ id, name, slug, thumbnail }) => ({
+    id,
+    name,
+    slug,
+    thumbnail,
+  }));
+});
+
 export const getPlushie = cache(async (slug: string) => {
   const row = await db.plushie.findUnique({ where: { slug }, include });
   return row ? toPlushie(row) : null;

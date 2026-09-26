@@ -41,6 +41,13 @@ import {
   type CommentViewer,
 } from '@/lib/comment-rules';
 import { Role } from '@/lib/generated/prisma/enums';
+import {
+  editableToMentions,
+  mentionedIds,
+  mentionsToEditable,
+  mentionsToText,
+  type MentionTarget,
+} from '@/lib/mentions';
 import { roleLabels, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
@@ -53,11 +60,12 @@ import {
   ItemMenuSeparator,
 } from '@/components/item-menu';
 import { LocalTime } from '@/components/local-time';
+import { MentionField, type MentionOption } from '@/components/mention-field';
+import { MentionText } from '@/components/mention-text';
 import { ReportDialog, type ReportTarget } from '@/components/report-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import { UserAvatar } from '@/components/user-avatar';
 import { UserContextMenu } from '@/components/user-context-menu';
 
@@ -143,6 +151,12 @@ const FocusContext = createContext<{ id: string; path: string[] } | null>(null);
  */
 const ContinueContext = createContext<((id: string) => void) | null>(null);
 
+/** Everyone who can be mentioned with @, and by id for showing mentions. */
+const MentionsContext = createContext<{
+  options: (MentionOption & MentionTarget)[];
+  targets: ReadonlyMap<string, MentionTarget>;
+}>({ options: [], targets: new Map() });
+
 /** Applies `change` to every comment in the tree, replies included. */
 function mapTree(
   comments: CommentView[],
@@ -171,10 +185,17 @@ function withoutIds(comments: CommentView[], ids: string[]): CommentView[] {
 export function Comments({
   plushieId,
   slug,
+  plushies,
 }: {
   plushieId: string;
   slug: string;
+  /** Everyone who can be mentioned with @. */
+  plushies: (MentionOption & MentionTarget)[];
 }) {
+  const [mentions] = useState(() => ({
+    options: plushies,
+    targets: new Map(plushies.map((plushie) => [plushie.id, plushie])),
+  }));
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const userId = session?.user.id;
   const [page, setPage] = useState<CommentsPage | null>(null);
@@ -383,72 +404,77 @@ export function Comments({
   return (
     // isolate: the opened boxes sit above the thread lines, but not above
     // anything outside the comments, like the sticky header.
-    <section className='isolate flex flex-col gap-4' aria-labelledby='comments'>
-      <h2 id='comments' className='font-heading text-2xl font-semibold'>
-        Comments
-        {page && page.total > 0 && (
-          <span className='ml-2 text-base font-normal text-muted-foreground'>
-            {page.total}
-          </span>
+    <MentionsContext value={mentions}>
+      <section
+        className='isolate flex flex-col gap-4'
+        aria-labelledby='comments'
+      >
+        <h2 id='comments' className='font-heading text-2xl font-semibold'>
+          Comments
+          {page && page.total > 0 && (
+            <span className='ml-2 text-base font-normal text-muted-foreground'>
+              {page.total}
+            </span>
+          )}
+        </h2>
+
+        {viewer && (
+          <Composer viewer={viewer} slug={slug}>
+            <CommentForm
+              label='Write a comment'
+              submit='Comment'
+              disabled={viewer.viewingAs}
+              onSubmit={async (body) => {
+                const result = await addComment(plushieId, { body });
+                if (!result.ok) return result.error;
+                added(result.comment, null);
+              }}
+            />
+          </Composer>
         )}
-      </h2>
 
-      {viewer && (
-        <Composer viewer={viewer} slug={slug}>
-          <CommentForm
-            label='Write a comment'
-            submit='Comment'
-            disabled={viewer.viewingAs}
-            onSubmit={async (body) => {
-              const result = await addComment(plushieId, { body });
-              if (!result.ok) return result.error;
-              added(result.comment, null);
-            }}
-          />
-        </Composer>
-      )}
+        {failed ? (
+          <Notice>
+            Comments couldn&rsquo;t be loaded. Try reloading the page.
+          </Notice>
+        ) : !page ? (
+          <CommentsSkeleton />
+        ) : page.threads.length === 0 ? (
+          <EmptyState icon={MessageCircleIcon}>
+            No comments yet.
+            {!viewer?.blocked && ' Be the first!'}
+          </EmptyState>
+        ) : (
+          <FocusContext value={focus}>
+            <ul className='flex flex-col gap-6'>
+              {page.threads.map((thread) => (
+                <li key={thread.id}>
+                  <Comment comment={thread} depth={0} actions={actions} />
+                </li>
+              ))}
+            </ul>
+          </FocusContext>
+        )}
 
-      {failed ? (
-        <Notice>
-          Comments couldn&rsquo;t be loaded. Try reloading the page.
-        </Notice>
-      ) : !page ? (
-        <CommentsSkeleton />
-      ) : page.threads.length === 0 ? (
-        <EmptyState icon={MessageCircleIcon}>
-          No comments yet.
-          {!viewer?.blocked && ' Be the first!'}
-        </EmptyState>
-      ) : (
-        <FocusContext value={focus}>
-          <ul className='flex flex-col gap-6'>
-            {page.threads.map((thread) => (
-              <li key={thread.id}>
-                <Comment comment={thread} depth={0} actions={actions} />
-              </li>
-            ))}
-          </ul>
-        </FocusContext>
-      )}
-
-      {page?.nextCursor && (
-        <Button
-          variant='outline'
-          className='self-center'
-          disabled={loadingMore}
-          onClick={loadMore}
-        >
-          {loadingMore && <Loader2Icon className='animate-spin' />}
-          Show more comments
-        </Button>
-      )}
-      {confirmDialog}
-      <ReportDialog
-        target={reporting}
-        onReportedAction={reported}
-        onCloseAction={() => setReporting(null)}
-      />
-    </section>
+        {page?.nextCursor && (
+          <Button
+            variant='outline'
+            className='self-center'
+            disabled={loadingMore}
+            onClick={loadMore}
+          >
+            {loadingMore && <Loader2Icon className='animate-spin' />}
+            Show more comments
+          </Button>
+        )}
+        {confirmDialog}
+        <ReportDialog
+          target={reporting}
+          onReportedAction={reported}
+          onCloseAction={() => setReporting(null)}
+        />
+      </section>
+    </MentionsContext>
   );
 }
 
@@ -744,6 +770,7 @@ function CommentBody({
   const canWrite = viewer && !viewer.blocked;
   const isEditing = actions.editing === comment.id;
   const linked = useContext(FocusContext)?.id === comment.id;
+  const { targets } = useContext(MentionsContext);
   const canDelete = own || viewer?.canModerate;
   const canReport = canWrite && !own;
   // Viewing as someone: what they could do shows, but can't be used.
@@ -791,7 +818,9 @@ function CommentBody({
           )}
           <ItemMenuItem
             icon={CopyIcon}
-            onSelect={() => copy(comment.body, 'Comment copied')}
+            onSelect={() =>
+              copy(mentionsToText(comment.body, targets), 'Comment copied')
+            }
           >
             Copy text
           </ItemMenuItem>
@@ -941,7 +970,7 @@ function CommentBody({
             />
           ) : (
             <p className='text-sm/relaxed wrap-break-word whitespace-pre-line'>
-              {comment.body}
+              <MentionText text={comment.body} targets={targets} />
             </p>
           )}
           {!isEditing && (
@@ -1060,7 +1089,10 @@ function CommentForm({
   onCancel?: () => void;
 }) {
   const id = useId();
-  const [body, setBody] = useState(initial);
+  const { options, targets } = useContext(MentionsContext);
+  // Mentions are typed as @Name and saved as links to the plushie's id.
+  const [body, setBody] = useState(() => mentionsToEditable(initial, targets));
+  const [picked, setPicked] = useState(() => new Set(mentionedIds(initial)));
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
 
@@ -1070,7 +1102,9 @@ function CommentForm({
     setError(undefined);
     startTransition(async () => {
       try {
-        const failed = await onSubmit(body.trim());
+        const failed = await onSubmit(
+          editableToMentions(body.trim(), options, picked)
+        );
         if (failed) return setError(failed);
         setBody('');
       } catch {
@@ -1090,10 +1124,13 @@ function CommentForm({
       <label htmlFor={id} className='sr-only'>
         {label}
       </label>
-      <Textarea
+      <MentionField
+        multiline
         id={id}
         value={body}
-        onChange={(event) => setBody(event.target.value)}
+        onValueChange={setBody}
+        options={options}
+        onPick={(plushieId) => setPicked((ids) => new Set(ids).add(plushieId))}
         onKeyDown={(event) => {
           // Ctrl/Cmd+Enter sends, like in most chats.
           if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {

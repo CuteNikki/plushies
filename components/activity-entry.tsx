@@ -35,6 +35,7 @@ import {
   ActivityType,
   type Activity,
 } from '@/lib/generated/prisma/client';
+import { mentionsToText } from '@/lib/mentions';
 import { isRole, roleLabels } from '@/lib/permissions';
 import type { RevertOption } from '@/lib/revert';
 import { cn } from '@/lib/utils';
@@ -411,7 +412,9 @@ function replyCount(comment: CommentSnapshot) {
 function commentChanges(entry: Activity): Change[] {
   const comment = (entry.before ?? entry.after) as CommentSnapshot | null;
   if (!comment || comment.deleted) return [];
-  return [{ label: 'Comment', after: <Text value={comment.body} /> }];
+  return [
+    { label: 'Comment', after: <Text value={mentionsToText(comment.body)} /> },
+  ];
 }
 
 function banChanges(entry: Activity): Change[] {
@@ -565,6 +568,9 @@ function plushieChanges(entry: Activity, context: ActivityContext): Change[] {
               />
             );
           }
+          case 'description':
+            // Mentions as they were named then.
+            return <Text value={mentionsToText(value as string)} />;
           default:
             return <Text value={value as string | null} />;
         }
@@ -578,7 +584,7 @@ function plushieChanges(entry: Activity, context: ActivityContext): Change[] {
 }
 
 function factText(fact: { label: string; value: string }) {
-  return `${fact.label}: ${fact.value}`;
+  return `${fact.label}: ${mentionsToText(fact.value)}`;
 }
 
 const userLabels: Record<keyof UserSnapshot, string> = {

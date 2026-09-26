@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getPlushieById } from '@/data/plushies';
+import { getMentionOptions, getPlushieById } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
@@ -15,7 +15,10 @@ export default async function EditPlushiePage(
 ) {
   await requireEditor();
   const { id } = await props.params;
-  const plushie = await getPlushieById(id);
+  const [plushie, plushies] = await Promise.all([
+    getPlushieById(id),
+    getMentionOptions(),
+  ]);
   if (!plushie) notFound();
 
   return (
@@ -31,7 +34,7 @@ export default async function EditPlushiePage(
         </Reveal>
       </div>
       {/* Reset the form's state when switching between plushies. */}
-      <PlushieForm key={plushie.id} plushie={plushie} />
+      <PlushieForm key={plushie.id} plushie={plushie} plushies={plushies} />
     </div>
   );
 }

@@ -1,8 +1,15 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getPlushie, getPlushies } from '@/data/plushies';
+import {
+  getMentionOptions,
+  getPlushie,
+  getPlushies,
+  type Plushie,
+} from '@/data/plushies';
 import { formatBirthday } from '@/lib/birthday';
+import { mentionedIds, mentionsToText } from '@/lib/mentions';
 import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
@@ -10,6 +17,7 @@ import { Comments } from '@/components/comments';
 import { DeletePlushieButton } from '@/components/delete-plushie-button';
 import { EditPlushieButton } from '@/components/edit-plushie-button';
 import { LikeButton } from '@/components/like-button';
+import { MentionText } from '@/components/mention-text';
 import {
   Reveal,
   RevealGroup,
@@ -17,6 +25,7 @@ import {
   RevealQueue,
 } from '@/components/motion';
 import { PlushieAge } from '@/components/plushie-age';
+import { PlushiePhoto } from '@/components/plushie-photo';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
 import { Toaster } from '@/components/ui/sonner';
@@ -26,30 +35,45 @@ export async function generateStaticParams() {
   return plushies.map((plushie) => ({ slug: plushie.slug }));
 }
 
+/** Who mentions can link to, by id. */
+async function mentionTargets() {
+  const plushies = await getPlushies();
+  return new Map(plushies.map((plushie) => [plushie.id, plushie]));
+}
+
+/** Everything a plushie says, where they can mention others. */
+function mentionableTexts(plushie: Plushie) {
+  return [plushie.description, ...plushie.facts.map((fact) => fact.value)];
+}
+
 export async function generateMetadata(
   props: PageProps<'/plushies/[slug]'>
 ): Promise<Metadata> {
   const { slug } = await props.params;
   const plushie = await getPlushie(slug);
   if (!plushie) return {};
+  const description = mentionsToText(
+    plushie.description,
+    await mentionTargets()
+  );
 
   // The preview image comes from opengraph-image.tsx next to this page.
   // openGraph replaces the layout's, so the shared fields are repeated here.
   return {
     title: plushie.name,
-    description: plushie.description,
+    description,
     openGraph: {
       type: 'profile',
       siteName: site.name,
       title: `${plushie.name} · ${site.name}`,
-      description: plushie.description,
+      description,
       url: `/plushies/${plushie.slug}`,
       locale: 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${plushie.name} · ${site.name}`,
-      description: plushie.description,
+      description,
     },
   };
 }
@@ -60,6 +84,14 @@ export default async function PlushiePage(
   const { slug } = await props.params;
   const plushie = await getPlushie(slug);
   if (!plushie) notFound();
+  const targets = await mentionTargets();
+  const mentionedBy = [...targets.values()].filter(
+    (other) =>
+      other.id !== plushie.id &&
+      mentionableTexts(other).some((text) =>
+        mentionedIds(text).includes(plushie.id)
+      )
+  );
 
   const details: [string, React.ReactNode][] = [
     ['Species', plushie.species],
@@ -68,14 +100,14 @@ export default async function PlushiePage(
     ['Birthday', plushie.birthday && formatBirthday(plushie.birthday)],
     ['Gender', plushie.gender],
     ['Pronouns', plushie.pronouns],
-    ...plushie.facts.map(({ label, value }): [string, string] => [
+    ...plushie.facts.map(({ label, value }): [string, React.ReactNode] => [
       label,
-      value,
+      <MentionText key={label} text={value} targets={targets} />,
     ]),
   ];
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className='flex flex-col gap-4'>
       <Reveal className='flex items-center justify-between gap-2'>
         <BackButton href='/'>All plushies</BackButton>
         <div className='flex flex-wrap gap-2'>
@@ -95,7 +127,7 @@ export default async function PlushiePage(
 
         <RevealQueue delay={0.2}>
           <div className='flex flex-col gap-6'>
-            <RevealGroup interval={0.12} className='flex flex-col gap-3'>
+            <RevealGroup interval={0.12} className='flex flex-col gap-2'>
               <RevealItem
                 direction='left'
                 className='flex items-start justify-between gap-4'
@@ -110,7 +142,7 @@ export default async function PlushiePage(
                 />
               </RevealItem>
               {plushie.traits.length > 0 && (
-                <RevealItem direction='left' className='flex flex-wrap gap-1.5'>
+                <RevealItem direction='left' className='flex flex-wrap gap-2'>
                   {plushie.traits.map((trait) => (
                     <Badge key={trait} variant='secondary'>
                       {trait}
@@ -123,14 +155,14 @@ export default async function PlushiePage(
                 direction='left'
                 className='mt-3 text-base leading-relaxed'
               >
-                {plushie.description}
+                <MentionText text={plushie.description} targets={targets} />
               </RevealItem>
             </RevealGroup>
 
             <RevealGroup
               as='dl'
               interval={0.08}
-              className='grid grid-cols-2 gap-3'
+              className='grid grid-cols-2 gap-2'
             >
               {details
                 .filter(([, value]) => value)
@@ -147,12 +179,47 @@ export default async function PlushiePage(
                   </RevealItem>
                 ))}
             </RevealGroup>
+
+            {mentionedBy.length > 0 && (
+              <RevealGroup
+                as='section'
+                interval={0.08}
+                className='flex flex-col gap-2'
+              >
+                <RevealItem direction='left'>
+                  <h2 className='text-xs text-muted-foreground'>
+                    Mentioned by
+                  </h2>
+                </RevealItem>
+                <RevealItem direction='left' className='flex flex-wrap gap-2'>
+                  {mentionedBy.map((other) => (
+                    <Link
+                      key={other.id}
+                      href={`/plushies/${other.slug}`}
+                      className='flex items-center gap-2 rounded-full bg-muted/60 py-1 pr-3.5 pl-1 font-heading text-sm font-medium ring-1 ring-foreground/5 transition-colors hover:bg-muted'
+                    >
+                      <PlushiePhoto
+                        plushie={other}
+                        sizes='28px'
+                        compact
+                        className='size-7 rounded-full'
+                      />
+                      {other.name}
+                    </Link>
+                  ))}
+                </RevealItem>
+              </RevealGroup>
+            )}
           </div>
         </RevealQueue>
       </article>
 
       <Reveal className='mt-6'>
-        <Comments plushieId={plushie.id} slug={plushie.slug} />
+        <Comments
+          plushieId={plushie.id}
+          slug={plushie.slug}
+          plushies={await getMentionOptions()}
+        />
       </Reveal>
       {/* For the comments. */}
       <Toaster />

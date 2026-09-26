@@ -27,6 +27,7 @@ import {
   countReports,
 } from '@/data/reports';
 import { formatWhen, parseBirthday, type NextBirthday } from '@/lib/birthday';
+import { mentionsToText } from '@/lib/mentions';
 import { isAdmin } from '@/lib/permissions';
 import { providerLabels } from '@/lib/providers';
 import { requireEditor } from '@/lib/session';
@@ -264,7 +265,9 @@ export default async function DashboardPage() {
                           <CommentAuthor author={comment.author} link={admin} />
                         </span>
                         {comment.replyTo ? ' replied: ' : ': '}
-                        <span className='text-foreground'>{comment.body}</span>
+                        <span className='text-foreground'>
+                          {mentionsToText(comment.body)}
+                        </span>
                       </p>
                     </RowMain>
                     <span className='shrink-0 text-sm text-muted-foreground'>

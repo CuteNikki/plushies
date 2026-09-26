@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import type { CommentRowData } from '@/data/comment-rows';
+import { mentionsToText } from '@/lib/mentions';
 
 import { useDeleteComment } from '@/components/delete-comment-button';
 import {
@@ -70,7 +71,9 @@ export function CommentMenu({
               icon={CopyIcon}
               onSelect={async () => {
                 try {
-                  await navigator.clipboard.writeText(comment.body);
+                  await navigator.clipboard.writeText(
+                    mentionsToText(comment.body)
+                  );
                   toast.success('Comment copied');
                 } catch {
                   toast.error('Couldn’t copy the comment');

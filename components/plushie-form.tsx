@@ -26,17 +26,23 @@ import {
   type FormState,
 } from '@/actions/plushies';
 import type { Plushie, PlushieFact, PlushieImage } from '@/data/plushies';
+import {
+  editableToMentions,
+  mentionedIds,
+  mentionsToEditable,
+  type MentionTarget,
+} from '@/lib/mentions';
 import { UploadDropzone } from '@/lib/uploadthing';
 import { cn } from '@/lib/utils';
 
 import { BirthdayField } from '@/components/birthday-field';
 import { useConfirm } from '@/components/confirm-dialog';
+import { MentionField, type MentionOption } from '@/components/mention-field';
 import { Reveal } from '@/components/motion';
 import { deletePlushieConfirm } from '@/components/plushie-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 
 // A compact square tile, the same size as the photo previews next to it.
 const dropzoneClassName = cn(
@@ -50,10 +56,13 @@ const dropzoneClassName = cn(
 export function PlushieForm({
   plushie,
   source,
+  plushies,
 }: {
   plushie?: Plushie;
   /** A plushie to duplicate: everything but their name and photos. */
   source?: Plushie;
+  /** Everyone who can be mentioned with @. */
+  plushies: (MentionOption & MentionTarget)[];
 }) {
   const details = plushie ?? source;
   const [state, formAction, saving] = useActionState<FormState, FormData>(
@@ -62,7 +71,31 @@ export function PlushieForm({
   );
   const [thumbnail, setThumbnail] = useState(plushie?.thumbnail ?? null);
   const [gallery, setGallery] = useState(plushie?.gallery ?? []);
-  const [facts, setFacts] = useState<PlushieFact[]>(details?.facts ?? []);
+
+  // Mentions are typed as @Name and saved as links to the plushie's id.
+  const others = plushies.filter((other) => other.id !== plushie?.id);
+  const [targets] = useState(
+    () => new Map(plushies.map((target) => [target.id, target]))
+  );
+  const [picked, setPicked] = useState(
+    () =>
+      new Set(
+        [details?.description, ...(details?.facts ?? []).map((f) => f.value)]
+          .filter((text) => text !== undefined)
+          .flatMap(mentionedIds)
+      )
+  );
+  const pick = (id: string) => setPicked((ids) => new Set(ids).add(id));
+  const toSaved = (text: string) => editableToMentions(text, others, picked);
+  const [description, setDescription] = useState(() =>
+    mentionsToEditable(details?.description ?? '', targets)
+  );
+  const [facts, setFacts] = useState<PlushieFact[]>(() =>
+    (details?.facts ?? []).map((fact) => ({
+      ...fact,
+      value: mentionsToEditable(fact.value, targets),
+    }))
+  );
   const [uploadError, setUploadError] = useState<string>();
   const [deleting, startDelete] = useTransition();
   const [ask, confirmDialog] = useConfirm();
@@ -111,7 +144,14 @@ export function PlushieForm({
       {plushie && <input type='hidden' name='id' value={plushie.id} />}
       <input type='hidden' name='thumbnail' value={JSON.stringify(thumbnail)} />
       <input type='hidden' name='gallery' value={JSON.stringify(gallery)} />
-      <input type='hidden' name='facts' value={JSON.stringify(facts)} />
+      <input type='hidden' name='description' value={toSaved(description)} />
+      <input
+        type='hidden'
+        name='facts'
+        value={JSON.stringify(
+          facts.map((fact) => ({ ...fact, value: toSaved(fact.value) }))
+        )}
+      />
 
       <Section
         title='Thumbnail'
@@ -274,13 +314,19 @@ export function PlushieForm({
         </div>
         <div className='flex flex-col gap-2'>
           <Label htmlFor='description'>Description</Label>
-          <Textarea
+          <MentionField
+            multiline
             id='description'
-            name='description'
             required
             rows={4}
-            defaultValue={details?.description}
+            value={description}
+            onValueChange={setDescription}
+            options={others}
+            onPick={pick}
           />
+          <p className='text-xs text-muted-foreground'>
+            Type @ to mention another plushie and link to them.
+          </p>
         </div>
       </Section>
 
@@ -300,17 +346,18 @@ export function PlushieForm({
               }
               className='max-w-48'
             />
-            <Input
+            <MentionField
               aria-label='Fact value'
-              placeholder='Strawberries'
+              placeholder='Strawberries, or @ for a plushie'
+              containerClassName='min-w-0 flex-1'
               value={fact.value}
-              onChange={(event) =>
+              onValueChange={(value) =>
                 setFacts((all) =>
-                  all.map((f, i) =>
-                    i === index ? { ...f, value: event.target.value } : f
-                  )
+                  all.map((f, i) => (i === index ? { ...f, value } : f))
                 )
               }
+              options={others}
+              onPick={pick}
             />
             <Button
               type='button'

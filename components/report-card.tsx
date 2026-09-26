@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { MessageCircleIcon, UserRoundIcon } from 'lucide-react';
 
+import { mentionsToText } from '@/lib/mentions';
 import { cn, count } from '@/lib/utils';
 
 import { CommentAuthor } from '@/components/comment-author';
@@ -300,7 +301,7 @@ export function CommentSubject({
         }
       />
       <p className='rounded-lg bg-muted/50 px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
-        {comment.body}
+        {mentionsToText(comment.body)}
       </p>
       {/* Where it was posted, apart from what it says. */}
       <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground'>

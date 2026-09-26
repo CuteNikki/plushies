@@ -1,4 +1,5 @@
 import { getPlushie, getPlushies } from '@/data/plushies';
+import { mentionsToText } from '@/lib/mentions';
 import { framePhoto, ogCard, ogSize } from '@/lib/og';
 import { site } from '@/lib/site';
 
@@ -36,6 +37,9 @@ export default async function PlushieOpengraphImage({
     subtitle:
       [plushie.species, plushie.pronouns].filter(Boolean).join(' · ') ||
       'One of my soft friends',
-    text: plushie.description,
+    text: mentionsToText(
+      plushie.description,
+      new Map((await getPlushies()).map((other) => [other.id, other]))
+    ),
   });
 }

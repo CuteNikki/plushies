@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { getPlushieById } from '@/data/plushies';
+import { getMentionOptions, getPlushieById } from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
@@ -15,7 +15,10 @@ export default async function NewPlushiePage(
   await requireEditor();
   // Duplicating starts from another plushie's details.
   const { from } = await props.searchParams;
-  const source = typeof from === 'string' ? await getPlushieById(from) : null;
+  const [source, plushies] = await Promise.all([
+    typeof from === 'string' ? getPlushieById(from) : null,
+    getMentionOptions(),
+  ]);
 
   return (
     <div className='mx-auto flex max-w-3xl flex-col gap-8'>
@@ -34,7 +37,11 @@ export default async function NewPlushiePage(
           )}
         </Reveal>
       </div>
-      <PlushieForm key={source?.id} source={source ?? undefined} />
+      <PlushieForm
+        key={source?.id}
+        source={source ?? undefined}
+        plushies={plushies}
+      />
     </div>
   );
 }

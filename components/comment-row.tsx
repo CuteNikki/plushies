@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { EyeOffIcon, FlagIcon } from 'lucide-react';
 
 import type { CommentRowData } from '@/data/comment-rows';
+import { mentionsToText } from '@/lib/mentions';
 import { count } from '@/lib/utils';
 
 import { CommentAuthor } from '@/components/comment-author';
@@ -110,13 +111,13 @@ export function CommentRow({
                     author={comment.replyTo.author}
                     link={viewer.admin}
                   />
-                  : &ldquo;{comment.replyTo.body}&rdquo;
+                  : &ldquo;{mentionsToText(comment.replyTo.body)}&rdquo;
                 </>
               )}
             </p>
           )}
           <p className='relative text-sm wrap-break-word whitespace-pre-line'>
-            {comment.body}
+            {mentionsToText(comment.body)}
           </p>
         </div>
       </CommentMenu>

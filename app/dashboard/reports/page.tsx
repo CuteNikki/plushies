@@ -22,6 +22,7 @@ import {
   searchQuery,
   withQuery,
 } from '@/lib/list-params';
+import { mentionsToText } from '@/lib/mentions';
 import { isAdmin, roleLabels } from '@/lib/permissions';
 import {
   REPORT_WINDOW_HOURS,
@@ -111,7 +112,7 @@ export default async function ReportsPage(
         at: item.resolvedAt,
         reports: item.reports.length,
         text: [
-          item.comment.body,
+          mentionsToText(item.comment.body),
           item.comment.author?.name,
           item.comment.plushie.name,
           item.resolvedBy?.name,
@@ -125,7 +126,7 @@ export default async function ReportsPage(
         at: item.reports[0].createdAt,
         reports: item.reports.length,
         text: [
-          item.comment.body,
+          mentionsToText(item.comment.body),
           item.author?.name,
           item.comment.plushie.name,
           ...reportTexts(item.reports, reportReasons),

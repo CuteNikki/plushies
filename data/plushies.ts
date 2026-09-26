@@ -4,6 +4,7 @@ import { cache } from 'react';
 
 import { db } from '@/lib/db';
 import type { Prisma } from '@/lib/generated/prisma/client';
+import { inOrder, type OrderGroup } from '@/lib/order';
 
 export type PlushieImage = { key: string; url: string };
 
@@ -33,11 +34,18 @@ export type Plushie = {
   traits: string[];
   /** How many accounts like them. */
   likes: number;
+  /** The plushies they belong with, e.g. a family. */
+  group: OrderGroup | null;
+  /** Their place in your order, among their group or outside one. */
+  position: number;
+  /** When they were added, as an ISO string. */
+  createdAt: string;
 };
 
 const include = {
   gallery: { orderBy: { position: 'asc' } },
   _count: { select: { likes: true } },
+  group: { select: { id: true, name: true, position: true } },
 } satisfies Prisma.PlushieInclude;
 
 type PlushieRow = Prisma.PlushieGetPayload<{ include: typeof include }>;
@@ -61,17 +69,30 @@ function toPlushie(row: PlushieRow): Plushie {
     facts: (row.facts ?? []) as PlushieFact[],
     traits: row.traits,
     likes: row._count.likes,
+    group: row.group,
+    position: row.position,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
 // Wrapped in cache() so a page and its metadata share one query per request.
 
+/** In your order, each group's plushies together. */
 export const getPlushies = cache(async () => {
   const rows = await db.plushie.findMany({
     include,
     orderBy: { createdAt: 'asc' },
   });
-  return rows.map(toPlushie);
+  return inOrder(rows.map(toPlushie));
+});
+
+/** The groups' names, for picking one in the plushie form. */
+export const getGroupNames = cache(async () => {
+  const groups = await db.plushieGroup.findMany({
+    select: { name: true },
+    orderBy: { name: 'asc' },
+  });
+  return groups.map((group) => group.name);
 });
 
 /** Everyone who can be mentioned with @, for the plushie form. */

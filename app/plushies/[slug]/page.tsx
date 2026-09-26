@@ -85,9 +85,18 @@ export default async function PlushiePage(
   const plushie = await getPlushie(slug);
   if (!plushie) notFound();
   const targets = await mentionTargets();
+  // In your order, like the home page.
+  const groupMates = plushie.group
+    ? [...targets.values()].filter(
+        (other) =>
+          other.group?.id === plushie.group!.id && other.id !== plushie.id
+      )
+    : [];
+  // Not their group, which is listed already and usually mentions them.
   const mentionedBy = [...targets.values()].filter(
     (other) =>
       other.id !== plushie.id &&
+      !groupMates.includes(other) &&
       mentionableTexts(other).some((text) =>
         mentionedIds(text).includes(plushie.id)
       )
@@ -180,35 +189,14 @@ export default async function PlushiePage(
                 ))}
             </RevealGroup>
 
+            {plushie.group && groupMates.length > 0 && (
+              <PlushieLinks
+                title={`Also in ${plushie.group.name}`}
+                plushies={groupMates}
+              />
+            )}
             {mentionedBy.length > 0 && (
-              <RevealGroup
-                as='section'
-                interval={0.08}
-                className='flex flex-col gap-2'
-              >
-                <RevealItem direction='left'>
-                  <h2 className='text-xs text-muted-foreground'>
-                    Mentioned by
-                  </h2>
-                </RevealItem>
-                <RevealItem direction='left' className='flex flex-wrap gap-2'>
-                  {mentionedBy.map((other) => (
-                    <Link
-                      key={other.id}
-                      href={`/plushies/${other.slug}`}
-                      className='flex items-center gap-2 rounded-full bg-muted/60 py-1 pr-3.5 pl-1 font-heading text-sm font-medium ring-1 ring-foreground/5 transition-colors hover:bg-muted'
-                    >
-                      <PlushiePhoto
-                        plushie={other}
-                        sizes='28px'
-                        compact
-                        className='size-7 rounded-full'
-                      />
-                      {other.name}
-                    </Link>
-                  ))}
-                </RevealItem>
-              </RevealGroup>
+              <PlushieLinks title='Mentioned by' plushies={mentionedBy} />
             )}
           </div>
         </RevealQueue>
@@ -224,5 +212,39 @@ export default async function PlushiePage(
       {/* For the comments. */}
       <Toaster />
     </div>
+  );
+}
+
+/** Other plushies as little photo-and-name links, under a small title. */
+function PlushieLinks({
+  title,
+  plushies,
+}: {
+  title: string;
+  plushies: Plushie[];
+}) {
+  return (
+    <RevealGroup as='section' interval={0.08} className='flex flex-col gap-2'>
+      <RevealItem direction='left'>
+        <h2 className='text-xs text-muted-foreground'>{title}</h2>
+      </RevealItem>
+      <RevealItem direction='left' className='flex flex-wrap gap-2'>
+        {plushies.map((other) => (
+          <Link
+            key={other.id}
+            href={`/plushies/${other.slug}`}
+            className='flex items-center gap-2 rounded-full bg-muted/60 py-1 pr-3.5 pl-1 font-heading text-sm font-medium ring-1 ring-foreground/5 transition-colors hover:bg-muted'
+          >
+            <PlushiePhoto
+              plushie={other}
+              sizes='28px'
+              compact
+              className='size-7 rounded-full'
+            />
+            {other.name}
+          </Link>
+        ))}
+      </RevealItem>
+    </RevealGroup>
   );
 }

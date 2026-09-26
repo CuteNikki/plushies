@@ -57,12 +57,15 @@ export function PlushieForm({
   plushie,
   source,
   plushies,
+  groups,
 }: {
   plushie?: Plushie;
   /** A plushie to duplicate: everything but their name and photos. */
   source?: Plushie;
   /** Everyone who can be mentioned with @. */
   plushies: (MentionOption & MentionTarget)[];
+  /** The groups' names, to pick from. */
+  groups: string[];
 }) {
   const details = plushie ?? source;
   const [state, formAction, saving] = useActionState<FormState, FormData>(
@@ -142,6 +145,8 @@ export function PlushieForm({
       className='flex flex-col gap-8'
     >
       {plushie && <input type='hidden' name='id' value={plushie.id} />}
+      {/* A copy goes right after the original, if they're in one group. */}
+      {source && <input type='hidden' name='placeAfter' value={source.id} />}
       <input type='hidden' name='thumbnail' value={JSON.stringify(thumbnail)} />
       <input type='hidden' name='gallery' value={JSON.stringify(gallery)} />
       <input type='hidden' name='description' value={toSaved(description)} />
@@ -311,6 +316,20 @@ export function PlushieForm({
             defaultValue={details?.pronouns}
             placeholder='she/her'
           />
+          <Field
+            label='Group'
+            name='group'
+            defaultValue={details?.group?.name}
+            placeholder='Peach & Goma'
+            hint='Plushies in a group stay together. Pick one or type a new name.'
+            list='plushie-groups'
+            autoComplete='off'
+          />
+          <datalist id='plushie-groups'>
+            {groups.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
         </div>
         <div className='flex flex-col gap-2'>
           <Label htmlFor='description'>Description</Label>

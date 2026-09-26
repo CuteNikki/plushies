@@ -157,6 +157,8 @@ export async function submitPlushie(fields: {
   birthday?: string;
   thumbnail?: Photo | null;
   gallery?: Photo[];
+  group?: string;
+  placeAfter?: string;
 }): Promise<{ error?: string; redirectedTo?: string }> {
   const form = new FormData();
   if (fields.id) form.set('id', fields.id);
@@ -170,6 +172,8 @@ export async function submitPlushie(fields: {
   form.set('facts', '[]');
   form.set('thumbnail', JSON.stringify(fields.thumbnail ?? null));
   form.set('gallery', JSON.stringify(fields.gallery ?? []));
+  form.set('group', fields.group ?? '');
+  if (fields.placeAfter) form.set('placeAfter', fields.placeAfter);
   try {
     return await savePlushie({}, form);
   } catch (error) {

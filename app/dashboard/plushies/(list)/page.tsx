@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   CakeIcon,
   HeartIcon,
+  ListOrderedIcon,
   PencilIcon,
   PlusIcon,
   SearchIcon,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { getPlushieList } from '@/data/dashboard';
+import { getPlushies } from '@/data/plushies';
 import {
   formatBirthday,
   formatWhen,
@@ -47,6 +49,7 @@ type View = keyof typeof views;
 
 /** Orders for the All tab; the others have their own. */
 const sorts = [
+  'order',
   'oldest',
   'newest',
   'name',
@@ -75,7 +78,12 @@ export default async function PlushiesPage(
       plushie.name.toLowerCase().includes(q) ||
       !!plushie.species?.toLowerCase().includes(q)
   );
+  // Where each is on the home page.
+  const place = new Map(
+    (await getPlushies()).map((plushie, index) => [plushie.id, index])
+  );
   const inOrder = {
+    order: all.toSorted((a, b) => place.get(a.id)! - place.get(b.id)!),
     oldest: all,
     newest: all.toReversed(),
     name: all.toSorted((a, b) => a.name.localeCompare(b.name)),
@@ -121,12 +129,20 @@ export default async function PlushiesPage(
             Add new friends or update the ones you have.
           </p>
         </div>
-        <Button asChild>
-          <Link href='/dashboard/plushies/new'>
-            <PlusIcon />
-            New Plushie
-          </Link>
-        </Button>
+        <div className='flex flex-wrap gap-2'>
+          <Button variant='outline' asChild>
+            <Link href='/dashboard/plushies/arrange'>
+              <ListOrderedIcon />
+              Arrange
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href='/dashboard/plushies/new'>
+              <PlusIcon />
+              New Plushie
+            </Link>
+          </Button>
+        </div>
       </Reveal>
 
       <Reveal
@@ -174,6 +190,7 @@ export default async function PlushiesPage(
                     param: 'sort',
                     label: 'Order',
                     options: [
+                      { value: 'order', label: 'Home page order' },
                       { value: 'oldest', label: 'Oldest first' },
                       { value: 'newest', label: 'Newest first' },
                       { value: 'name', label: 'Name A–Z' },

@@ -22,6 +22,7 @@ import {
   isViewingAs,
   VIEWING_AS_MESSAGE,
 } from '@/lib/permissions';
+import { nextPosition } from '@/lib/plushie-order';
 import { changedKeys, loadRevertState, revertOption } from '@/lib/revert';
 import { getSession } from '@/lib/session';
 import { fileKey } from '@/lib/uploads';
@@ -227,6 +228,8 @@ export async function revertActivity(id: string): Promise<{ error?: string }> {
             ...(plushieData(before, keys) as Prisma.PlushieCreateInput),
             // The same id, so its history and links still match.
             id: entry.subjectId,
+            // Last in your order, outside any group.
+            position: await nextPosition(db, null),
             gallery: {
               create: before.gallery.map((url, position) => ({
                 key: fileKey(url),

@@ -23,6 +23,13 @@ model Plushie {
   facts       Json     @default("[]")
   traits      String[] @default([])
 
+  /// Plushies in a group stay together, e.g. a family.
+  groupId  String?
+  group    PlushieGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  /// Where they go on the home page: among their group's plushies, or among
+  /// the groups and other plushies outside one.
+  position Int           @default(0)
+
   /// UploadThing file key and URL of the main photo.
   thumbnailKey String?
   thumbnailUrl String?
@@ -33,7 +40,22 @@ model Plushie {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([groupId])
   @@map("plushie")
+}
+
+/// Plushies that belong together, shown next to each other.
+model PlushieGroup {
+  id       String    @id @default(cuid())
+  /// Unique, ignoring case: the form finds a group by its name.
+  name     String    @unique
+  /// Its place among the groups and the plushies outside one.
+  position Int       @default(0)
+  plushies Plushie[]
+
+  createdAt DateTime @default(now())
+
+  @@map("plushie_group")
 }
 
 model PlushieImage {

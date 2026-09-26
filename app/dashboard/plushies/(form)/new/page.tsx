@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 
-import { getMentionOptions, getPlushieById } from '@/data/plushies';
+import {
+  getGroupNames,
+  getMentionOptions,
+  getPlushieById,
+} from '@/data/plushies';
 import { requireEditor } from '@/lib/session';
 
 import { BackButton } from '@/components/back-button';
@@ -15,9 +19,10 @@ export default async function NewPlushiePage(
   await requireEditor();
   // Duplicating starts from another plushie's details.
   const { from } = await props.searchParams;
-  const [source, plushies] = await Promise.all([
+  const [source, plushies, groups] = await Promise.all([
     typeof from === 'string' ? getPlushieById(from) : null,
     getMentionOptions(),
+    getGroupNames(),
   ]);
 
   return (
@@ -41,6 +46,7 @@ export default async function NewPlushiePage(
         key={source?.id}
         source={source ?? undefined}
         plushies={plushies}
+        groups={groups}
       />
     </div>
   );

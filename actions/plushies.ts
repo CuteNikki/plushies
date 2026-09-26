@@ -19,6 +19,13 @@ import {
   isViewingAs,
   VIEWING_AS_MESSAGE,
 } from '@/lib/permissions';
+import {
+  findGroup,
+  makeRoomAfter,
+  nextPosition,
+  removeEmptyGroups,
+} from '@/lib/plushie-order';
+import { changedKeys } from '@/lib/revert';
 import { getSession } from '@/lib/session';
 import { deleteFiles, deleteOrphanedFiles, unusedKeys } from '@/lib/uploads';
 
@@ -38,6 +45,16 @@ const optional = z
   .string()
   .trim()
   .transform((value) => value || null);
+
+const GROUP_NAME_MAX = 60;
+
+const groupName = z
+  .string()
+  .trim()
+  .max(
+    GROUP_NAME_MAX,
+    `Keep the group's name under ${GROUP_NAME_MAX} characters`
+  );
 
 const plushieSchema = z.object({
   // Only sent when editing an existing plushie.
@@ -75,6 +92,9 @@ const plushieSchema = z.object({
     .transform((facts) => facts.filter((fact) => fact.label && fact.value)),
   thumbnail: image.nullable(),
   gallery: z.array(image),
+  group: groupName.optional().transform((value) => value || null),
+  /** Duplicating: the plushie to go right after, if in the same group. */
+  placeAfter: z.string().optional(),
 });
 
 function slugify(name: string) {
@@ -108,6 +128,55 @@ const withGallery = {
   gallery: { orderBy: { position: 'asc' } },
 } satisfies Prisma.PlushieInclude;
 
+/**
+ * Where a saved plushie goes. They stay put unless they join or leave a
+ * group; then they go last in it, or right after the plushie they were
+ * copied from if that one is there too. A new group takes the place of the
+ * plushie that starts it.
+ */
+async function placement(
+  tx: Prisma.TransactionClient,
+  {
+    existing,
+    name,
+    placeAfter,
+  }: {
+    existing: { groupId: string | null; position: number } | null;
+    name: string | null;
+    placeAfter?: string;
+  }
+): Promise<{ groupId: string | null; position: number }> {
+  const group = name ? await findGroup(tx, name) : null;
+  if (existing && (name ? group?.id : null) === existing.groupId) {
+    return { groupId: existing.groupId, position: existing.position };
+  }
+  const source = placeAfter
+    ? await tx.plushie.findUnique({
+        where: { id: placeAfter },
+        select: { groupId: true, position: true },
+      })
+    : null;
+
+  if (name && !group) {
+    const position =
+      existing && !existing.groupId
+        ? existing.position
+        : source && !source.groupId
+          ? await makeRoomAfter(tx, null, source.position)
+          : await nextPosition(tx, null);
+    const created = await tx.plushieGroup.create({ data: { name, position } });
+    return { groupId: created.id, position: 1 };
+  }
+  const groupId = group?.id ?? null;
+  if (source && source.groupId === groupId) {
+    return {
+      groupId,
+      position: await makeRoomAfter(tx, groupId, source.position),
+    };
+  }
+  return { groupId, position: await nextPosition(tx, groupId) };
+}
+
 export async function savePlushie(
   _state: FormState,
   formData: FormData
@@ -122,7 +191,7 @@ export async function savePlushie(
   });
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
-  const { id, thumbnail, gallery, ...fields } = parsed.data;
+  const { id, thumbnail, gallery, group, placeAfter, ...fields } = parsed.data;
   const slug = fields.slug || slugify(fields.name);
   if (!slug) return { error: 'Pick a URL name for your plushie' };
 
@@ -140,34 +209,56 @@ export async function savePlushie(
   let logged: Promise<void>;
   try {
     if (id) {
-      const existing = await db.plushie.findUnique({
-        where: { id },
-        include: withGallery,
+      const saved = await db.$transaction(async (tx) => {
+        const existing = await tx.plushie.findUnique({
+          where: { id },
+          include: withGallery,
+        });
+        if (!existing) return null;
+        const updated = await tx.plushie.update({
+          where: { id },
+          data: {
+            ...data,
+            ...(await placement(tx, { existing, name: group })),
+            gallery: { deleteMany: {}, create: galleryRows },
+          },
+          include: withGallery,
+        });
+        await removeEmptyGroups(tx);
+        return { existing, updated };
       });
-      if (!existing) return { error: 'This plushie no longer exists' };
+      if (!saved) return { error: 'This plushie no longer exists' };
 
-      const updated = await db.plushie.update({
-        where: { id },
-        data: {
-          ...data,
-          gallery: { deleteMany: {}, create: galleryRows },
-        },
-        include: withGallery,
-      });
-      logged = logActivity({
-        type: ActivityType.UPDATED,
-        subject: ActivitySubject.PLUSHIE,
-        subjectId: id,
-        subjectName: updated.name,
-        actor,
-        before: plushieSnapshot(existing),
-        after: plushieSnapshot(updated),
-      });
+      const before = plushieSnapshot(saved.existing);
+      const after = plushieSnapshot(saved.updated);
+      // Only joining or leaving a group isn't in the history.
+      logged =
+        changedKeys(before, after).length > 0
+          ? logActivity({
+              type: ActivityType.UPDATED,
+              subject: ActivitySubject.PLUSHIE,
+              subjectId: id,
+              subjectName: saved.updated.name,
+              actor,
+              before,
+              after,
+            })
+          : Promise.resolve();
     } else {
-      const created = await db.plushie.create({
-        data: { ...data, gallery: { create: galleryRows } },
-        include: withGallery,
-      });
+      const created = await db.$transaction(async (tx) =>
+        tx.plushie.create({
+          data: {
+            ...data,
+            ...(await placement(tx, {
+              existing: null,
+              name: group,
+              placeAfter,
+            })),
+            gallery: { create: galleryRows },
+          },
+          include: withGallery,
+        })
+      );
       logged = logActivity({
         type: ActivityType.CREATED,
         subject: ActivitySubject.PLUSHIE,
@@ -203,9 +294,13 @@ export async function deletePlushie(
 ) {
   const actor = await assertEditor();
 
-  const plushie = await db.plushie.delete({
-    where: { id },
-    include: withGallery,
+  const plushie = await db.$transaction(async (tx) => {
+    const deleted = await tx.plushie.delete({
+      where: { id },
+      include: withGallery,
+    });
+    await removeEmptyGroups(tx);
+    return deleted;
   });
   const logged = logActivity({
     type: ActivityType.DELETED,
@@ -232,4 +327,134 @@ export async function discardUploads(keys: string[]) {
   if (keys.length === 0) return;
 
   await deleteFiles(await unusedKeys(keys));
+}
+
+const orderSchema = z.array(
+  z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('plushie'), id: z.string() }),
+    z.object({
+      kind: z.literal('group'),
+      id: z.string(),
+      plushieIds: z.array(z.string()),
+    }),
+  ])
+);
+
+export type OrderInput = z.infer<typeof orderSchema>;
+
+/**
+ * Saves your order: the groups and the plushies outside one, and each
+ * group's plushies. Plushies moved into or out of a group on the arrange
+ * page change group here too. Groups deleted meanwhile are skipped, so
+ * their plushies stay where they are.
+ */
+export async function saveOrder(
+  input: OrderInput
+): Promise<{ error?: string }> {
+  await assertEditor();
+  const parsed = orderSchema.safeParse(input);
+  if (!parsed.success) return { error: 'That order couldn’t be saved' };
+
+  await db.$transaction(async (tx) => {
+    const groups = new Set(
+      (await tx.plushieGroup.findMany({ select: { id: true } })).map(
+        (group) => group.id
+      )
+    );
+    await Promise.all(
+      parsed.data.flatMap((item, index) =>
+        item.kind === 'plushie'
+          ? [
+              tx.plushie.updateMany({
+                where: { id: item.id },
+                data: { groupId: null, position: index + 1 },
+              }),
+            ]
+          : groups.has(item.id)
+            ? [
+                tx.plushieGroup.update({
+                  where: { id: item.id },
+                  data: { position: index + 1 },
+                }),
+                ...item.plushieIds.map((plushieId, position) =>
+                  tx.plushie.updateMany({
+                    where: { id: plushieId },
+                    data: { groupId: item.id, position: position + 1 },
+                  })
+                ),
+              ]
+            : []
+      )
+    );
+    await removeEmptyGroups(tx);
+  });
+  revalidatePath('/', 'layout');
+  return {};
+}
+
+/**
+ * Moves a plushie into a group by name, starting it if there's none by that
+ * name. A new group goes where the plushie was, or right after the group
+ * they left.
+ */
+export async function moveToNewGroup(
+  plushieId: string,
+  input: string
+): Promise<{ error?: string }> {
+  await assertEditor();
+  const parsed = groupName.min(1, 'Give the group a name').safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const name = parsed.data;
+
+  const moved = await db.$transaction(async (tx) => {
+    const plushie = await tx.plushie.findUnique({
+      where: { id: plushieId },
+      include: { group: true },
+    });
+    if (!plushie) return false;
+    const existing = await findGroup(tx, name);
+    if (existing) {
+      if (existing.id !== plushie.groupId) {
+        await tx.plushie.update({
+          where: { id: plushieId },
+          data: {
+            groupId: existing.id,
+            position: await nextPosition(tx, existing.id),
+          },
+        });
+      }
+    } else {
+      const position = plushie.group
+        ? await makeRoomAfter(tx, null, plushie.group.position)
+        : plushie.position;
+      const group = await tx.plushieGroup.create({ data: { name, position } });
+      await tx.plushie.update({
+        where: { id: plushieId },
+        data: { groupId: group.id, position: 1 },
+      });
+    }
+    await removeEmptyGroups(tx);
+    return true;
+  });
+  if (!moved) return { error: 'This plushie no longer exists' };
+  revalidatePath('/', 'layout');
+  return {};
+}
+
+export async function renameGroup(
+  id: string,
+  input: string
+): Promise<{ error?: string }> {
+  await assertEditor();
+  const parsed = groupName.min(1, 'Give the group a name').safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const name = parsed.data;
+
+  const taken = await findGroup(db, name);
+  if (taken && taken.id !== id) {
+    return { error: `There’s already a group called “${taken.name}”` };
+  }
+  await db.plushieGroup.update({ where: { id }, data: { name } });
+  revalidatePath('/', 'layout');
+  return {};
 }

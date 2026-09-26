@@ -18,8 +18,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-/** They come oldest first, in the order they were added. */
+/** They come in your order, each group's plushies together. */
 const orders = {
+  mine: 'My order',
   oldest: 'Oldest first',
   newest: 'Newest first',
   name: 'Name A–Z',
@@ -30,7 +31,7 @@ type Order = keyof typeof orders;
 
 export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
   const [query, setQuery] = useState('');
-  const [order, setOrder] = useState<Order>('oldest');
+  const [order, setOrder] = useState<Order>('mine');
 
   const q = query.trim().toLowerCase();
   const filtered = plushies.filter((plushie) =>
@@ -38,14 +39,18 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
       .filter(Boolean)
       .some((value) => value!.toLowerCase().includes(q))
   );
+  const byAdded = () =>
+    filtered.toSorted((a, b) => a.createdAt.localeCompare(b.createdAt));
   const shown =
-    order === 'newest'
-      ? filtered.toReversed()
-      : order === 'name'
-        ? filtered.toSorted((a, b) => a.name.localeCompare(b.name))
-        : order === 'likes'
-          ? filtered.toSorted((a, b) => b.likes - a.likes)
-          : filtered;
+    order === 'oldest'
+      ? byAdded()
+      : order === 'newest'
+        ? byAdded().toReversed()
+        : order === 'name'
+          ? filtered.toSorted((a, b) => a.name.localeCompare(b.name))
+          : order === 'likes'
+            ? filtered.toSorted((a, b) => b.likes - a.likes)
+            : filtered;
 
   return (
     <div className='flex flex-col gap-6'>

@@ -17,6 +17,10 @@ const fields = [
   { label: 'Traits', hint: 'Separate with commas' },
   { label: 'Gender' },
   { label: 'Pronouns' },
+  {
+    label: 'Group',
+    hint: 'Plushies in a group stay together. Pick one or type a new name.',
+  },
 ];
 
 /** Shared by the new and edit plushie pages. */

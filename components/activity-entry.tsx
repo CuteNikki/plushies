@@ -479,11 +479,11 @@ const plushieLabels: Record<keyof PlushieSnapshot, string> = {
   thumbnail: 'Thumbnail',
   gallery: 'Gallery',
   species: 'Species',
+  origin: 'From',
   birthday: 'Birthday',
+  traits: 'Traits',
   gender: 'Gender',
   pronouns: 'Pronouns',
-  origin: 'From',
-  traits: 'Traits',
   description: 'Description',
   facts: 'Facts',
 };

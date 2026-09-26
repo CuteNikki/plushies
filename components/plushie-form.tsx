@@ -297,19 +297,19 @@ export function PlushieForm({
             placeholder='A claw machine in Tokyo'
           />
           <BirthdayField defaultValue={details?.birthday} />
-          <Field label='Gender' name='gender' defaultValue={details?.gender} />
-          <Field
-            label='Pronouns'
-            name='pronouns'
-            defaultValue={details?.pronouns}
-            placeholder='she/her'
-          />
           <Field
             label='Traits'
             name='traits'
             defaultValue={details?.traits.join(', ')}
             placeholder='Sleepy, Gentle, Cuddly'
             hint='Separate with commas'
+          />
+          <Field label='Gender' name='gender' defaultValue={details?.gender} />
+          <Field
+            label='Pronouns'
+            name='pronouns'
+            defaultValue={details?.pronouns}
+            placeholder='she/her'
           />
         </div>
         <div className='flex flex-col gap-2'>

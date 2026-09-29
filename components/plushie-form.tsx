@@ -35,6 +35,7 @@ import {
 import { UploadDropzone } from '@/lib/uploadthing';
 import { cn } from '@/lib/utils';
 
+import { useBackLink } from '@/components/back-button';
 import { BirthdayField } from '@/components/birthday-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { MentionField, type MentionOption } from '@/components/mention-field';
@@ -102,6 +103,11 @@ export function PlushieForm({
   const [uploadError, setUploadError] = useState<string>();
   const [deleting, startDelete] = useTransition();
   const [ask, confirmDialog] = useConfirm();
+  // Back to wherever the form was opened from, as it was left.
+  const cancel = useBackLink(
+    plushie ? `/plushies/${plushie.slug}` : '/dashboard/plushies',
+    { anyPage: true }
+  );
 
   // Photos from this visit that aren't saved yet are cleaned up when removed
   // or on cancel. Ones left behind by closing the tab are swept up later.
@@ -420,11 +426,12 @@ export function PlushieForm({
               href={
                 plushie ? `/plushies/${plushie.slug}` : '/dashboard/plushies'
               }
-              onClick={() => {
+              onClick={(event) => {
                 const unsaved = [thumbnail, ...gallery]
                   .filter((image) => image && !savedKeys.has(image.key))
                   .map((image) => image!.key);
                 if (unsaved.length > 0) void discardUploads(unsaved);
+                cancel(event);
               }}
             >
               Cancel

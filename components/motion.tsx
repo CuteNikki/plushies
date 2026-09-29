@@ -9,6 +9,7 @@ import {
   type Variants,
 } from 'motion/react';
 import * as m from 'motion/react-m';
+import { usePathname } from 'next/navigation';
 import {
   Children,
   createContext,
@@ -17,6 +18,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+import { hasSeenPage } from '@/lib/navigation';
 
 // No 'down': things falling from above while others rise looks like a collision.
 type Direction = 'up' | 'left' | 'right' | 'none';
@@ -116,9 +119,14 @@ const FeaturesReadyContext = createContext(true);
 
 /**
  * Waits until the element first scrolls into view, then claims `seconds` of
- * the nearest queue. Returns the delay to use, or `null` until then.
+ * the nearest queue. Returns the delay to use, or `null` until then, and
+ * whether to skip the animation: on a page seen before during this visit,
+ * e.g. going back to the list after opening one of its plushies, everything
+ * is there right away instead of fading in again.
  */
 function useReveal(seconds: number) {
+  const pathname = usePathname();
+  const [seen] = useState(() => hasSeenPage(pathname));
   const ref = useRef<HTMLElement>(null);
   // As soon as any of it shows. A share of its area would never be reached
   // by elements many screens tall, like a long list, which then stay hidden.
@@ -126,7 +134,7 @@ function useReveal(seconds: number) {
   const queue = useContext(QueueContext);
   const parentClaimed = useContext(ParentClaimedContext);
   const featuresReady = useContext(FeaturesReadyContext);
-  const [delay, setDelay] = useState<number | null>(null);
+  const [delay, setDelay] = useState<number | null>(seen ? 0 : null);
 
   useEffect(() => {
     // React runs child effects before parent ones, so without waiting, rows
@@ -141,7 +149,7 @@ function useReveal(seconds: number) {
     return () => cancelAnimationFrame(frame);
   }, [inView, parentClaimed, featuresReady, delay, queue, seconds]);
 
-  return { ref, delay };
+  return { ref, delay, seen };
 }
 
 // The lightweight `m` components: MotionProvider loads what they animate with.
@@ -175,11 +183,11 @@ export function Reveal({
   children?: React.ReactNode;
 }) {
   const Component = elements[as] as typeof m.div;
-  const { ref, delay } = useReveal(STEP);
+  const { ref, delay, seen } = useReveal(STEP);
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
-      initial='hidden'
+      initial={seen ? false : 'hidden'}
       animate={delay === null ? 'hidden' : 'visible'}
       variants={fadeIn(direction, delay ?? 0)}
       {...props}
@@ -207,11 +215,12 @@ export function RevealGroup({
 }) {
   const Component = elements[as] as typeof m.div;
   const count = Children.count(props.children);
-  const { ref, delay } = useReveal(interval * Math.max(count, 1));
+  const { ref, delay, seen } = useReveal(interval * Math.max(count, 1));
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
-      initial='hidden'
+      // Its items start where the group does.
+      initial={seen ? false : 'hidden'}
       animate={delay === null ? 'hidden' : 'visible'}
       variants={{
         hidden: {},

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+
 import {
   getMentionOptions,
   getPlushie,
@@ -14,8 +16,6 @@ import { site } from '@/lib/site';
 
 import { BackButton } from '@/components/back-button';
 import { Comments } from '@/components/comments';
-import { DeletePlushieButton } from '@/components/delete-plushie-button';
-import { EditPlushieButton } from '@/components/edit-plushie-button';
 import { LikeButton } from '@/components/like-button';
 import { MentionText } from '@/components/mention-text';
 import {
@@ -24,10 +24,12 @@ import {
   RevealItem,
   RevealQueue,
 } from '@/components/motion';
+import { PlushieActions } from '@/components/plushie-actions';
 import { PlushieAge } from '@/components/plushie-age';
 import { PlushiePhoto } from '@/components/plushie-photo';
 import { PlushiePhotos } from '@/components/plushie-photos';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/sonner';
 
 export async function generateStaticParams() {
@@ -85,6 +87,11 @@ export default async function PlushiePage(
   const plushie = await getPlushie(slug);
   if (!plushie) notFound();
   const targets = await mentionTargets();
+  // Their neighbors in your order, like on the home page, for browsing.
+  const everyone = [...targets.values()];
+  const index = everyone.findIndex((other) => other.id === plushie.id);
+  const previous = everyone[index - 1];
+  const next = everyone[index + 1];
   // In your order, like the home page.
   const groupMates = plushie.group
     ? [...targets.values()].filter(
@@ -119,11 +126,8 @@ export default async function PlushiePage(
     <div className='flex flex-col gap-4'>
       <Reveal className='flex items-center justify-between gap-2'>
         <BackButton href='/'>All plushies</BackButton>
-        <div className='flex flex-wrap gap-2'>
-          <EditPlushieButton id={plushie.id} />
-          <DeletePlushieButton
-            plushie={{ id: plushie.id, name: plushie.name }}
-          />
+        <div className='flex flex-wrap justify-end gap-2'>
+          <PlushieActions plushie={{ id: plushie.id, name: plushie.name }} />
         </div>
       </Reveal>
 
@@ -202,6 +206,21 @@ export default async function PlushiePage(
         </RevealQueue>
       </article>
 
+      {(previous || next) && (
+        <Reveal
+          as='nav'
+          aria-label='More plushies'
+          className='mt-4 flex justify-between gap-2 border-t pt-4'
+        >
+          {previous ? (
+            <NeighborLink plushie={previous} direction='previous' />
+          ) : (
+            <span />
+          )}
+          {next && <NeighborLink plushie={next} direction='next' />}
+        </Reveal>
+      )}
+
       <Reveal className='mt-6'>
         <Comments
           plushieId={plushie.id}
@@ -246,5 +265,45 @@ function PlushieLinks({
         ))}
       </RevealItem>
     </RevealGroup>
+  );
+}
+
+/** The plushie before or after this one, with their photo and name. */
+function NeighborLink({
+  plushie,
+  direction,
+}: {
+  plushie: Plushie;
+  direction: 'previous' | 'next';
+}) {
+  const Icon = direction === 'previous' ? ChevronLeftIcon : ChevronRightIcon;
+  return (
+    <Button
+      variant='ghost'
+      className='h-auto min-w-0 gap-2 rounded-full py-1.5 font-heading'
+      asChild
+    >
+      <Link
+        href={`/plushies/${plushie.slug}`}
+        rel={direction === 'previous' ? 'prev' : 'next'}
+        className={direction === 'next' ? 'flex-row-reverse' : undefined}
+      >
+        <Icon />
+        <PlushiePhoto
+          plushie={plushie}
+          sizes='28px'
+          compact
+          className='size-7 shrink-0 rounded-full'
+        />
+        <span
+          className={`flex min-w-0 flex-col leading-tight ${direction === 'next' ? 'items-end' : 'items-start'}`}
+        >
+          <span className='text-xs font-normal text-muted-foreground'>
+            {direction === 'previous' ? 'Previous' : 'Next'}
+          </span>
+          <span className='truncate'>{plushie.name}</span>
+        </span>
+      </Link>
+    </Button>
   );
 }

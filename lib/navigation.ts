@@ -1,10 +1,13 @@
 /**
- * Where people have been during this visit, tracked by ScrollToTop. Kept in
+ * How people got to the page they're on, tracked by ScrollToTop. Kept in
  * memory, so a reload starts fresh.
  */
 
-/** Pages shown before, which appear right away instead of animating again. */
-const seenPages = new Set<string>();
+/**
+ * The page reached with back or forward, which appears as it was left
+ * instead of animating again. Cleared by the next link.
+ */
+let returnedTo: string | null = null;
 
 /**
  * The page right behind this one in the history: set when this page was
@@ -12,14 +15,23 @@ const seenPages = new Set<string>();
  */
 let openedFrom: string | null = null;
 
-export function hasSeenPage(pathname: string) {
-  return seenPages.has(pathname);
+/**
+ * Called on back and forward, before the page they return to renders. The
+ * address has changed by then, so it names that page.
+ */
+export function returnToPage(pathname: string) {
+  returnedTo = pathname;
 }
 
-/** Called when a page is left, and with the next page's opener. */
+/** Whether this page was reached with back or forward. */
+export function isReturningTo(pathname: string) {
+  return returnedTo === pathname;
+}
+
+/** Called once a new page shows, with the one before it. */
 export function leavePage(pathname: string, next: { byLink: boolean }) {
-  seenPages.add(pathname);
   openedFrom = next.byLink ? pathname : null;
+  if (next.byLink) returnedTo = null;
 }
 
 /**

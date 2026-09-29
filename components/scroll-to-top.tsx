@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
-import { leavePage } from '@/lib/navigation';
+import { leavePage, returnToPage } from '@/lib/navigation';
 
 /**
  * Starts every new page at the top. Next.js only scrolls when the new page's
@@ -19,7 +19,10 @@ export function ScrollToTop() {
   const backOrForward = useRef(false);
 
   useEffect(() => {
-    const onPopState = () => (backOrForward.current = true);
+    const onPopState = () => {
+      backOrForward.current = true;
+      returnToPage(location.pathname);
+    };
     addEventListener('popstate', onPopState);
     return () => removeEventListener('popstate', onPopState);
   }, []);

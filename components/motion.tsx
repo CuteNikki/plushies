@@ -19,7 +19,7 @@ import {
   useState,
 } from 'react';
 
-import { hasSeenPage } from '@/lib/navigation';
+import { isReturningTo } from '@/lib/navigation';
 
 // No 'down': things falling from above while others rise looks like a collision.
 type Direction = 'up' | 'left' | 'right' | 'none';
@@ -120,13 +120,13 @@ const FeaturesReadyContext = createContext(true);
 /**
  * Waits until the element first scrolls into view, then claims `seconds` of
  * the nearest queue. Returns the delay to use, or `null` until then, and
- * whether to skip the animation: on a page seen before during this visit,
- * e.g. going back to the list after opening one of its plushies, everything
- * is there right away instead of fading in again.
+ * whether to skip the animation: on a page reached with back or forward,
+ * e.g. back to the list after opening one of its plushies, everything is
+ * there right away instead of fading in again. Links animate as usual.
  */
 function useReveal(seconds: number) {
   const pathname = usePathname();
-  const [seen] = useState(() => hasSeenPage(pathname));
+  const [returning] = useState(() => isReturningTo(pathname));
   const ref = useRef<HTMLElement>(null);
   // As soon as any of it shows. A share of its area would never be reached
   // by elements many screens tall, like a long list, which then stay hidden.
@@ -134,7 +134,7 @@ function useReveal(seconds: number) {
   const queue = useContext(QueueContext);
   const parentClaimed = useContext(ParentClaimedContext);
   const featuresReady = useContext(FeaturesReadyContext);
-  const [delay, setDelay] = useState<number | null>(seen ? 0 : null);
+  const [delay, setDelay] = useState<number | null>(returning ? 0 : null);
 
   useEffect(() => {
     // React runs child effects before parent ones, so without waiting, rows
@@ -149,7 +149,7 @@ function useReveal(seconds: number) {
     return () => cancelAnimationFrame(frame);
   }, [inView, parentClaimed, featuresReady, delay, queue, seconds]);
 
-  return { ref, delay, seen };
+  return { ref, delay, returning };
 }
 
 // The lightweight `m` components: MotionProvider loads what they animate with.
@@ -183,11 +183,11 @@ export function Reveal({
   children?: React.ReactNode;
 }) {
   const Component = elements[as] as typeof m.div;
-  const { ref, delay, seen } = useReveal(STEP);
+  const { ref, delay, returning } = useReveal(STEP);
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
-      initial={seen ? false : 'hidden'}
+      initial={returning ? false : 'hidden'}
       animate={delay === null ? 'hidden' : 'visible'}
       variants={fadeIn(direction, delay ?? 0)}
       {...props}
@@ -215,12 +215,12 @@ export function RevealGroup({
 }) {
   const Component = elements[as] as typeof m.div;
   const count = Children.count(props.children);
-  const { ref, delay, seen } = useReveal(interval * Math.max(count, 1));
+  const { ref, delay, returning } = useReveal(interval * Math.max(count, 1));
   return (
     <Component
       ref={ref as React.Ref<HTMLDivElement>}
       // Its items start where the group does.
-      initial={seen ? false : 'hidden'}
+      initial={returning ? false : 'hidden'}
       animate={delay === null ? 'hidden' : 'visible'}
       variants={{
         hidden: {},

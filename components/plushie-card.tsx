@@ -25,11 +25,12 @@ export function PlushieCard({
     <PlushieContextMenu
       plushie={plushie}
       as='div'
-      className='group/card relative'
+      className='group/card relative h-full'
     >
       <Link
         href={`/plushies/${plushie.slug}`}
-        className='group block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/40 focus-visible:ring-2 focus-visible:ring-ring'
+        // As tall as the others in its row, whose pronouns might wrap.
+        className='group flex h-full flex-col overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/10 hover:ring-primary/40 focus-visible:ring-2 focus-visible:ring-ring'
       >
         <PlushiePhoto
           plushie={plushie}
@@ -37,12 +38,20 @@ export function PlushieCard({
           preload={preload}
           className='transition group-hover:brightness-105'
         />
-        <div className='flex items-center justify-between gap-2 p-3 px-4'>
-          <h2 className='truncate font-heading text-base font-semibold'>
+        {/* The pronouns go below names too long to fit beside them. Only
+            names too long for the whole card end in "…", shown whole on
+            hover. */}
+        <div className='flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 p-3'>
+          <h2
+            title={plushie.name}
+            className='max-w-full truncate font-heading text-sm font-semibold sm:text-base'
+          >
             {plushie.name}
           </h2>
           {plushie.pronouns && (
-            <Badge variant='secondary'>{plushie.pronouns}</Badge>
+            <Badge variant='secondary' size='sm'>
+              {plushie.pronouns}
+            </Badge>
           )}
         </div>
       </Link>

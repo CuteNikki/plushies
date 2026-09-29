@@ -35,7 +35,7 @@ import {
 import { UploadDropzone } from '@/lib/uploadthing';
 import { cn } from '@/lib/utils';
 
-import { useBackLink } from '@/components/back-button';
+import { onBackLinkClick } from '@/components/back-button';
 import { BirthdayField } from '@/components/birthday-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { MentionField, type MentionOption } from '@/components/mention-field';
@@ -104,7 +104,7 @@ export function PlushieForm({
   const [deleting, startDelete] = useTransition();
   const [ask, confirmDialog] = useConfirm();
   // Back to wherever the form was opened from, as it was left.
-  const cancel = useBackLink(
+  const cancel = onBackLinkClick(
     plushie ? `/plushies/${plushie.slug}` : '/dashboard/plushies',
     { anyPage: true }
   );

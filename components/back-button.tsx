@@ -1,29 +1,28 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 import { ArrowLeftIcon } from 'lucide-react';
 
-import { canGoBackTo } from '@/lib/navigation';
+import { stepsBackTo } from '@/lib/navigation';
 
 import { Button } from '@/components/ui/button';
 
 /**
- * Goes back in the history when that's where `href` points, so the page
+ * Goes back in the history to the last visit to where `href` points, or to
+ * the page before with `anyPage`, however many steps back, so the page
  * returns as it was left: scrolled down, filtered and sorted. A plain link
  * otherwise, e.g. when the page was opened from elsewhere, and always when
  * opened in a new tab.
  */
-export function useBackLink(href: string, { anyPage = false } = {}) {
-  const router = useRouter();
+export function onBackLinkClick(href: string, { anyPage = false } = {}) {
   return (event: React.MouseEvent) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey)
-      return false;
-    if (!canGoBackTo(anyPage ? undefined : href.split('?')[0])) return false;
+      return;
+    const steps = stepsBackTo(anyPage ? undefined : href.split('?')[0]);
+    if (!steps) return;
     event.preventDefault();
-    router.back();
-    return true;
+    history.go(-steps);
   };
 }
 
@@ -35,10 +34,9 @@ export function BackButton({
   href: string;
   children: React.ReactNode;
 }) {
-  const goBack = useBackLink(href);
   return (
     <Button variant='ghost' size='sm' className='w-fit' asChild>
-      <Link href={href} onClick={goBack}>
+      <Link href={href} onClick={onBackLinkClick(href)}>
         <ArrowLeftIcon />
         {children}
       </Link>

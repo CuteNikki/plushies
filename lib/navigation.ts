@@ -11,7 +11,8 @@ let returnedTo: string | null = null;
 
 /**
  * The page right behind this one in the history: set when this page was
- * opened by a link, unknown after going back or forward.
+ * opened by a link, unknown after going back or forward. For browsers
+ * without the Navigation API, which can't list the history.
  */
 let openedFrom: string | null = null;
 
@@ -34,11 +35,56 @@ export function leavePage(pathname: string, next: { byLink: boolean }) {
   if (next.byLink) returnedTo = null;
 }
 
+/** The parts of the Navigation API used here, not in TypeScript's types yet. */
+type HistoryEntry = {
+  key: string;
+  index: number;
+  url: string | null;
+  /** False for entries from before the last full page load. */
+  sameDocument: boolean;
+};
+
+type HistoryEntries = {
+  currentEntry: HistoryEntry | null;
+  entries(): HistoryEntry[];
+};
+
+function historyEntries() {
+  return (globalThis as { navigation?: HistoryEntries }).navigation;
+}
+
 /**
- * Whether going back in the history returns to `pathname`, or to any page
- * of this site without one. Going back keeps that page's scroll position and
- * filters, where a link would start it over.
+ * Identifies the history entry being shown, to remember its scroll position.
+ * Null in browsers without the Navigation API.
  */
-export function canGoBackTo(pathname?: string) {
-  return openedFrom !== null && (!pathname || openedFrom === pathname);
+export function currentEntryKey() {
+  return historyEntries()?.currentEntry?.key ?? null;
+}
+
+/**
+ * How many steps back in the history the last visit to `pathname` is, or
+ * the page before this one without one; null when it isn't there, e.g. for
+ * a page opened from elsewhere. Going back keeps that page's scroll position
+ * and filters, where a link would start it over. Browsers without the
+ * Navigation API only know the page right behind this one.
+ */
+export function stepsBackTo(pathname?: string) {
+  const navigation = historyEntries();
+  const current = navigation?.currentEntry;
+  if (!navigation || !current) {
+    const found = openedFrom !== null && (!pathname || openedFrom === pathname);
+    return found ? 1 : null;
+  }
+  // Only this site's pages are listed, the latest first when going back.
+  // Not past the last full page load, e.g. an address typed in: going back
+  // there loads the page afresh.
+  const entries = navigation.entries();
+  for (let index = current.index - 1; index >= 0; index--) {
+    const { url, sameDocument } = entries[index];
+    if (!url || !sameDocument) return null;
+    if (!pathname || new URL(url).pathname === pathname) {
+      return current.index - index;
+    }
+  }
+  return null;
 }

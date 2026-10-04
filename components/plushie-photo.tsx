@@ -1,9 +1,7 @@
-import Image from 'next/image';
-
-import { HeartCrackIcon } from 'lucide-react';
-
 import type { Plushie } from '@/data/plushies';
 import { cn } from '@/lib/utils';
+
+import { MissingPhoto, PhotoImage } from '@/components/photo-image';
 
 export function PlushiePhoto({
   plushie,
@@ -26,21 +24,17 @@ export function PlushiePhoto({
       )}
     >
       {plushie.thumbnail ? (
-        <Image
+        <PhotoImage
           src={plushie.thumbnail.url}
           alt={`Photo of ${plushie.name}`}
           fill
           sizes={sizes}
           preload={preload}
+          compact={compact}
           className='object-cover'
         />
       ) : (
-        <div className='flex size-full flex-col items-center justify-center gap-2 text-primary/60'>
-          <HeartCrackIcon className='size-1/2 fill-current' />
-          {!compact && (
-            <span className='font-heading text-sm'>Missing Photo</span>
-          )}
-        </div>
+        <MissingPhoto compact={compact} />
       )}
     </div>
   );

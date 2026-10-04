@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   startTransition,
@@ -40,6 +39,7 @@ import { BirthdayField } from '@/components/birthday-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { MentionField, type MentionOption } from '@/components/mention-field';
 import { Reveal } from '@/components/motion';
+import { PhotoImage } from '@/components/photo-image';
 import { deletePlushieConfirm } from '@/components/plushie-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -517,7 +517,7 @@ function Field({
 function Photo({ image }: { image: PlushieImage }) {
   return (
     <div className='relative aspect-square bg-muted'>
-      <Image
+      <PhotoImage
         src={image.url}
         alt=''
         fill

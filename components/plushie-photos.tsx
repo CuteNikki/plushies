@@ -1,12 +1,12 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 
 import type { Plushie } from '@/data/plushies';
 import { cn } from '@/lib/utils';
 
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import { PhotoImage } from '@/components/photo-image';
 import { PlushiePhoto } from '@/components/plushie-photo';
 
 /**
@@ -40,7 +40,7 @@ export function PlushiePhotos({
         direction='right'
         className='relative aspect-square overflow-hidden rounded-2xl bg-muted ring-1 ring-foreground/10'
       >
-        <Image
+        <PhotoImage
           key={current.key}
           src={current.url}
           alt={`Photo ${selected + 1} of ${plushie.name}`}
@@ -67,11 +67,12 @@ export function PlushiePhotos({
                     : 'opacity-70 hover:opacity-100'
                 )}
               >
-                <Image
+                <PhotoImage
                   src={photo.url}
                   alt=''
                   fill
                   sizes='(min-width: 768px) 10vw, 20vw'
+                  compact
                   className='object-cover'
                 />
               </button>

@@ -1,11 +1,10 @@
-import Image from 'next/image';
-
 import { HeartIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
 import { cn } from '@/lib/utils';
 
 import { Reveal, RevealQueue } from '@/components/motion';
+import { PhotoImage } from '@/components/photo-image';
 
 /**
  * Slight tilts and offsets for the stacked photos, back to front, with a
@@ -56,7 +55,7 @@ export async function AuthShell({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <div className='relative size-full overflow-hidden rounded-xl'>
-                    <Image
+                    <PhotoImage
                       src={plushie.thumbnail!.url}
                       alt=''
                       fill

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 
 import { ImageIcon, PencilIcon, SearchIcon, StarIcon } from 'lucide-react';
@@ -14,6 +13,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ItemMenuButton } from '@/components/item-menu';
 import { ListControls } from '@/components/list-controls';
 import { Reveal } from '@/components/motion';
+import { PhotoImage } from '@/components/photo-image';
 import { PlushieMenu } from '@/components/plushie-menu';
 import { RowLink } from '@/components/row-link';
 import { StorageUsage } from '@/components/storage-usage';
@@ -158,11 +158,12 @@ export default async function PhotosPage(
                     rel='noopener noreferrer'
                     className='block size-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset'
                   >
-                    <Image
+                    <PhotoImage
                       src={photo.url}
                       alt={`Photo ${index + 1} of ${plushie.name}`}
                       fill
                       sizes='(min-width: 640px) 144px, 96px'
+                      compact
                       className='object-cover'
                     />
                   </a>

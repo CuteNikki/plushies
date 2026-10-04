@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 
 import {
@@ -41,6 +40,7 @@ import type { RevertOption } from '@/lib/revert';
 import { cn } from '@/lib/utils';
 
 import { LocalTime } from '@/components/local-time';
+import { PhotoImage } from '@/components/photo-image';
 import { PlushieContextMenu } from '@/components/plushie-menu';
 import { PrivateText } from '@/components/private-text';
 import { RevertButton } from '@/components/revert-button';
@@ -701,7 +701,14 @@ function Photo({
         ring
       )}
     >
-      <Image src={url} alt='' fill sizes='48px' className='object-cover' />
+      <PhotoImage
+        src={url}
+        alt=''
+        fill
+        sizes='48px'
+        compact
+        className='object-cover'
+      />
     </span>
   );
 }

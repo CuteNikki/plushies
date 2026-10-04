@@ -44,7 +44,8 @@ export default async function ArrangePlushiesPage() {
 
   return (
     <div className='mx-auto flex w-full max-w-2xl flex-col gap-6'>
-      <Reveal className='flex'>
+      {/* Stays in reach while scrolling through a long list. */}
+      <Reveal className='sticky-bar flex'>
         <BackButton href='/dashboard/plushies'>Plushies</BackButton>
       </Reveal>
       <Reveal>

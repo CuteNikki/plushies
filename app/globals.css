@@ -127,6 +127,9 @@
   }
   html {
     @apply scrollbar-gutter-stable font-sans;
+    /* The sticky site header's height, kept up to date by SiteHeader, so
+       other sticky bars can sit right under it. */
+    --header-height: 3.5rem;
   }
   html body[data-scroll-locked] {
     @apply mr-0!;
@@ -164,6 +167,19 @@
       calc(var(--bar) - 2 * var(--r)) no-repeat,
     linear-gradient(var(--c), var(--c)) center / calc(100% - 2 * var(--r))
       var(--bar) no-repeat;
+}
+
+/* A bar of controls that stays under the site header while the page scrolls.
+   Its padding reaches past the page's own, so what scrolls under it is
+   blurred edge to edge, and the negative margins keep the layout as it was. */
+@utility sticky-bar {
+  position: sticky;
+  top: var(--header-height);
+  z-index: 10;
+  margin: calc(-1 * --spacing(2)) calc(-1 * --spacing(4));
+  padding: --spacing(2) --spacing(4);
+  background-color: --alpha(var(--color-background) / 80%);
+  backdrop-filter: blur(var(--blur-sm));
 }
 
 /*

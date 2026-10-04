@@ -176,7 +176,8 @@ export default async function PlushiesPage(
         ))}
       </Reveal>
 
-      <Reveal>
+      {/* Only on wider screens, where it fits on one line. */}
+      <Reveal className='sm:sticky-bar'>
         <ListControls
           query={query}
           search={{

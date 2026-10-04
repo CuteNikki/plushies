@@ -2,13 +2,14 @@ import Link from 'next/link';
 
 import { HeartIcon } from 'lucide-react';
 
+import { StickyHeader } from '@/components/sticky-header';
 import { ThemeButton } from '@/components/theme-button';
 import { UserMenu } from '@/components/user-menu';
 import { ViewingAsBanner } from '@/components/viewing-as-banner';
 
 export function SiteHeader() {
   return (
-    <header className='sticky top-0 z-10 border-b bg-background/80 backdrop-blur'>
+    <StickyHeader className='sticky top-0 z-20 border-b bg-background/80 backdrop-blur'>
       <ViewingAsBanner />
       <div className='mx-auto flex h-14 max-w-6xl items-center justify-between px-4'>
         <Link
@@ -23,6 +24,6 @@ export function SiteHeader() {
           <ThemeButton />
         </div>
       </div>
-    </header>
+    </StickyHeader>
   );
 }

@@ -83,7 +83,7 @@ export default function PlushieFormLoading() {
         <Skeleton className='h-6 w-20' />
       </div>
       {/* Create and Cancel. */}
-      <div className='flex gap-2 border-t pt-6'>
+      <div className='sticky bottom-4 flex gap-2 rounded-xl bg-card/80 p-3 shadow-lg ring-1 shadow-black/10 ring-foreground/10 backdrop-blur'>
         <Skeleton className='h-7 w-16' />
         <Skeleton className='h-7 w-16' />
       </div>

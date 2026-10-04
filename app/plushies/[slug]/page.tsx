@@ -124,7 +124,8 @@ export default async function PlushiePage(
 
   return (
     <div className='flex flex-col gap-4'>
-      <Reveal className='flex items-center justify-between gap-2'>
+      {/* Stays under the site header, so the actions are always at hand. */}
+      <Reveal className='sticky-bar flex items-center justify-between gap-2'>
         <BackButton href='/'>All plushies</BackButton>
         <div className='flex flex-wrap justify-end gap-2'>
           <PlushieActions plushie={{ id: plushie.id, name: plushie.name }} />

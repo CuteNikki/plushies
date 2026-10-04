@@ -313,7 +313,8 @@ export default async function ReportsPage(
         <Segments label='Status' items={statuses} />
       </Reveal>
 
-      <Reveal>
+      {/* Only on wider screens, where it fits on one line. */}
+      <Reveal className='sm:sticky-bar'>
         <ListControls
           query={query}
           search={{

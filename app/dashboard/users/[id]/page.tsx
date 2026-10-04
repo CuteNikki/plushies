@@ -65,11 +65,12 @@ export default async function UserPage(
   const banned = isBanned(user);
 
   return (
-    <div className='flex flex-col gap-8'>
-      <div className='flex flex-col gap-6'>
-        <Reveal className='flex'>
-          <BackButton href='/dashboard/users'>Users</BackButton>
-        </Reveal>
+    <div className='flex flex-col gap-6'>
+      {/* Stays in reach while scrolling, so it spans the whole page. */}
+      <Reveal className='sticky-bar flex'>
+        <BackButton href='/dashboard/users'>Users</BackButton>
+      </Reveal>
+      <div className='flex flex-col gap-8'>
         <Reveal className='flex flex-wrap items-start justify-between gap-4'>
           <div className='flex min-w-0 flex-col gap-1.5'>
             <h1 className='font-heading text-4xl font-semibold tracking-tight wrap-break-word'>
@@ -100,183 +101,186 @@ export default async function UserPage(
             />
           </div>
         </Reveal>
-      </div>
 
-      <Section
-        title='Likes'
-        description={count(user._count.likes, 'plushie') + ' liked.'}
-        more={user._count.likes > user.likes.length && `${page}/likes`}
-      >
-        {user.likes.length > 0 ? (
-          <LikedPlushies
-            plushies={user.likes.map(({ plushie }) => plushie)}
-            preview
-          />
-        ) : (
-          <EmptyState icon={HeartIcon}>No likes yet.</EmptyState>
-        )}
-      </Section>
-
-      <Section
-        title='Reports'
-        description={`${count(reportCount.received, 'report')} about them or their comments, ${count(reportCount.sent, 'report')} sent by them.`}
-      >
-        <ReceivedSentReports
-          received={{
-            count: reportCount.received,
-            more:
-              reports.about.length > shownReports.about.length
-                ? `${page}/reports`
-                : null,
-            list:
-              shownReports.about.length > 0 ? (
-                <ul className='flex flex-col gap-4'>
-                  {shownReports.about.map((item) => (
-                    <ReportCaseCard key={item.key} item={item} />
-                  ))}
-                </ul>
-              ) : (
-                <EmptyState icon={FlagIcon}>
-                  No one has reported them or their comments.
-                </EmptyState>
-              ),
-          }}
-          sent={{
-            count: reportCount.sent,
-            more:
-              reports.sent.length > shownReports.sent.length
-                ? `${page}/reports?show=sent`
-                : null,
-            list:
-              shownReports.sent.length > 0 ? (
-                <ul className='flex flex-col gap-4'>
-                  {shownReports.sent.map((item) => (
-                    <ReportCaseCard key={item.key} item={item} />
-                  ))}
-                </ul>
-              ) : (
-                <EmptyState icon={FlagIcon}>
-                  They haven’t reported anything.
-                </EmptyState>
-              ),
-          }}
-        />
-      </Section>
-
-      <Section
-        title='Comments'
-        description={
-          user._count.comments > user.comments.length
-            ? `${count(user._count.comments, 'comment')}, the latest ${user.comments.length} shown.`
-            : `${count(user._count.comments, 'comment')}.`
-        }
-        more={user._count.comments > user.comments.length && `${page}/comments`}
-      >
-        {user.comments.length > 0 ? (
-          <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
-            {user.comments.map((comment) => (
-              <CommentRow
-                key={comment.id}
-                comment={toCommentRow(comment)}
-                viewer={{ id: session.user.id, admin: true }}
-                showAuthor={false}
-              />
-            ))}
-          </ul>
-        ) : (
-          <EmptyState icon={MessageCircleIcon}>No comments yet.</EmptyState>
-        )}
-      </Section>
-
-      <Section
-        title='Activity'
-        description={`Changes to this account and changes they made, from the last ${ACTIVITY_DAYS} days.`}
-        more={activity.total > USER_PAGE_SHOWN.activity && `${page}/activity`}
-      >
-        {activity.entries.length > 0 ? (
-          <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
-            {activity.entries.map(({ entry, revert, revertedBy }) => (
-              <li key={entry.id}>
-                <ActivityEntry
-                  entry={entry}
-                  context={activity.context}
-                  revert={revert}
-                  revertedBy={revertedBy}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <EmptyState icon={HistoryIcon}>
-            Nothing in the last {ACTIVITY_DAYS} days.
-          </EmptyState>
-        )}
-      </Section>
-
-      {/* Last: it's not there on your own page, and everything above stays
-          put either way, as the loading placeholders expect. */}
-      {!isYou && (
         <Section
-          title='Ban'
-          description={
-            banned
-              ? undefined
-              : 'Signs them out everywhere and stops them signing in. They see the reason, if you give one, when they try.'
-          }
+          title='Likes'
+          description={count(user._count.likes, 'plushie') + ' liked.'}
+          more={user._count.likes > user.likes.length && `${page}/likes`}
         >
-          {banned ? (
-            <div className='flex flex-col gap-3 rounded-xl bg-destructive/5 p-4 ring-1 ring-destructive/20'>
-              <p className='text-sm'>
-                Banned
-                {user.bannedBy && (
-                  <>
-                    {' '}
-                    by{' '}
-                    <UserContextMenu user={user.bannedBy}>
-                      <Link
-                        href={`/dashboard/users/${user.bannedBy.id}`}
-                        className='font-semibold hover:underline'
-                      >
-                        {user.bannedBy.name}
-                      </Link>
-                    </UserContextMenu>
-                  </>
-                )}
-                {user.bannedAt && (
-                  <>
-                    {' '}
-                    <LocalTime iso={user.bannedAt.toISOString()} />
-                  </>
-                )}
-                {user.banExpires ? (
-                  <>
-                    , until{' '}
-                    <LocalTime iso={user.banExpires.toISOString()} absolute />.
-                  </>
-                ) : (
-                  ', until lifted.'
-                )}
-              </p>
-              <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
-                {user.banReason ?? (
-                  <span className='text-muted-foreground italic'>
-                    No reason given
-                  </span>
-                )}
-              </p>
-              <UnbanButton user={user} />
-            </div>
-          ) : isAdmin(user.role) ? (
-            <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
-              Admins can&rsquo;t be banned. Make them an editor first.
-            </p>
+          {user.likes.length > 0 ? (
+            <LikedPlushies
+              plushies={user.likes.map(({ plushie }) => plushie)}
+              preview
+            />
           ) : (
-            <div className='rounded-xl p-4 ring-1 ring-foreground/10'>
-              <BanForm user={user} />
-            </div>
+            <EmptyState icon={HeartIcon}>No likes yet.</EmptyState>
           )}
         </Section>
-      )}
+
+        <Section
+          title='Reports'
+          description={`${count(reportCount.received, 'report')} about them or their comments, ${count(reportCount.sent, 'report')} sent by them.`}
+        >
+          <ReceivedSentReports
+            received={{
+              count: reportCount.received,
+              more:
+                reports.about.length > shownReports.about.length
+                  ? `${page}/reports`
+                  : null,
+              list:
+                shownReports.about.length > 0 ? (
+                  <ul className='flex flex-col gap-4'>
+                    {shownReports.about.map((item) => (
+                      <ReportCaseCard key={item.key} item={item} />
+                    ))}
+                  </ul>
+                ) : (
+                  <EmptyState icon={FlagIcon}>
+                    No one has reported them or their comments.
+                  </EmptyState>
+                ),
+            }}
+            sent={{
+              count: reportCount.sent,
+              more:
+                reports.sent.length > shownReports.sent.length
+                  ? `${page}/reports?show=sent`
+                  : null,
+              list:
+                shownReports.sent.length > 0 ? (
+                  <ul className='flex flex-col gap-4'>
+                    {shownReports.sent.map((item) => (
+                      <ReportCaseCard key={item.key} item={item} />
+                    ))}
+                  </ul>
+                ) : (
+                  <EmptyState icon={FlagIcon}>
+                    They haven’t reported anything.
+                  </EmptyState>
+                ),
+            }}
+          />
+        </Section>
+
+        <Section
+          title='Comments'
+          description={
+            user._count.comments > user.comments.length
+              ? `${count(user._count.comments, 'comment')}, the latest ${user.comments.length} shown.`
+              : `${count(user._count.comments, 'comment')}.`
+          }
+          more={
+            user._count.comments > user.comments.length && `${page}/comments`
+          }
+        >
+          {user.comments.length > 0 ? (
+            <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
+              {user.comments.map((comment) => (
+                <CommentRow
+                  key={comment.id}
+                  comment={toCommentRow(comment)}
+                  viewer={{ id: session.user.id, admin: true }}
+                  showAuthor={false}
+                />
+              ))}
+            </ul>
+          ) : (
+            <EmptyState icon={MessageCircleIcon}>No comments yet.</EmptyState>
+          )}
+        </Section>
+
+        <Section
+          title='Activity'
+          description={`Changes to this account and changes they made, from the last ${ACTIVITY_DAYS} days.`}
+          more={activity.total > USER_PAGE_SHOWN.activity && `${page}/activity`}
+        >
+          {activity.entries.length > 0 ? (
+            <ul className='flex flex-col divide-y overflow-hidden rounded-xl ring-1 ring-foreground/10'>
+              {activity.entries.map(({ entry, revert, revertedBy }) => (
+                <li key={entry.id}>
+                  <ActivityEntry
+                    entry={entry}
+                    context={activity.context}
+                    revert={revert}
+                    revertedBy={revertedBy}
+                  />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState icon={HistoryIcon}>
+              Nothing in the last {ACTIVITY_DAYS} days.
+            </EmptyState>
+          )}
+        </Section>
+
+        {/* Last: it's not there on your own page, and everything above stays
+          put either way, as the loading placeholders expect. */}
+        {!isYou && (
+          <Section
+            title='Ban'
+            description={
+              banned
+                ? undefined
+                : 'Signs them out everywhere and stops them signing in. They see the reason, if you give one, when they try.'
+            }
+          >
+            {banned ? (
+              <div className='flex flex-col gap-3 rounded-xl bg-destructive/5 p-4 ring-1 ring-destructive/20'>
+                <p className='text-sm'>
+                  Banned
+                  {user.bannedBy && (
+                    <>
+                      {' '}
+                      by{' '}
+                      <UserContextMenu user={user.bannedBy}>
+                        <Link
+                          href={`/dashboard/users/${user.bannedBy.id}`}
+                          className='font-semibold hover:underline'
+                        >
+                          {user.bannedBy.name}
+                        </Link>
+                      </UserContextMenu>
+                    </>
+                  )}
+                  {user.bannedAt && (
+                    <>
+                      {' '}
+                      <LocalTime iso={user.bannedAt.toISOString()} />
+                    </>
+                  )}
+                  {user.banExpires ? (
+                    <>
+                      , until{' '}
+                      <LocalTime iso={user.banExpires.toISOString()} absolute />
+                      .
+                    </>
+                  ) : (
+                    ', until lifted.'
+                  )}
+                </p>
+                <p className='rounded-lg bg-background px-3 py-2 text-sm wrap-break-word whitespace-pre-line'>
+                  {user.banReason ?? (
+                    <span className='text-muted-foreground italic'>
+                      No reason given
+                    </span>
+                  )}
+                </p>
+                <UnbanButton user={user} />
+              </div>
+            ) : isAdmin(user.role) ? (
+              <p className='rounded-xl p-4 text-sm text-muted-foreground ring-1 ring-foreground/10'>
+                Admins can&rsquo;t be banned. Make them an editor first.
+              </p>
+            ) : (
+              <div className='rounded-xl p-4 ring-1 ring-foreground/10'>
+                <BanForm user={user} />
+              </div>
+            )}
+          </Section>
+        )}
+      </div>
     </div>
   );
 }

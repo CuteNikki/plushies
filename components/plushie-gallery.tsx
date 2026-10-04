@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { SearchIcon } from 'lucide-react';
+import { ArrowDownUpIcon, SearchIcon } from 'lucide-react';
 
 import type { Plushie } from '@/data/plushies';
 
@@ -20,7 +20,7 @@ import {
 
 /** They come in your order, each group's plushies together. */
 const orders = {
-  mine: 'My order',
+  mine: 'Default order',
   oldest: 'Oldest first',
   newest: 'Newest first',
   name: 'Name A–Z',
@@ -54,12 +54,13 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
 
   return (
     <div className='flex flex-col gap-6'>
-      <Reveal className='flex flex-wrap gap-2'>
-        <div className='relative w-full max-w-sm'>
+      {/* Stays in reach while scrolling through the plushies. */}
+      <Reveal className='sticky-bar flex gap-2'>
+        <div className='relative min-w-0 flex-1 sm:max-w-sm'>
           <SearchIcon className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground' />
           <Input
             type='search'
-            placeholder='Search by name, species, trait…'
+            placeholder='Search plushies'
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className='h-10 rounded-full pl-9 text-sm'
@@ -67,10 +68,13 @@ export function PlushieGallery({ plushies }: { plushies: Plushie[] }) {
           />
         </div>
         <Select value={order} onValueChange={(v) => setOrder(v as Order)}>
+          {/* Just an icon on phones, leaving the room to the search. */}
           <SelectTrigger
-            className='h-10! w-auto min-w-36 rounded-full'
+            // Radix drops a className on SelectValue, so it's hidden from here.
+            className='h-10! w-auto shrink-0 rounded-full px-3 max-sm:*:data-[slot=select-value]:sr-only sm:min-w-36'
             aria-label='Order'
           >
+            <ArrowDownUpIcon className='sm:hidden' aria-hidden />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

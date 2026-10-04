@@ -415,13 +415,14 @@ export function PlushieForm({
         </p>
       )}
 
-      <div className='flex flex-wrap items-center justify-between gap-3 border-t pt-6'>
+      {/* Floats at the bottom while scrolling, so saving is always at hand. */}
+      <div className='sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card/80 p-3 shadow-lg ring-1 shadow-black/10 ring-foreground/10 backdrop-blur'>
         <div className='flex gap-2'>
           <Button type='submit' disabled={saving || deleting}>
             {saving && <Loader2Icon className='animate-spin' />}
             {plushie ? 'Save' : 'Create'}
           </Button>
-          <Button type='button' variant='ghost' asChild>
+          <Button type='button' variant='secondary' asChild>
             <Link
               href={
                 plushie ? `/plushies/${plushie.slug}` : '/dashboard/plushies'

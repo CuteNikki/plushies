@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { createHash, randomUUID } from 'node:crypto';
+
 import { UTApi } from 'uploadthing/server';
 
 import { ActivitySubject, snapshotPhotos } from '@/lib/activity';
@@ -18,6 +20,25 @@ export const PHOTO_RETENTION_DAYS = 30;
 
 export function photoRetentionCutoff() {
   return new Date(Date.now() - PHOTO_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * Names the database this site runs on, from its host and name. Uploads carry
+ * it in their UploadThing custom ID, so the orphan sweep only deletes this
+ * database's files: another database on the same token, like a local copy,
+ * doesn't know these plushies and would otherwise see every photo as unused.
+ */
+export const uploadOwner = (() => {
+  const { host, pathname } = new URL(process.env.DATABASE_URL!);
+  return createHash('sha256')
+    .update(host + pathname)
+    .digest('base64url')
+    .slice(0, 12);
+})();
+
+/** A custom ID for a new upload, marking it as this database's. */
+export function newUploadId() {
+  return `${uploadOwner}-${randomUUID()}`;
 }
 
 /** The UploadThing file key in a photo URL, e.g. https://x.ufs.sh/f/<key>. */
@@ -85,7 +106,7 @@ export async function unusedKeys(keys: string[]) {
 /**
  * Deletes files no plushie uses, e.g. uploads from a form that was closed
  * without saving, photos removed more than PHOTO_RETENTION_DAYS ago, or
- * deletes that failed before.
+ * deletes that failed before. Only this database's uploads, see uploadOwner.
  */
 export async function deleteOrphanedFiles() {
   try {
@@ -94,7 +115,11 @@ export async function deleteOrphanedFiles() {
     for (let offset = 0; ;) {
       const { files, hasMore } = await utapi.listFiles({ limit: 500, offset });
       for (const file of files) {
-        if (file.status !== 'Deletion Pending' && file.uploadedAt < cutoff) {
+        if (
+          file.customId?.startsWith(`${uploadOwner}-`) &&
+          file.status !== 'Deletion Pending' &&
+          file.uploadedAt < cutoff
+        ) {
           candidates.push(file.key);
         }
       }

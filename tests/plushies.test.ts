@@ -153,6 +153,20 @@ describe('photos', () => {
     expect([...uploads.keys()].toSorted()).toEqual(['fresh', 'photo']);
   });
 
+  test('cleaning up leaves files from other databases alone', async () => {
+    await asEditor();
+    upload('other-database', 2, 'someone-else-1234');
+    upload('no-custom-id', 2, null);
+
+    await submitPlushie({ name: 'Mochi' });
+    await settle();
+
+    expect([...uploads.keys()].toSorted()).toEqual([
+      'no-custom-id',
+      'other-database',
+    ]);
+  });
+
   test('deleting a plushie keeps its photos, so it can be restored', async () => {
     await asEditor();
     const photo = upload('photo', 2);

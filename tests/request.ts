@@ -27,7 +27,12 @@ export type SentEmail = { kind: string; to: string; args: string[] };
 
 export const sentEmails: SentEmail[] = [];
 
-export type StoredFile = { key: string; uploadedAt: number; status: string };
+export type StoredFile = {
+  key: string;
+  customId: string | null;
+  uploadedAt: number;
+  status: string;
+};
 
 /** Files in the pretend UploadThing, by key. */
 export const uploads = new Map<string, StoredFile>();

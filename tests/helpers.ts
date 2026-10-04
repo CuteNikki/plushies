@@ -2,6 +2,7 @@ import { savePlushie } from '@/actions/plushies';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Role } from '@/lib/permissions';
+import { newUploadId } from '@/lib/uploads';
 
 import { assertTestDatabase, request, uploads } from './request';
 
@@ -132,10 +133,18 @@ export async function createPlushie(name: string) {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-/** A photo in the pretend UploadThing, uploaded `daysAgo`. */
-export function upload(key: string, daysAgo = 0) {
+/**
+ * A photo in the pretend UploadThing, uploaded `daysAgo`, by this database
+ * unless `customId` says otherwise.
+ */
+export function upload(
+  key: string,
+  daysAgo = 0,
+  customId: string | null = newUploadId()
+) {
   uploads.set(key, {
     key,
+    customId,
     uploadedAt: Date.now() - daysAgo * DAY,
     status: 'Uploaded',
   });

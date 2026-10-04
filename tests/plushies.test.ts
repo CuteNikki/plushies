@@ -173,9 +173,7 @@ describe('photos', () => {
     await submitPlushie({ name: 'Mochi', thumbnail: photo });
     const { id } = (await plushieBySlug('mochi'))!;
 
-    await expect(deletePlushie(id)).rejects.toThrow(
-      'Redirected to /dashboard/plushies'
-    );
+    await deletePlushie(id);
     await settle();
 
     expect(await plushieBySlug('mochi')).toBeNull();

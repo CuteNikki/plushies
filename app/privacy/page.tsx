@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Privacy Policy' };
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title='Privacy Policy' updated='September 24, 2026'>
+    <LegalPage title='Privacy Policy' updated='October 14, 2026'>
       <LegalSection title='1. Who is responsible'>
         <p>
           The controller within the meaning of the GDPR is the operator named in
@@ -187,11 +187,6 @@ export default function PrivacyPage() {
             photos are delivered through our own server.
           </li>
           <li>
-            <strong>Resend</strong> (Plus Five Five, Inc., USA): sends email
-            verification and password reset emails. Resend receives your email
-            address, name and the content of the email.
-          </li>
-          <li>
             <strong>IPinfo</strong> (IPinfo, Inc., USA): when you open your
             account settings, the IP addresses of your sessions are sent to
             IPinfo to look up their country and network provider. Each address
@@ -204,6 +199,10 @@ export default function PrivacyPage() {
           there. Where required, such transfers are based on the EU-US Data
           Privacy Framework or on the EU Standard Contractual Clauses (Art. 46
           (2) (c) GDPR).
+        </p>
+        <p>
+          Emails from the site, such as email verification and password reset
+          emails, are sent by our own mail server, not by an email service.
         </p>
         <p>
           Fonts are downloaded when the site is built and served from our own

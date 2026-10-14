@@ -9,6 +9,7 @@ import {
 } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { admin, twoFactor } from 'better-auth/plugins';
+import { after } from 'next/server';
 
 import { withAccountActivity } from '@/lib/activity';
 import { banNotice } from '@/lib/ban-notice';
@@ -77,9 +78,11 @@ export const auth = betterAuth({
     enabled: true,
     revokeSessionsOnPasswordReset: true,
     sendResetPassword: async ({ user, url }) => {
-      // Not awaited, so the response time doesn't reveal whether the email exists.
-      void sendPasswordResetEmail(user.email, user.name, url).catch((error) =>
-        console.error('Failed to send password reset email', error)
+      // After the response, so its timing doesn't reveal whether the email exists.
+      after(() =>
+        sendPasswordResetEmail(user.email, user.name, url).catch((error) =>
+          console.error('Failed to send password reset email', error)
+        )
       );
     },
   },
@@ -96,13 +99,15 @@ export const auth = betterAuth({
         where: { email: user.email },
         select: { id: true },
       }));
-      void sendVerificationEmail(
-        user.email,
-        user.name,
-        changing ? withCallback(url, '/verified?step=changed') : url,
-        changing
-      ).catch((error) =>
-        console.error('Failed to send verification email', error)
+      after(() =>
+        sendVerificationEmail(
+          user.email,
+          user.name,
+          changing ? withCallback(url, '/verified?step=changed') : url,
+          changing
+        ).catch((error) =>
+          console.error('Failed to send verification email', error)
+        )
       );
     },
   },
@@ -131,13 +136,15 @@ export const auth = betterAuth({
       // Verified addresses first confirm from the current address, so a
       // stolen session can't quietly take over the account.
       sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
-        void sendEmailChangeConfirmation(
-          user.email,
-          user.name,
-          newEmail,
-          withCallback(url, '/verified?step=confirmed')
-        ).catch((error) =>
-          console.error('Failed to send email change confirmation', error)
+        after(() =>
+          sendEmailChangeConfirmation(
+            user.email,
+            user.name,
+            newEmail,
+            withCallback(url, '/verified?step=confirmed')
+          ).catch((error) =>
+            console.error('Failed to send email change confirmation', error)
+          )
         );
       },
     },
@@ -149,12 +156,11 @@ export const auth = betterAuth({
       sendDeleteAccountVerification: async ({ user, url, token }) => {
         const link = new URL('/account/delete', new URL(url).origin);
         link.searchParams.set('token', token);
-        void sendDeleteAccountEmail(
-          user.email,
-          user.name,
-          link.toString()
-        ).catch((error) =>
-          console.error('Failed to send delete account email', error)
+        after(() =>
+          sendDeleteAccountEmail(user.email, user.name, link.toString()).catch(
+            (error) =>
+              console.error('Failed to send delete account email', error)
+          )
         );
       },
       deleteTokenExpiresIn: 60 * 60,
@@ -224,8 +230,10 @@ export const auth = betterAuth({
         // Only a hash is kept, like a password.
         storeOTP: 'hashed',
         sendOTP: ({ user, otp }) => {
-          void sendTwoFactorCode(user.email, user.name, otp).catch((error) =>
-            console.error('Failed to send sign-in code', error)
+          after(() =>
+            sendTwoFactorCode(user.email, user.name, otp).catch((error) =>
+              console.error('Failed to send sign-in code', error)
+            )
           );
         },
       },

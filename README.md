@@ -2,7 +2,7 @@
 
 A little website that shows all of my plushies: their names, birthdays, favorite things and photos. Visitors can sign in to like plushies and leave comments; editors and admins look after the collection from a dashboard.
 
-Built with Next.js 16, React 19, Tailwind CSS 4 and shadcn/ui, with Prisma on Postgres, Better Auth for accounts, UploadThing for photos and Resend for emails. Bun runs the scripts and tests.
+Built with Next.js 16, React 19, Tailwind CSS 4 and shadcn/ui, with Prisma on Postgres, Better Auth for accounts, UploadThing for photos and Nodemailer for emails, sent through our own mail server (Stalwart at mail.niso.moe). Bun runs the scripts and tests.
 
 ## Setup
 
@@ -29,7 +29,7 @@ Then open http://localhost:3000.
 | `BETTER_AUTH_URL` | Where the site runs. Passkeys only work on this address. |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | From a Discord app's OAuth2 page. Its redirect URL is `<BETTER_AUTH_URL>/api/auth/callback/discord`. |
 | `UPLOADTHING_TOKEN` | From the UploadThing dashboard, for photo uploads. |
-| `RESEND_API_KEY`, `EMAIL_FROM` | For every email the site sends. `EMAIL_FROM` must use a domain verified in Resend. |
+| `SMTP_URL`, `EMAIL_FROM` | For every email the site sends. `SMTP_URL` logs in to the mail server, with the `@` in the username written as `%40`: `smtps://no-reply%40niso.moe:password@mail.niso.moe`. `EMAIL_FROM` is optional (`Plushies <no-reply@niso.moe>`) and must be an address of that account. |
 | `IPINFO_TOKEN` | Optional. Shows a country and network provider next to each session in account settings. |
 | `SITE_URL` | Optional. The public address used in link previews; defaults to `BETTER_AUTH_URL`. |
 

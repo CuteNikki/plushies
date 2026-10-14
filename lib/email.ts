@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
 async function sendEmail(email: {
   to: string;
@@ -8,16 +8,17 @@ async function sendEmail(email: {
   text: string;
   html: string;
 }) {
-  // Created here, not at import, so builds work without the API key.
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM!,
+  // Our mail server, e.g. smtps://no-reply%40niso.moe:password@mail.niso.moe
+  const url = process.env.SMTP_URL;
+  if (!url) throw new Error('Set SMTP_URL to send emails.');
+
+  await nodemailer.createTransport(url).sendMail({
+    from: process.env.EMAIL_FROM ?? 'Plushies <no-reply@niso.moe>',
     ...email,
     // A unique value stops Gmail from grouping emails with the same subject
     // into one conversation, where it hides the repeated text behind "…".
     headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
   });
-  if (error) throw new Error(`Resend: ${error.message}`);
 }
 
 export async function sendPasswordResetEmail(

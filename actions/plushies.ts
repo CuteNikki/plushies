@@ -43,13 +43,12 @@ import {
 
 export type FormState = { error?: string };
 
-const image = z.object({ key: z.string().min(1), url: z.url() }).refine(
-  ({ key, url }) =>
-    photoKey(url) === key ||
-    // Saved before photos moved to our storage, until they're moved too.
-    new URL(url).hostname.endsWith('.ufs.sh'),
-  'Photos must be uploaded through the form'
-);
+const image = z
+  .object({ key: z.string().min(1), url: z.url() })
+  .refine(
+    ({ key, url }) => photoKey(url) === key,
+    'Photos must be uploaded through the form'
+  );
 
 const optional = z
   .string()

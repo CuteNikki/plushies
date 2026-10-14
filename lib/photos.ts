@@ -41,7 +41,7 @@ export function photoKey(url: string) {
 
 /**
  * The photo at `url` (its large size, as saved) in `size`. A URL that isn't
- * ours, like an UploadThing one not moved yet, stays as it is.
+ * ours stays as it is.
  */
 export function photoUrl(url: string, size: PhotoSize) {
   if (size === 'large' || !photoKey(url)) return url;

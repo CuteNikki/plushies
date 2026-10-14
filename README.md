@@ -6,7 +6,7 @@ Built with Next.js 16, React 19, Tailwind CSS 4 and shadcn/ui, with Prisma on Po
 
 ## Setup
 
-You need [Bun](https://bun.sh), Node 24.21 or newer (for the Prisma CLI), a Postgres database, and Docker if you want to run the tests.
+You need [Bun](https://bun.sh), Node 22.12 or newer (older versions break the Prisma CLI), a Postgres database, and Docker if you want to run the tests.
 
 1. Copy `.env.example` to `.env` and fill it in (see below).
 2. Install, set up the database and start the site:
@@ -91,7 +91,6 @@ While an admin views the site as someone else, a banner says so and nothing can 
 | `bun run make-admin <email>` | Makes an existing account an admin. |
 | `bun run sample-comments [--remove]` | Adds sample comments by the existing accounts, or takes them out again. |
 | `bun run encrypt-oauth-tokens [--write]` | Encrypts Discord tokens stored before encryption was turned on. Without `--write` it only reports. |
-| `bun run move-photos [--write]` | Moves photos still on UploadThing to our own storage, in both sizes, and points plushies at them (not the activity log). Without `--write` it only reports. |
 
 ## Where things are
 

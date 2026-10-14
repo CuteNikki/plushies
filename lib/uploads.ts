@@ -69,9 +69,9 @@ export async function newUpload(
   };
 }
 
-/** The key of the photo at `url`, or of an UploadThing one not moved yet. */
+/** The key of the photo at `url`, or the URL itself for one that isn't ours. */
 export function fileKey(url: string) {
-  return photoKey(url) ?? new URL(url).pathname.split('/').pop()!;
+  return photoKey(url) ?? url;
 }
 
 /** Photo URLs that plushie changes of the last PHOTO_RETENTION_DAYS show. */

@@ -3,9 +3,6 @@
   "version": "0.0.1",
   "type": "module",
   "private": true,
-  "engines": {
-    "node": ">=24.21"
-  },
   "packageManager": "bun",
   "scripts": {
     "dev": "next dev",
@@ -22,8 +19,7 @@
     "db:studio": "prisma studio",
     "make-admin": "bun scripts/make-admin.ts",
     "sample-comments": "bun scripts/sample-comments.ts",
-    "encrypt-oauth-tokens": "bun scripts/encrypt-oauth-tokens.ts",
-    "move-photos": "bun scripts/move-photos.ts"
+    "encrypt-oauth-tokens": "bun scripts/encrypt-oauth-tokens.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.6",

@@ -24,16 +24,29 @@ const FRAME = 300;
 /**
  * A photo as a square PNG data URL for the preview frame. Converting first
  * means any uploaded format works, and GIFs use their first frame.
+ *
+ * Null (the heart) if the photo can't be downloaded, so one slow or missing
+ * photo doesn't fail the whole build.
  */
 export async function framePhoto(url: string) {
-  // Cached, so the preview can be built ahead of time like the page.
-  const response = await fetch(url, { cache: 'force-cache' });
-  if (!response.ok) return null;
-  const png = await sharp(Buffer.from(await response.arrayBuffer()))
-    .resize(FRAME * 2, FRAME * 2, { fit: 'cover' })
-    .png()
-    .toBuffer();
-  return `data:image/png;base64,${png.toString('base64')}`;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      // Cached, so the preview can be built ahead of time like the page.
+      const response = await fetch(url, {
+        cache: 'force-cache',
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!response.ok) return null;
+      const png = await sharp(Buffer.from(await response.arrayBuffer()))
+        .resize(FRAME * 2, FRAME * 2, { fit: 'cover' })
+        .png()
+        .toBuffer();
+      return `data:image/png;base64,${png.toString('base64')}`;
+    } catch (error) {
+      console.warn(`Couldn't frame ${url} (attempt ${attempt}):`, error);
+    }
+  }
+  return null;
 }
 
 /**

@@ -181,12 +181,6 @@ export default function PrivacyPage() {
             comments, so the browsers of visitors who see it contact Discord.
           </li>
           <li>
-            <strong>UploadThing</strong> (Ping Labs, Inc., USA): stores the
-            plushie photos. When editors upload photos, their browser sends the
-            files directly to UploadThing. Visitors do not contact UploadThing:
-            photos are delivered through our own server.
-          </li>
-          <li>
             <strong>IPinfo</strong> (IPinfo, Inc., USA): when you open your
             account settings, the IP addresses of your sessions are sent to
             IPinfo to look up their country and network provider. Each address
@@ -205,6 +199,12 @@ export default function PrivacyPage() {
           emails, are sent by our own mail server, not by an email service.
         </p>
         <p>
+          Plushie photos are kept on our own server and loaded from
+          images.niso.moe, not from a storage service. When editors upload
+          photos, their browser makes them smaller and sends them there
+          directly.
+        </p>
+        <p>
           Fonts are downloaded when the site is built and served from our own
           domain, so your browser does not contact Google when you visit. We do
           not embed third-party scripts, trackers or social media widgets.
@@ -213,9 +213,10 @@ export default function PrivacyPage() {
 
       <LegalSection title='7. Hosting'>
         <p>
-          The website and its database run on infrastructure operated by the
-          operator. Data is only disclosed to others where described above or
-          where the law requires it, for example to authorities.
+          The website, its database and the plushie photos run on infrastructure
+          operated by the operator. Data is only disclosed to others where
+          described above or where the law requires it, for example to
+          authorities.
         </p>
       </LegalSection>
 
@@ -233,12 +234,12 @@ export default function PrivacyPage() {
           them. When your account is deleted, your comments are deleted with it;
           one that others replied to stays as &ldquo;[deleted]&rdquo;, without
           your name or text, until its replies are gone. Photos removed from a
-          plushie, or of a deleted plushie, are kept on UploadThing for 30 days
-          so the change can be undone, and deleted after that. Activity log
-          entries are deleted after 90 days, including those about accounts that
-          were deleted before then. Log data, if any, is kept only as long as
-          needed for security and troubleshooting. Browser storage stays on your
-          device until it expires or you clear it.
+          plushie, or of a deleted plushie, are kept for 30 days so the change
+          can be undone, and deleted after that. Activity log entries are
+          deleted after 90 days, including those about accounts that were
+          deleted before then. Log data, if any, is kept only as long as needed
+          for security and troubleshooting. Browser storage stays on your device
+          until it expires or you clear it.
         </p>
       </LegalSection>
 

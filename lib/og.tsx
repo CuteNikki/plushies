@@ -6,6 +6,7 @@ import { ImageResponse } from 'next/og';
 import sharp from 'sharp';
 
 import { Heart } from '@/lib/brand-image';
+import { photoUrl } from '@/lib/photos';
 import { brand } from '@/lib/site';
 
 /** Link preview size, shared by every opengraph-image file. */
@@ -32,7 +33,7 @@ export async function framePhoto(url: string) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       // Cached, so the preview can be built ahead of time like the page.
-      const response = await fetch(url, {
+      const response = await fetch(photoUrl(url, 'small'), {
         cache: 'force-cache',
         signal: AbortSignal.timeout(15_000),
       });

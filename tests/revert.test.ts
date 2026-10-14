@@ -83,8 +83,8 @@ describe('reverting plushie changes', () => {
       where: { id },
       include: { gallery: true },
     });
-    expect(back.thumbnailKey).toBe('a');
-    expect(back.gallery.map((photo) => photo.key)).toEqual(['b']);
+    expect(back.thumbnailKey).toBe(a.key);
+    expect(back.gallery.map((photo) => photo.key)).toEqual([b.key]);
   });
 });
 

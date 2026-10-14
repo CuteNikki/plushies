@@ -27,14 +27,9 @@ export type SentEmail = { kind: string; to: string; args: string[] };
 
 export const sentEmails: SentEmail[] = [];
 
-export type StoredFile = {
-  key: string;
-  customId: string | null;
-  uploadedAt: number;
-  status: string;
-};
+export type StoredFile = { key: string; size: number; lastModified: Date };
 
-/** Files in the pretend UploadThing, by key. */
+/** Files in the pretend photo storage, by key, e.g. <database>/<id>/large.webp. */
 export const uploads = new Map<string, StoredFile>();
 
 const deferred: Promise<unknown>[] = [];

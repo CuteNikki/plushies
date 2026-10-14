@@ -20,6 +20,13 @@ import {
   VIEWING_AS_MESSAGE,
 } from '@/lib/permissions';
 import {
+  MAX_PHOTO_BYTES,
+  PHOTO_TYPES,
+  photoKey,
+  type PhotoSize,
+  type PhotoType,
+} from '@/lib/photos';
+import {
   findGroup,
   makeRoomAfter,
   nextPosition,
@@ -27,19 +34,22 @@ import {
 } from '@/lib/plushie-order';
 import { changedKeys } from '@/lib/revert';
 import { getSession } from '@/lib/session';
-import { deleteFiles, deleteOrphanedFiles, unusedKeys } from '@/lib/uploads';
+import {
+  deleteFiles,
+  deleteOrphanedFiles,
+  newUpload,
+  unusedKeys,
+} from '@/lib/uploads';
 
 export type FormState = { error?: string };
 
-const image = z.object({
-  key: z.string().min(1),
-  url: z
-    .url()
-    .refine(
-      (url) => new URL(url).hostname.endsWith('.ufs.sh'),
-      'Photos must be uploaded through the form'
-    ),
-});
+const image = z.object({ key: z.string().min(1), url: z.url() }).refine(
+  ({ key, url }) =>
+    photoKey(url) === key ||
+    // Saved before photos moved to our storage, until they're moved too.
+    new URL(url).hostname.endsWith('.ufs.sh'),
+  'Photos must be uploaded through the form'
+);
 
 const optional = z
   .string()
@@ -319,6 +329,28 @@ export async function deletePlushie(
   revalidatePath('/', 'layout');
   // From its edit page, which is gone now; lists just refresh.
   if (options.backToList) redirect('/dashboard/plushies');
+}
+
+/**
+ * Links to upload a new photo's two sizes to, for the browser to send them
+ * straight to storage (see PhotoUpload).
+ */
+export async function requestUpload(
+  type: string,
+  sizes: Record<PhotoSize, number>
+) {
+  await assertEditor();
+  if (!Object.hasOwn(PHOTO_TYPES, type)) {
+    return { error: 'Photos can only be sent as WebP or JPEG' };
+  }
+  const fits = (size: unknown) =>
+    Number.isInteger(size) &&
+    (size as number) > 0 &&
+    (size as number) <= MAX_PHOTO_BYTES;
+  if (!fits(sizes?.large) || !fits(sizes?.small)) {
+    return { error: 'That photo is too big, even made smaller' };
+  }
+  return newUpload(type as PhotoType, sizes);
 }
 
 /** Removes photos that were uploaded but never saved, e.g. on cancel. */

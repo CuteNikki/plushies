@@ -8,7 +8,7 @@ import { cn, count, formatBytes } from '@/lib/utils';
 import { EmptyState } from '@/components/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 
-/** How full UploadThing is, for the dashboard and the photos page. */
+/** How full the photo storage is, for the dashboard and the photos page. */
 export function StorageUsage() {
   return (
     <Suspense fallback={<StorageSkeleton />}>
@@ -18,12 +18,12 @@ export function StorageUsage() {
 }
 
 /**
- * Looked up from UploadThing on each visit. It streams in after the rest of
- * the page, so a slow answer doesn't hold up the dashboard.
+ * Looked up from storage on each visit. It streams in after the rest of the
+ * page, so a slow answer doesn't hold up the dashboard.
  */
 async function Usage() {
   const usage = await getStorageUsage().catch((error) => {
-    console.error('Failed to load UploadThing usage', error);
+    console.error('Failed to load photo storage usage', error);
     return null;
   });
   if (!usage) {
@@ -79,7 +79,7 @@ async function Usage() {
         />
       </div>
       <p className='text-sm text-muted-foreground'>
-        {count(usage.files, 'file')} uploaded
+        {count(usage.photos, 'photo')} kept
       </p>
     </div>
   );

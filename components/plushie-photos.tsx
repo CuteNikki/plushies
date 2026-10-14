@@ -47,6 +47,7 @@ export function PlushiePhotos({
           fill
           sizes='(min-width: 768px) 50vw, 100vw'
           preload={selected === 0}
+          large
           className='object-cover'
         />
       </Reveal>

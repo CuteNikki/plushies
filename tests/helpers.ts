@@ -2,7 +2,8 @@ import { savePlushie } from '@/actions/plushies';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Role } from '@/lib/permissions';
-import { newUploadId } from '@/lib/uploads';
+import { PHOTO_ORIGIN } from '@/lib/photos';
+import { uploadOwner } from '@/lib/uploads';
 
 import { assertTestDatabase, request, uploads } from './request';
 
@@ -134,21 +135,33 @@ export async function createPlushie(name: string) {
 const DAY = 24 * 60 * 60 * 1000;
 
 /**
- * A photo in the pretend UploadThing, uploaded `daysAgo`, by this database
- * unless `customId` says otherwise.
+ * A photo in the pretend storage, both its sizes uploaded `daysAgo`, by this
+ * database unless `owner` says otherwise.
  */
-export function upload(
-  key: string,
-  daysAgo = 0,
-  customId: string | null = newUploadId()
-) {
-  uploads.set(key, {
-    key,
-    customId,
-    uploadedAt: Date.now() - daysAgo * DAY,
-    status: 'Uploaded',
-  });
-  return { key, url: `https://test.ufs.sh/f/${key}` };
+export function upload(name: string, daysAgo = 0, owner = uploadOwner) {
+  const key = `${owner}/${name}`;
+  for (const size of ['large', 'small']) {
+    const file = `${key}/${size}.webp`;
+    uploads.set(file, {
+      key: file,
+      size: 1000,
+      lastModified: new Date(Date.now() - daysAgo * DAY),
+    });
+  }
+  return { key, url: `${PHOTO_ORIGIN}/${key}/large.webp` };
+}
+
+/**
+ * The photos left in the pretend storage, by name for this database's, or
+ * <database>/<name> for others'. Each is listed once, with both its sizes.
+ */
+export function storedPhotos() {
+  const photos = new Set(
+    [...uploads.keys()].map((file) =>
+      file.replace(/\/(large|small)\.webp$/, '').replace(`${uploadOwner}/`, '')
+    )
+  );
+  return [...photos].toSorted();
 }
 
 type Photo = { key: string; url: string };

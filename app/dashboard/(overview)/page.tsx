@@ -372,7 +372,7 @@ export default async function DashboardPage() {
 
         <Section
           title='Photo storage'
-          description='Space used on UploadThing.'
+          description='Space used on our photo storage.'
           action={<SeeAll href='/dashboard/photos'>All photos</SeeAll>}
         >
           {/* Not a list, so it keeps its own height instead of stretching

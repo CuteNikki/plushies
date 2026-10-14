@@ -64,27 +64,16 @@ mock.module('@/lib/email', () => ({
   sendTwoFactorCode: record('two-factor-code'),
 }));
 
-// UploadThing, as far as lib/uploads.ts uses it, over the files in `uploads`.
-mock.module('uploadthing/server', () => ({
-  UTApi: class {
-    async listFiles({ limit = 500, offset = 0 } = {}) {
-      const files = [...uploads.values()];
-      return {
-        files: files.slice(offset, offset + limit),
-        hasMore: offset + limit < files.length,
-      };
-    }
-    async deleteFiles(keys: string[]) {
-      for (const key of keys) uploads.delete(key);
-      return { success: true, deletedCount: keys.length };
-    }
-    async getUsageInfo() {
-      return {
-        totalBytes: uploads.size * 1000,
-        limitBytes: 2_000_000_000,
-        filesUploaded: uploads.size,
-      };
-    }
+// The photo storage, as far as lib/uploads.ts uses it, over the files in `uploads`.
+mock.module('@/lib/storage', () => ({
+  async signUpload(key: string) {
+    return `https://storage.test/${key}?signed`;
+  },
+  async listObjects(prefix: string) {
+    return [...uploads.values()].filter((file) => file.key.startsWith(prefix));
+  },
+  async deleteObject(key: string) {
+    uploads.delete(key);
   },
 }));
 

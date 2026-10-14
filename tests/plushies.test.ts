@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 
-import { deletePlushie, discardUploads } from '@/actions/plushies';
+import {
+  deletePlushie,
+  discardUploads,
+  requestUpload,
+} from '@/actions/plushies';
 import { getPlushieList } from '@/data/dashboard';
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { db } from '@/lib/db';
@@ -10,10 +14,11 @@ import {
   actAs,
   createPlushie,
   createUser,
+  storedPhotos,
   submitPlushie,
   upload,
 } from './helpers';
-import { settle, uploads } from './request';
+import { settle } from './request';
 
 async function asEditor() {
   const editor = await createUser({ name: 'Eve', role: Role.EDITOR });
@@ -80,6 +85,11 @@ describe('saving a plushie', () => {
         },
         'Photos must be uploaded through the form',
       ],
+      [
+        // Ours, but saved under another photo's key.
+        { name: 'Mochi', thumbnail: { ...upload('a'), key: upload('b').key } },
+        'Photos must be uploaded through the form',
+      ],
     ];
     for (const [fields, error] of cases) {
       expect(await submitPlushie(fields)).toEqual({ error });
@@ -104,8 +114,8 @@ describe('saving a plushie', () => {
     await submitPlushie({ id, name: 'Mochi', thumbnail: c, gallery: [b, a] });
 
     const saved = await plushieBySlug('mochi');
-    expect(saved?.thumbnailKey).toBe('c');
-    expect(saved?.gallery.map((photo) => photo.key)).toEqual(['b', 'a']);
+    expect(saved?.thumbnailKey).toBe(c.key);
+    expect(saved?.gallery.map((photo) => photo.key)).toEqual([b.key, a.key]);
   });
 });
 
@@ -115,7 +125,7 @@ describe('photos', () => {
     const [thumb, inGallery, removed] = ['thumb', 'in-gallery', 'removed'].map(
       (key) => upload(key)
     );
-    upload('never-saved');
+    const neverSaved = upload('never-saved');
     await submitPlushie({
       name: 'Mochi',
       thumbnail: thumb,
@@ -131,13 +141,11 @@ describe('photos', () => {
     });
     await settle();
 
-    await discardUploads(['thumb', 'in-gallery', 'removed', 'never-saved']);
+    await discardUploads(
+      [thumb, inGallery, removed, neverSaved].map((photo) => photo.key)
+    );
 
-    expect([...uploads.keys()].toSorted()).toEqual([
-      'in-gallery',
-      'removed',
-      'thumb',
-    ]);
+    expect(storedPhotos()).toEqual(['in-gallery', 'removed', 'thumb']);
   });
 
   test('saving cleans up old leftovers, not fresh uploads', async () => {
@@ -150,21 +158,18 @@ describe('photos', () => {
     await submitPlushie({ name: 'Mochi', thumbnail: photo });
     await settle();
 
-    expect([...uploads.keys()].toSorted()).toEqual(['fresh', 'photo']);
+    expect(storedPhotos()).toEqual(['fresh', 'photo']);
   });
 
-  test('cleaning up leaves files from other databases alone', async () => {
+  test('cleaning up leaves photos from other databases alone', async () => {
     await asEditor();
-    upload('other-database', 2, 'someone-else-1234');
-    upload('no-custom-id', 2, null);
+    const other = upload('other-database', 2, 'someone-else');
 
     await submitPlushie({ name: 'Mochi' });
     await settle();
+    await discardUploads([other.key, 'someone-else']);
 
-    expect([...uploads.keys()].toSorted()).toEqual([
-      'no-custom-id',
-      'other-database',
-    ]);
+    expect(storedPhotos()).toEqual(['someone-else/other-database']);
   });
 
   test('deleting a plushie keeps its photos, so it can be restored', async () => {
@@ -177,7 +182,36 @@ describe('photos', () => {
     await settle();
 
     expect(await plushieBySlug('mochi')).toBeNull();
-    expect(uploads.has('photo')).toBe(true);
+    expect(storedPhotos()).toEqual(['photo']);
+  });
+
+  test('uploading gives links for both sizes, to editors only', async () => {
+    const viewer = await createUser({ name: 'Val' });
+    actAs(viewer.browser);
+    await expect(
+      requestUpload('image/webp', { large: 1000, small: 100 })
+    ).rejects.toThrow('Only editors can change plushies');
+
+    await asEditor();
+    expect(
+      await requestUpload('image/png', { large: 1000, small: 100 })
+    ).toEqual({ error: 'Photos can only be sent as WebP or JPEG' });
+    expect(
+      await requestUpload('image/webp', { large: 9 * 1024 * 1024, small: 100 })
+    ).toEqual({ error: 'That photo is too big, even made smaller' });
+
+    const link = await requestUpload('image/jpeg', { large: 1000, small: 100 });
+    if ('error' in link) throw new Error(link.error);
+    expect(link.url).toBe(`https://images.niso.moe/${link.key}/large.jpg`);
+    expect(link.uploads).toEqual({
+      large: `https://storage.test/${link.key}/large.jpg?signed`,
+      small: `https://storage.test/${link.key}/small.jpg?signed`,
+    });
+    // What the form sends back saves.
+    const thumbnail = { key: link.key, url: link.url };
+    expect(await submitPlushie({ name: 'Mochi', thumbnail })).toEqual({
+      redirectedTo: '/plushies/mochi',
+    });
   });
 });
 

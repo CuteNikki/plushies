@@ -31,8 +31,6 @@ import {
   mentionsToEditable,
   type MentionTarget,
 } from '@/lib/mentions';
-import { UploadDropzone } from '@/lib/uploadthing';
-import { cn } from '@/lib/utils';
 
 import { onBackLinkClick } from '@/components/back-button';
 import { BirthdayField } from '@/components/birthday-field';
@@ -40,19 +38,11 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { MentionField, type MentionOption } from '@/components/mention-field';
 import { Reveal } from '@/components/motion';
 import { PhotoImage } from '@/components/photo-image';
+import { PhotoUpload } from '@/components/photo-upload';
 import { deletePlushieConfirm } from '@/components/plushie-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-// A compact square tile, the same size as the photo previews next to it.
-const dropzoneClassName = cn(
-  'm-0 aspect-square w-full gap-0 rounded-xl border-2 border-dashed border-primary/30 bg-muted/40 p-3 transition-colors hover:border-primary/60',
-  'ut-upload-icon:size-8 ut-upload-icon:text-primary/60',
-  'ut-label:mt-1 ut-label:w-auto ut-label:text-xs ut-label:leading-4 ut-label:text-primary',
-  'ut-allowed-content:text-[0.7rem] ut-allowed-content:text-muted-foreground',
-  'ut-button:mt-2 ut-button:h-8 ut-button:w-auto ut-button:rounded-full ut-button:bg-primary ut-button:px-3 ut-button:text-xs ut-button:text-primary-foreground ut-button:ut-readying:bg-primary/60'
-);
 
 export function PlushieForm({
   plushie,
@@ -187,21 +177,7 @@ export function PlushieForm({
               </Button>
             </div>
           ) : (
-            <UploadDropzone
-              endpoint='plushieThumbnail'
-              config={{ mode: 'auto', cn }}
-              className={dropzoneClassName}
-              content={{
-                label: 'Drop a photo or click',
-                allowedContent: 'One image, up to 8MB',
-                button: 'Choose photo',
-              }}
-              onClientUploadComplete={([file]) => {
-                setUploadError(undefined);
-                if (file) setThumbnail({ key: file.key, url: file.ufsUrl });
-              }}
-              onUploadError={(err) => setUploadError(err.message)}
-            />
+            <PhotoUpload onUploaded={setThumbnail} onError={setUploadError} />
           )}
         </div>
       </Section>
@@ -258,23 +234,10 @@ export function PlushieForm({
           ))}
           {/* The last tile adds more photos. */}
           <li>
-            <UploadDropzone
-              endpoint='plushieImage'
-              config={{ mode: 'auto', cn }}
-              className={dropzoneClassName}
-              content={{
-                label: 'Drop photos or click',
-                allowedContent: 'Up to 20 at once, 8MB each',
-                button: 'Add photos',
-              }}
-              onClientUploadComplete={(files) => {
-                setUploadError(undefined);
-                setGallery((images) => [
-                  ...images,
-                  ...files.map((file) => ({ key: file.key, url: file.ufsUrl })),
-                ]);
-              }}
-              onUploadError={(err) => setUploadError(err.message)}
+            <PhotoUpload
+              multiple
+              onUploaded={(image) => setGallery((images) => [...images, image])}
+              onError={setUploadError}
             />
           </li>
         </ul>

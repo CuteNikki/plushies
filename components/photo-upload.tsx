@@ -1,5 +1,3 @@
-'use client';
-
 import { useState } from 'react';
 
 import { ImageUpIcon, Loader2Icon } from 'lucide-react';

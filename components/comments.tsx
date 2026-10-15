@@ -53,12 +53,8 @@ import { cn } from '@/lib/utils';
 
 import { useConfirm } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
-import {
-  ItemMenu,
-  ItemMenuButton,
-  ItemMenuItem,
-  ItemMenuSeparator,
-} from '@/components/item-menu';
+import { ItemMenu, ItemMenuButton } from '@/components/item-menu';
+import { ItemMenuItem, ItemMenuSeparator } from '@/components/item-menu-items';
 import { LocalTime } from '@/components/local-time';
 import { MentionField, type MentionOption } from '@/components/mention-field';
 import { MentionText } from '@/components/mention-text';

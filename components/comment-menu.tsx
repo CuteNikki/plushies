@@ -13,11 +13,8 @@ import type { CommentRowData } from '@/data/comment-rows';
 import { mentionsToText } from '@/lib/mentions';
 
 import { useDeleteComment } from '@/components/delete-comment-button';
-import {
-  ItemMenu,
-  ItemMenuItem,
-  ItemMenuSeparator,
-} from '@/components/item-menu';
+import { ItemMenu } from '@/components/item-menu';
+import { ItemMenuItem, ItemMenuSeparator } from '@/components/item-menu-items';
 
 /** A comment's row, with its actions on right-click and an ItemMenuButton. */
 export function CommentMenu({

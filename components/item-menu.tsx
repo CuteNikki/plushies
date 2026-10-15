@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { createContext, use } from 'react';
 
-import { MoreHorizontalIcon, type LucideIcon } from 'lucide-react';
+import { MoreHorizontalIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -12,15 +11,11 @@ import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -36,13 +31,13 @@ type Menu = {
 const MenuContext = createContext<Menu | null>(null);
 
 /** Which menu the items are in, so they use its parts. */
-const KindContext = createContext<'dropdown' | 'context'>('dropdown');
+export const KindContext = createContext<'dropdown' | 'context'>('dropdown');
 
 /**
  * Something's actions, in a menu. With `children`, they're a row that also
  * opens the menu on right-click, with an ItemMenuButton somewhere in it;
  * without, it's just the button. Build `items` from ItemMenuItem and
- * ItemMenuSeparator, and keep any dialogs they open outside of it: the menu
+ * ItemMenuSeparator (from item-menu-items), and keep any dialogs they open outside of it: the menu
  * unmounts as it closes. Inside another one, e.g. a name in a comment's row,
  * right-clicking opens only the innermost.
  */
@@ -140,49 +135,5 @@ export function ItemMenuButton({
         <KindContext value='dropdown'>{menu.items}</KindContext>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
-}
-
-export function ItemMenuItem({
-  icon: Icon,
-  href,
-  onSelect,
-  variant,
-  disabled,
-  children,
-}: {
-  icon: LucideIcon;
-  /** Makes it a link, so it can also be opened in a new tab. */
-  href?: string;
-  onSelect?: () => void;
-  variant?: 'default' | 'destructive';
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  const Item =
-    use(KindContext) === 'context' ? ContextMenuItem : DropdownMenuItem;
-  if (href) {
-    return (
-      <Item asChild variant={variant} disabled={disabled}>
-        <Link href={href}>
-          <Icon />
-          {children}
-        </Link>
-      </Item>
-    );
-  }
-  return (
-    <Item variant={variant} disabled={disabled} onSelect={onSelect}>
-      <Icon />
-      {children}
-    </Item>
-  );
-}
-
-export function ItemMenuSeparator() {
-  return use(KindContext) === 'context' ? (
-    <ContextMenuSeparator />
-  ) : (
-    <DropdownMenuSeparator />
   );
 }

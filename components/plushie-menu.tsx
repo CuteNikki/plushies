@@ -16,11 +16,8 @@ import { authClient } from '@/lib/auth-client';
 import { canEditPlushies, isViewingAs } from '@/lib/permissions';
 
 import { useConfirm, type ConfirmOptions } from '@/components/confirm-dialog';
-import {
-  ItemMenu,
-  ItemMenuItem,
-  ItemMenuSeparator,
-} from '@/components/item-menu';
+import { ItemMenu } from '@/components/item-menu';
+import { ItemMenuItem, ItemMenuSeparator } from '@/components/item-menu-items';
 
 /** Asked before deleting a plushie, here and on its edit page. */
 export function deletePlushieConfirm(name: string): ConfirmOptions {

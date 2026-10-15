@@ -8,7 +8,8 @@ import { getUserMenuInfo } from '@/actions/users';
 import { authClient } from '@/lib/auth-client';
 import { isAdmin, isViewingAs } from '@/lib/permissions';
 
-import { ItemMenu, ItemMenuItem } from '@/components/item-menu';
+import { ItemMenu } from '@/components/item-menu';
+import { ItemMenuItem } from '@/components/item-menu-items';
 import { useUserActionItems } from '@/components/user-actions';
 
 type Info = Awaited<ReturnType<typeof getUserMenuInfo>>;

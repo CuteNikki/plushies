@@ -25,11 +25,8 @@ import { isAdmin } from '@/lib/permissions';
 
 import { BanDialog, confirmLiftBan, liftBan } from '@/components/ban-controls';
 import { useConfirm } from '@/components/confirm-dialog';
-import {
-  ItemMenu,
-  ItemMenuItem,
-  ItemMenuSeparator,
-} from '@/components/item-menu';
+import { ItemMenu } from '@/components/item-menu';
+import { ItemMenuItem, ItemMenuSeparator } from '@/components/item-menu-items';
 
 type UserActionsProps = {
   user: { id: string; name: string; role: string };

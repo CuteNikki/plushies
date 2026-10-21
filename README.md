@@ -111,10 +111,10 @@ Photos are kept on our own server, in [Garage](https://garagehq.deuxfleurs.fr), 
 
 Each photo is a folder `<database>/<id>/` with `large.webp` and `small.webp` (`.jpg` from a browser that can't write WebP). `<database>` is named after the database (`uploadOwner` in `lib/uploads.ts`), so the cleanup after saving only deletes this database's photos, not those of a local copy on the same storage.
 
-It's the Garage that runs [Tinderhaj](https://github.com/CuteNikki/Tinderhaj)'s pictures (`storage/` there, container `tinderhaj-storage` on the server), with a bucket of its own:
+It's the server's shared image storage (`~/services/storage`, container `image-storage`), which [Tinderhaj](https://github.com/CuteNikki/Tinderhaj) uses too, with a bucket of its own:
 
 1. Point `images.niso.moe` at the server (an A record; on Cloudflare, DNS only, so Caddy can get its certificate).
-2. Make the bucket, with `garage` standing for `docker exec tinderhaj-storage /garage`. The bucket is named after its address, which is how Garage knows which one a photo is read from:
+2. Make the bucket, with `garage` standing for `docker exec image-storage /garage`. The bucket is named after its address, which is how Garage knows which one a photo is read from:
    ```sh
    garage bucket create images.niso.moe
    garage bucket website --allow images.niso.moe
@@ -131,14 +131,14 @@ It's the Garage that runs [Tinderhaj](https://github.com/CuteNikki/Tinderhaj)'s 
    	}
    	@api path /images.niso.moe /images.niso.moe/*
    	handle @api {
-   		reverse_proxy tinderhaj-storage:3900
+   		reverse_proxy image-storage:3900
    	}
    	handle {
    		# A photo never changes: a new one gets a new address
    		header Cache-Control "public, max-age=31536000, immutable"
    		header Content-Security-Policy "default-src 'none'; sandbox"
    		header X-Content-Type-Options nosniff
-   		reverse_proxy tinderhaj-storage:3902
+   		reverse_proxy image-storage:3902
    	}
    }
    ```

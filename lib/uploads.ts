@@ -5,7 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { ActivitySubject, snapshotPhotos } from '@/lib/activity';
 import { db } from '@/lib/db';
 import {
-  PHOTO_ORIGIN,
+  PHOTO_BASE,
   PHOTO_TYPES,
   photoKey,
   type PhotoSize,
@@ -64,7 +64,7 @@ export async function newUpload(
   );
   return {
     key,
-    url: `${PHOTO_ORIGIN}/${key}/large.${extension}`,
+    url: `${PHOTO_BASE}/${key}/large.${extension}`,
     uploads: { large, small },
   };
 }

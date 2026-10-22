@@ -3,6 +3,8 @@
  * README's Photos section).
  */
 export const PHOTO_ORIGIN = 'https://images.niso.moe';
+/** This site's photos: its own bucket, which Caddy serves under /plushies/. */
+export const PHOTO_BASE = `${PHOTO_ORIGIN}/plushies`;
 
 /**
  * Each photo is kept twice, made in the browser before it's sent: small for
@@ -24,9 +26,10 @@ export type PhotoType = keyof typeof PHOTO_TYPES;
 /** The most one size of a photo can be, as it's sent. */
 export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 
-// A photo's large size, saved as its URL: <origin>/<key>/large.<extension>,
-// where the key is <database>/<id> (see uploadOwner).
-const PHOTO_PATH = /^\/([\w-]+\/[\w-]+)\/large\.(webp|jpg)$/;
+// A photo's large size, saved as its URL: <origin>/plushies/<key>/large.<extension>,
+// where the key is <database>/<id> (see uploadOwner). One saved while every
+// site shared a bucket has no /plushies/, and still loads from that bucket.
+const PHOTO_PATH = /^\/(?:plushies\/)?([\w-]+\/[\w-]+)\/large\.(webp|jpg)$/;
 
 /** A photo's key, the folder both its sizes are in, from its URL. Null for a URL that isn't one of ours. */
 export function photoKey(url: string) {

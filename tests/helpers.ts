@@ -2,7 +2,7 @@ import { savePlushie } from '@/actions/plushies';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Role } from '@/lib/permissions';
-import { PHOTO_ORIGIN } from '@/lib/photos';
+import { PHOTO_BASE } from '@/lib/photos';
 import { uploadOwner } from '@/lib/uploads';
 
 import { assertTestDatabase, request, uploads } from './request';
@@ -148,7 +148,7 @@ export function upload(name: string, daysAgo = 0, owner = uploadOwner) {
       lastModified: new Date(Date.now() - daysAgo * DAY),
     });
   }
-  return { key, url: `${PHOTO_ORIGIN}/${key}/large.webp` };
+  return { key, url: `${PHOTO_BASE}/${key}/large.webp` };
 }
 
 /**

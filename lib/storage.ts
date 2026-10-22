@@ -2,12 +2,11 @@ import 'server-only';
 
 import { AwsClient } from 'aws4fetch';
 
-import { PHOTO_ORIGIN } from '@/lib/photos';
-
-// The bucket, named after the address it's read at. Garage's S3 API takes it
-// in the path, so everything under /images.niso.moe/ goes there (see the
-// README's Photos section), and the rest is reading photos.
-const BUCKET = 'images.niso.moe';
+// The site's own bucket, and Garage's S3 API for every site, which takes the
+// bucket in the path (see the README's Photos section). Photos are read from
+// images.niso.moe/plushies/ (PHOTO_BASE), which Caddy serves from the bucket.
+const BUCKET = 'plushies';
+const STORAGE_ENDPOINT = 'https://s3.niso.moe';
 
 /** How long a link to upload to lasts: plenty to send one photo, too short to keep. */
 const UPLOAD_LINK_SECONDS = 300;
@@ -31,7 +30,7 @@ function storage() {
 }
 
 function apiUrl(objectKey = '') {
-  return new URL(`/${BUCKET}/${objectKey}`, PHOTO_ORIGIN);
+  return new URL(`/${BUCKET}/${objectKey}`, STORAGE_ENDPOINT);
 }
 
 /**

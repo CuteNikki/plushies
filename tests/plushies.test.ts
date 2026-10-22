@@ -202,7 +202,9 @@ describe('photos', () => {
 
     const link = await requestUpload('image/jpeg', { large: 1000, small: 100 });
     if ('error' in link) throw new Error(link.error);
-    expect(link.url).toBe(`https://images.niso.moe/${link.key}/large.jpg`);
+    expect(link.url).toBe(
+      `https://images.niso.moe/plushies/${link.key}/large.jpg`
+    );
     expect(link.uploads).toEqual({
       large: `https://storage.test/${link.key}/large.jpg?signed`,
       small: `https://storage.test/${link.key}/small.jpg?signed`,

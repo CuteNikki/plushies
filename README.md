@@ -2,7 +2,7 @@
 
 A little website that shows all of my plushies: their names, birthdays, favorite things and photos. Visitors can sign in to like plushies and leave comments; editors and admins look after the collection from a dashboard.
 
-Built with Next.js 16, React 19, Tailwind CSS 4 and shadcn/ui, with Prisma on Postgres, Better Auth for accounts, photos on our own server (Garage at images.niso.moe) and Nodemailer for emails, sent through our own mail server (Stalwart at mail.niso.moe). Bun runs the scripts and tests.
+Built with Next.js 16, React 19, Tailwind CSS 4 and shadcn/ui, with Prisma on Postgres, Better Auth for accounts, photos on our own server (Garage, served at images.niso.moe/plushies) and Nodemailer for emails, sent through our own mail server (Stalwart at mail.niso.moe). Bun runs the scripts and tests.
 
 ## Setup
 
@@ -107,41 +107,22 @@ This Next.js version differs from older ones in places. Check `node_modules/next
 
 ## Photos
 
-Photos are kept on our own server, in [Garage](https://garagehq.deuxfleurs.fr), an S3-compatible store, and load from `https://images.niso.moe` (`PHOTO_ORIGIN` in `lib/photos.ts`). The browser makes each photo in two sizes before it goes, small for cards and lists and large for its plushie's page (`PHOTO_SIZES`), asks the site for links to upload them to (`requestUpload`), and sends them there itself. The links last 5 minutes and are signed for that file's type and size. The site saves the large one's URL, and pages show the small one unless they need the large one, straight from storage: the host doesn't resize them, since its plan limits that (`images.unoptimized` in `next.config.ts`).
+Photos are kept on our own server, in [Garage](https://garagehq.deuxfleurs.fr), an S3-compatible store, in the site's own bucket, `plushies`, and load from `https://images.niso.moe/plushies/` (`PHOTO_BASE` in `lib/photos.ts`). The browser makes each photo in two sizes before it goes, small for cards and lists and large for its plushie's page (`PHOTO_SIZES`), asks the site for links to upload them to (`requestUpload`), and sends them there itself, through Garage's S3 API at `https://s3.niso.moe`. The links last 5 minutes and are signed for that file's type and size. The site saves the large one's URL, and pages show the small one unless they need the large one, straight from storage: the host doesn't resize them, since its plan limits that (`images.unoptimized` in `next.config.ts`).
 
-Each photo is a folder `<database>/<id>/` with `large.webp` and `small.webp` (`.jpg` from a browser that can't write WebP). `<database>` is named after the database (`uploadOwner` in `lib/uploads.ts`), so the cleanup after saving only deletes this database's photos, not those of a local copy on the same storage.
+Each photo is a folder `<database>/<id>/` with `large.webp` and `small.webp` (`.jpg` from a browser that can't write WebP). `<database>` is named after the database (`uploadOwner` in `lib/uploads.ts`), so the cleanup after saving only deletes this database's photos, not those of a local copy on the same storage. Photos saved while every site shared one bucket have no `/plushies/` in their URL; `photoKey` still knows them.
 
-It's the server's shared image storage (`~/services/storage`, container `image-storage`), which [Tinderhaj](https://github.com/CuteNikki/Tinderhaj) uses too, with a bucket of its own:
+It's the server's image storage (`~/services/storage`, container `garage`), where every site has a bucket of its own. With `garage` standing for `docker exec garage /garage`:
 
-1. Point `images.niso.moe` at the server (an A record; on Cloudflare, DNS only, so Caddy can get its certificate).
-2. Make the bucket, with `garage` standing for `docker exec image-storage /garage`. The bucket is named after its address, which is how Garage knows which one a photo is read from:
+1. Make the bucket and the site's key, which can use that bucket and no other:
    ```sh
-   garage bucket create images.niso.moe
-   garage bucket website --allow images.niso.moe
-   garage bucket set-quotas images.niso.moe --max-size 10GiB   # STORAGE_LIMIT_BYTES in lib/uploads.ts
+   garage bucket create plushies
+   garage bucket website --allow plushies
+   garage bucket set-quotas plushies --max-size 10GiB   # STORAGE_LIMIT_BYTES in lib/uploads.ts
    garage key create plushies-site      # its Key ID and Secret key are STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY
-   garage bucket allow --read --write --owner images.niso.moe --key plushies-site
+   garage bucket allow --read --write plushies --key plushies-site
    ```
-3. Let the site's pages upload to it: with that key, put a CORS rule on the bucket allowing `PUT` with a `content-type` header from `https://plushies.niso.moe` and `http://localhost:3000`.
-4. Add it to the Caddyfile. Garage's S3 API only takes `*.tinderhaj.com` addresses as bucket names, so here the bucket goes in the path, and everything under `/images.niso.moe/` is uploading, listing and deleting:
-   ```caddyfile
-   images.niso.moe {
-   	request_body {
-   		max_size 10MB
-   	}
-   	@api path /images.niso.moe /images.niso.moe/*
-   	handle @api {
-   		reverse_proxy image-storage:3900
-   	}
-   	handle {
-   		# A photo never changes: a new one gets a new address
-   		header Cache-Control "public, max-age=31536000, immutable"
-   		header Content-Security-Policy "default-src 'none'; sandbox"
-   		header X-Content-Type-Options nosniff
-   		reverse_proxy image-storage:3902
-   	}
-   }
-   ```
+2. Let the site's pages upload to it: put a CORS rule on the bucket allowing `PUT` with a `content-type` header from `https://plushies.niso.moe` and `http://localhost:3000`.
+3. Caddy serves the bucket at `images.niso.moe/plushies/` and Garage's S3 API at `s3.niso.moe` (the server's `~/services/caddy/Caddyfile`). Uploads have an address of their own because they're signed for their path, which Caddy can't rewrite.
 
 ## Changing the data model
 

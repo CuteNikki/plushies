@@ -11,7 +11,7 @@ const isBuild = process.env.NEXT_PHASE === 'phase-production-build';
 function createClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    max: isBuild ? 2 : 5,
+    max: isBuild ? 2 : 3,
   });
   // Lets Vercel close idle connections before it suspends the function, instead of leaving them open on the server.
   attachDatabasePool(pool);

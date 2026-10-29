@@ -72,6 +72,7 @@
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "mysql2": "3.24.6"
+    "mysql2": "3.24.6",
+    "zod": "^4.6.7"
   }
 }

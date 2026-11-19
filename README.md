@@ -82,7 +82,7 @@ While an admin views the site as someone else, a banner says so and nothing can 
 | --- | --- |
 | `bun dev` | Runs the site locally. |
 | `bun run build`, `bun start` | Builds and serves the production site. |
-| `bun lint`, `bun typecheck`, `bun format` | ESLint, TypeScript and Prettier. |
+| `bun lint`, `bun typecheck`, `bun format`, `bun format:check` | ESLint, TypeScript and Prettier. |
 | `bun run test` | The tests (see below). |
 | `bun db:migrate` | Creates a migration from schema changes and applies it. |
 | `bun db:deploy` | Applies migrations in production. |

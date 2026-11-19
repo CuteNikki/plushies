@@ -9,8 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,css}\"",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "bun --no-env-file scripts/test.ts",
     "postinstall": "prisma generate",
@@ -75,5 +75,40 @@
   "overrides": {
     "mysql2": "3.24.6",
     "zod": "^4.6.7"
+  },
+  "prettier": {
+    "endOfLine": "lf",
+    "semi": true,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "printWidth": 80,
+    "plugins": [
+      "@ianvs/prettier-plugin-sort-imports",
+      "prettier-plugin-tailwindcss"
+    ],
+    "importOrder": [
+      "<BUILTIN_MODULES>",
+      "<THIRD_PARTY_MODULES>",
+      "",
+      "^lucide-react$",
+      "^@/components/discord-icon$",
+      "",
+      "^@/actions/(.*)$",
+      "^@/data/(.*)$",
+      "^@/lib/(.*)$",
+      "^@/app/(.*)$",
+      "",
+      "^@/components/(.*)$",
+      "^@/hooks/(.*)$",
+      "",
+      "^[.]"
+    ],
+    "tailwindStylesheet": "app/globals.css",
+    "tailwindFunctions": [
+      "cn",
+      "cva"
+    ]
   }
 }

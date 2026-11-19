@@ -129,7 +129,10 @@ export default function DashboardLoading() {
             }
           />
         </Section>
-        <Section title='Photo storage' description='Space used on our photo storage.'>
+        <Section
+          title='Photo storage'
+          description='Space used on our photo storage.'
+        >
           <div className='self-start'>
             <StorageSkeleton />
           </div>

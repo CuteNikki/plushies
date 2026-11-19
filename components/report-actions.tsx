@@ -60,12 +60,7 @@ export function ReportActions({
         {keeping ? <Loader2Icon className='animate-spin' /> : <CheckIcon />}
         Keep
       </Button>
-      <Button
-        variant='destructive'
-        size='sm'
-        disabled={busy}
-        onClick={remove}
-      >
+      <Button variant='destructive' size='sm' disabled={busy} onClick={remove}>
         {deleting ? <Loader2Icon className='animate-spin' /> : <Trash2Icon />}
         Delete
       </Button>

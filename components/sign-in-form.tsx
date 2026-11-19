@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { DiscordIcon } from '@/components/discord-icon';
 import { FingerprintIcon, Loader2Icon } from 'lucide-react';
+import { DiscordIcon } from '@/components/discord-icon';
 
 import { authClient } from '@/lib/auth-client';
 

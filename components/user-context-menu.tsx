@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { HourglassIcon, UserIcon } from 'lucide-react';
 
 import { getUserMenuInfo } from '@/actions/users';
+
 import { authClient } from '@/lib/auth-client';
 import { isAdmin, isViewingAs } from '@/lib/permissions';
 

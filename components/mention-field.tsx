@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from 'react';
 
 import type { Plushie } from '@/data/plushies';
+
 import { cn } from '@/lib/utils';
 
 import { PlushiePhoto } from '@/components/plushie-photo';

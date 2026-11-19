@@ -5,6 +5,7 @@ import { useTransition } from 'react';
 import { EyeIcon, Loader2Icon, XIcon } from 'lucide-react';
 
 import { stopViewingAs } from '@/actions/users';
+
 import { authClient } from '@/lib/auth-client';
 import { isRole, roleLabels } from '@/lib/permissions';
 

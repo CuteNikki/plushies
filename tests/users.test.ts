@@ -10,6 +10,7 @@ import {
   viewAsUser,
 } from '@/actions/users';
 import { getUsers } from '@/data/users';
+
 import { ActivityType } from '@/lib/activity';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';

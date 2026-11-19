@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { getActivity } from '@/data/activity';
+
 import { ActivitySubject, ActivityType } from '@/lib/activity';
 import { db } from '@/lib/db';
 

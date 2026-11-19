@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ListOrderedIcon } from 'lucide-react';
 
 import { getPlushies } from '@/data/plushies';
+
 import { arrange } from '@/lib/order';
 import { requireEditor } from '@/lib/session';
 

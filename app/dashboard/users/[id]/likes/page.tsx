@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { HeartIcon } from 'lucide-react';
 
 import { getUserLikes, getUserName, LIKES_PAGE_SIZES } from '@/data/users';
+
 import { pageNumber, pageSize, plainQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';
 import { count } from '@/lib/utils';

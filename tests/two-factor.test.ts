@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { forgetTrustedDevices } from '@/actions/account';
+
 import { auth } from '@/lib/auth';
 
 import {

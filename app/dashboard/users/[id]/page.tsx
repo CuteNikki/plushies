@@ -14,6 +14,7 @@ import { getActivity } from '@/data/activity';
 import { toCommentRow } from '@/data/comment-rows';
 import { getReportsForUser, reportsIn } from '@/data/reports';
 import { getUser, USER_PAGE_SHOWN } from '@/data/users';
+
 import { ACTIVITY_DAYS } from '@/lib/activity';
 import { isBanned } from '@/lib/bans';
 import { isAdmin } from '@/lib/permissions';

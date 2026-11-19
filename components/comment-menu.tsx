@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 
 import type { CommentRowData } from '@/data/comment-rows';
+
 import { mentionsToText } from '@/lib/mentions';
 
 import { useDeleteComment } from '@/components/delete-comment-button';

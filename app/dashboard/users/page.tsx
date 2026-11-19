@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { UsersIcon } from 'lucide-react';
 
 import { getUsers, userRoles, userSorts } from '@/data/users';
+
 import { isBanned } from '@/lib/bans';
 import { oneOf, plainQuery, searchQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';

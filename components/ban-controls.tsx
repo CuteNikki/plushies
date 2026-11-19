@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { BanIcon, Loader2Icon, ShieldCheckIcon } from 'lucide-react';
 
 import { banUser, unbanUser } from '@/actions/users';
+
 import {
   BAN_REASON_MAX,
   banDurations,

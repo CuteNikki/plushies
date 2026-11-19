@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { getAccountSettings } from '@/data/account';
+
 import { requireUser } from '@/lib/session';
 
 import { DeleteAccount } from '@/components/account/delete-account';

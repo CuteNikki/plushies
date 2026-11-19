@@ -17,6 +17,7 @@ import {
 
 import { forgetTrustedDevices } from '@/actions/account';
 import type { TwoFactorMethod } from '@/data/account';
+
 import { authClient } from '@/lib/auth-client';
 import { count } from '@/lib/utils';
 

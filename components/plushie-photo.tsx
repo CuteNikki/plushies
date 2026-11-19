@@ -1,4 +1,5 @@
 import type { Plushie } from '@/data/plushies';
+
 import { cn } from '@/lib/utils';
 
 import { MissingPhoto, PhotoImage } from '@/components/photo-image';

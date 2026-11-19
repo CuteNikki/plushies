@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { banUser, unbanUser } from '@/actions/users';
+
 import { ActivityType } from '@/lib/activity';
 import { isBanned } from '@/lib/bans';
 import { db } from '@/lib/db';

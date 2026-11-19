@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { HeartIcon } from 'lucide-react';
 
 import { toggleLike, type LikeState } from '@/actions/likes';
+
 import { authClient } from '@/lib/auth-client';
 import { isViewingAs, VIEWING_AS_MESSAGE } from '@/lib/permissions';
 import { cn } from '@/lib/utils';

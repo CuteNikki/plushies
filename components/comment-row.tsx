@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { EyeOffIcon, FlagIcon } from 'lucide-react';
 
 import type { CommentRowData } from '@/data/comment-rows';
+
 import { mentionsToText } from '@/lib/mentions';
 import { count } from '@/lib/utils';
 

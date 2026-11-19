@@ -5,6 +5,7 @@ import { HistoryIcon } from 'lucide-react';
 
 import { getActivity } from '@/data/activity';
 import { getUserName } from '@/data/users';
+
 import { ACTIVITY_DAYS } from '@/lib/activity';
 import { pageNumber, pageSize, plainQuery } from '@/lib/list-params';
 import { requireAdmin } from '@/lib/session';

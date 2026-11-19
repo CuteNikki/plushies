@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { HistoryIcon } from 'lucide-react';
 
 import { activitySorts, getActivity } from '@/data/activity';
+
 import { ACTIVITY_DAYS, ActivitySubject } from '@/lib/activity';
 import {
   oneOf,

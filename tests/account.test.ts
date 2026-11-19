@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { revokeOtherSessions, revokeSession } from '@/actions/account';
+
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { Role } from '@/lib/permissions';

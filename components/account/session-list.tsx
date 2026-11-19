@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { revokeOtherSessions, revokeSession } from '@/actions/account';
+
 import { formatDate, relative } from '@/lib/time';
 import { cn } from '@/lib/utils';
 

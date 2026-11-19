@@ -126,7 +126,7 @@ It's the server's image storage (`~/services/storage`, container `garage`), wher
 
 ## Changing the data model
 
-Edit `prisma/schema.prisma`, then run `bun db:migrate` to create and apply a migration. In production, run `bun db:deploy`.
+Edit `prisma/schema.prisma`, then run `bun db:migrate` to create and apply a migration. In production, the Docker image's `migrate` stage applies it before the site starts (or run `bun db:deploy` by hand).
 
 ## Tests
 

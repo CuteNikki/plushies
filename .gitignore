@@ -38,3 +38,6 @@ next-env.d.ts
 
 /lib/generated/prisma
 .vercel
+
+# Settings for one server only (networks, names), kept on that server
+compose.override.yaml

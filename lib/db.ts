@@ -1,5 +1,4 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { attachDatabasePool } from '@vercel/functions';
 import { Pool } from 'pg';
 
 import { PrismaClient } from '@/lib/generated/prisma/client';
@@ -13,8 +12,6 @@ function createClient() {
     connectionString: process.env.DATABASE_URL,
     max: isBuild ? 2 : 3,
   });
-  // Lets Vercel close idle connections before it suspends the function, instead of leaving them open on the server.
-  attachDatabasePool(pool);
   return new PrismaClient({ adapter: new PrismaPg(pool) });
 }
 
